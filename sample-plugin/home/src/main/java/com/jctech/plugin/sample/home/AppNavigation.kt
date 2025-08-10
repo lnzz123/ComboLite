@@ -5,6 +5,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.jctech.plugin.sample.common.navigation.AppScreen
+import com.jctech.plugin.sample.home.screen.HomeScreen
 import com.jctech.plugin.sample.screen.ScreenOne
 import com.jctech.plugin.sample.screen.ScreenTwo
 
@@ -19,7 +20,7 @@ import com.jctech.plugin.sample.screen.ScreenTwo
 fun NavGraphBuilder.appNavigation(sharedTransitionScope: SharedTransitionScope) {
   with(sharedTransitionScope) {
     composable<AppScreen.Home> {
-      HomeScreen()
+        HomeScreen()
     }
 
     composable<AppScreen.ScreenOne> {

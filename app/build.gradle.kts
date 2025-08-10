@@ -24,7 +24,7 @@ android {
     signingConfigs {
         getByName("debug") {
             storeFile =
-                file("/Users/heshenglong/AndroidStudioProjects/ComposePluginSample/jctech.jks")
+                file("$rootDir/jctech.jks")
             storePassword = "he1755858138"
             keyAlias = "jctech"
             keyPassword = "he1755858138"
@@ -36,7 +36,7 @@ android {
         }
         create("release") {
             storeFile =
-                file("/Users/heshenglong/AndroidStudioProjects/ComposePluginSample/jctech.jks")
+                file("$rootDir/jctech.jks")
             keyAlias = "jctech"
             keyPassword = "he1755858138"
             storePassword = "he1755858138"
@@ -74,11 +74,11 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -89,5 +89,5 @@ dependencies {
 
     implementation(projects.pluginFramework.pluginCore)
     // common模块包含了所有依赖，构建fat-aar容易出现bug。
-    implementation(projects.samplePlugin.common)
+    implementation(projects.dependencies)
 }

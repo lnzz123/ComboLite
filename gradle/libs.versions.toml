@@ -48,6 +48,7 @@ composeBom = "2025.07.00"
 koin = "4.1.0"
 appcompatVersion = "1.7.1"
 materialVersion = "1.12.0"
+material3AdaptiveNavigationSuite = "1.3.2"
 
 [libraries]
 # Timber 日志库
@@ -139,6 +140,7 @@ androidx-foundation-android = { group = "androidx.compose.foundation", name = "f
 androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "lifecycleProcess" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompatVersion" }
 material = { group = "com.google.android.material", name = "material", version.ref = "materialVersion" }
+androidx-material3-adaptive-navigation-suite = { group = "androidx.compose.material3", name = "material3-adaptive-navigation-suite", version.ref = "material3AdaptiveNavigationSuite" }
 
 #
 [plugins]

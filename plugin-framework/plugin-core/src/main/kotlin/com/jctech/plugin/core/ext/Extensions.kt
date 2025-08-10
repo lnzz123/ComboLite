@@ -17,6 +17,7 @@
 
 package com.jctech.plugin.core.ext
 
+import kotlinx.coroutines.flow.MutableStateFlow
 import timber.log.Timber
 
 fun <T> ClassLoader.getInterface(interfaceClass: Class<T>, className: String): T? {
@@ -39,4 +40,15 @@ fun <T> ClassLoader.getInterface(interfaceClass: Class<T>, className: String): T
         Timber.e(e, "加载接口实现类失败: $className")
         null
     }
+}
+
+/**
+ * 这是一个为 MutableStateFlow<Map> 类型设计的扩展函数。
+ * 它能够安全且原子性地更新 Map 中的数据，避免直接修改状态流的 value 属性。
+ * 这种方式可以确保在并发环境下正确地更新不可变 Map。
+ *
+ * @param mutator 一个 Lambda 函数，接收一个可变的 Map，你可以在其中执行任何修改操作。
+ */
+fun <K, V> MutableStateFlow<Map<K, V>>.update(mutator: MutableMap<K, V>.() -> Unit) {
+    this.value = this.value.toMutableMap().apply(mutator).toMap()
 }

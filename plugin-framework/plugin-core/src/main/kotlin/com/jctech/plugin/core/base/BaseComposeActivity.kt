@@ -19,13 +19,21 @@ package com.jctech.plugin.core.base
 
 import android.content.res.Resources
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import com.jctech.plugin.core.manager.PluginManager
 import com.jctech.plugin.core.resources.PluginResourcesManager
 import org.koin.android.ext.android.inject
 
+/**
+ * Compose插件框架Activity基类
+ * 重写Resources获取逻辑
+ */
 open class BaseComposeActivity : ComponentActivity() {
-    val pluginResourcesManager: PluginResourcesManager by inject()
-
+    /**
+     * 重写getResources方法，返回插件资源
+     */
     override fun getResources(): Resources {
-        return pluginResourcesManager.getResources()
+
+        return PluginManager.getResourcesManager().getResources()
     }
 }

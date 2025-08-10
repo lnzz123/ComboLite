@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright © 2025. 贵州君城网络科技有限公司 版权所有
+  ~ 保留所有权利。
+  ~
+  ~ 本软件（包括但不限于代码、文档、资源文件等）受《中华人民共和国著作权法》及相关法律法规保护。
+  ~ 未经本公司书面授权，任何单位或个人不得：
+  ~ 1. 以任何形式复制、传播、修改、分发本软件的全部或部分内容；
+  ~ 2. 将本软件用于商业目的或未经授权的第三方项目；
+  ~ 3. 删除或篡改本软件中的版权声明、商标标识及技术标识。
+  ~
+  ~ 违反上述条款者，本公司将依法追究其民事及刑事责任，并有权要求赔偿因此造成的全部经济损失。
+  ~
+  ~ 授权许可请联系：贵州君城网络科技有限公司法律事务部
+  ~ 邮箱：1755858138@qq.com
+  ~ 电话：+86-175-85074415
+  -->
+
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp"
+    android:height="30dp"
+    android:viewportWidth="120"
+    android:viewportHeight="30">
+    <path
+        android:fillType="evenOdd"
+        android:pathData="M17.95,29.69C17.77,29.73 17.58,29.76 17.4,29.79C9.23,31.12 1.52,25.57 0.2,17.4C-0.63,12.3 1.21,7.39 4.7,4.1C4.55,4.61 4.52,5.17 4.61,5.73C4.95,7.85 6.95,9.28 9.06,8.94C11.17,8.6 12.61,6.6 12.26,4.49C11.98,2.76 10.6,1.49 8.95,1.27C10.09,0.77 11.31,0.4 12.59,0.2C20.76,-1.13 28.46,4.42 29.79,12.59C30.63,17.73 28.74,22.69 25.18,25.99L25.15,24.5C25.03,18.83 22.48,13.49 18.14,9.83L17.41,9.21C16.09,8.1 14.18,8 12.75,8.98C10.65,10.41 10.49,13.45 12.43,15.1L12.56,15.21C16.03,18.16 18.02,22.5 17.97,27.06L17.95,29.69Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="21"
+                android:centerY="2.91"
+                android:gradientRadius="27.41"
+                android:type="radial">
+                <item
+                    android:color="#FF005AF0"
+                    android:offset="0" />
+                <item
+                    android:color="#FF005AF0"
+                    android:offset="0.51" />
+                <item
+                    android:color="#FF669FFF"
+                    android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillType="evenOdd"
+        android:pathData="M9.97,26.84C18.22,27.49 25.44,21.32 26.09,13.07C26.42,8.85 24.97,4.91 22.38,1.97C27.27,4.76 30.39,10.2 29.91,16.18C29.27,24.44 22.05,30.6 13.8,29.95C9.75,29.64 6.22,27.74 3.73,24.93C5.59,25.98 7.7,26.66 9.97,26.84Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="6.39"
+                android:endY="29.97"
+                android:startX="26.19"
+                android:startY="2.97"
+                android:type="linear">
+                <item
+                    android:color="#19FFFFFF"
+                    android:offset="0" />
+                <item
+                    android:color="#7FC9C6C7"
+                    android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M46.35,25.82L40.99,25.82L40.99,4L46.35,4L46.35,25.82ZM71.02,25.82L65.66,25.82L65.66,17.18L59.96,17.18L59.96,25.82L54.6,25.82L54.6,4L59.96,4L59.96,12.4L65.66,12.4L65.66,4L71.02,4L71.02,25.82ZM95.44,18.16C95.44,22.94 91.67,26 87.13,26C82.6,26 78.89,22.94 78.89,18.16L78.89,4L84.25,4L84.25,18.03C84.25,20.06 85.35,21.22 87.13,21.22C88.91,21.22 90.07,20.06 90.07,18.03L90.07,4L95.44,4L95.44,18.16ZM119.62,19.38C119.62,23.55 116.7,25.82 112.81,25.82L103.32,25.82L103.32,4L112.35,4C116.89,4 119.31,6.54 119.31,10.31C119.31,12.79 117.59,14.17 116.92,14.63C117.81,15.18 119.62,16.32 119.62,19.38ZM113.95,10.59C113.95,9.73 113.49,8.81 112.02,8.81L108.68,8.81L108.68,12.36L112.02,12.36C113.49,12.36 113.95,11.45 113.95,10.59ZM114.25,19.08C114.25,18.16 113.76,17.18 112.29,17.18L108.68,17.18L108.68,21.01L112.29,21.01C113.76,21.01 114.25,19.99 114.25,19.08Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="79.96"
+                android:endY="31.56"
+                android:startX="79.96"
+                android:startY="-6.74"
+                android:type="linear">
+                <item
+                    android:color="#FF4287F9"
+                    android:offset="0" />
+                <item
+                    android:color="#FF005AF0"
+                    android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

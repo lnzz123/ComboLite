@@ -19,8 +19,8 @@ package com.jctech.plugin.sample
 
 import com.jctech.plugin.core.BuildConfig
 import com.jctech.plugin.core.base.BaseComposeApplication
-import com.jctech.plugin.core.di.pluginFrameworkModule
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.loadKoinModules
 import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -56,18 +56,10 @@ class ComposeApp : BaseComposeApplication() {
             Timber.plant(Timber.DebugTree())
         }
 
-        // 初始化Koin依赖注入框架
-        startKoin {
-            androidContext(this@ComposeApp)
-            modules(
-                // 应用模块
-                module {
-                    viewModel { LoadingViewModel(applicationContext,get()) }
-                },
-                // 插件框架模块
-                pluginFrameworkModule,
-//                navigationModule
-            )
-        }
+        loadKoinModules(
+            module {
+                viewModel { LoadingViewModel(applicationContext) }
+            }
+        )
     }
 }

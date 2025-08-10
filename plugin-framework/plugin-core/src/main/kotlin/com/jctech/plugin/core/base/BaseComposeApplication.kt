@@ -18,5 +18,27 @@
 package com.jctech.plugin.core.base
 
 import android.app.Application
+import com.jctech.plugin.core.manager.PluginManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 
-open class BaseComposeApplication : Application()
+/**
+ * Compose插件框架Application基类
+ * 用于初始化插件框架，加载插件
+ */
+open class BaseComposeApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        startKoin {
+            androidContext(this@BaseComposeApplication)
+        }
+        PluginManager.initialize(this) {
+            CoroutineScope(Dispatchers.Default).launch {
+                PluginManager.loadEnabledPlugins()
+            }
+        }
+    }
+}

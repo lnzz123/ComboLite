@@ -18,12 +18,16 @@
 package com.jctech.plugin.core.resources
 
 import android.annotation.SuppressLint
+import android.app.Application
 import android.content.Context
 import android.content.res.AssetManager
 import android.content.res.Resources
 import android.content.res.loader.ResourcesLoader
 import android.os.Build
 import androidx.annotation.RequiresApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -48,7 +52,7 @@ import java.util.concurrent.ConcurrentHashMap
  * - 维护资源版本和缓存机制
  */
 class PluginResourcesManager(
-    private val context: Context,
+    private val context: Application,
 ) {
     companion object {
         private const val TAG = "PluginResourcesManager"
@@ -61,8 +65,8 @@ class PluginResourcesManager(
     private val resourcesLoaderMap = ConcurrentHashMap<String, ResourcesLoader>()
 
     // 当前合并的资源实例（默认为应用的 resources，添加插件后为合并资源）
-    @Volatile
-    private var mResources: Resources = context.applicationContext.resources
+    private val _mResources = MutableStateFlow(context.resources)
+    val mResourcesFlow: StateFlow<Resources> = _mResources.asStateFlow()
 
     /**
      * 获取当前合并后的资源实例
@@ -70,7 +74,7 @@ class PluginResourcesManager(
      * 绕过系统缓存机制，始终返回包含所有插件资源的最新实例
      */
     fun getResources(): Resources {
-        return mResources
+        return _mResources.value
     }
 
     /**
@@ -129,7 +133,7 @@ class PluginResourcesManager(
             }
 
             // 添加到宿主应用的资源中
-            mResources.addLoaders(resourcesLoader)
+            _mResources.value.addLoaders(resourcesLoader)
 
             // 保存 ResourcesLoader 引用到映射表
             resourcesLoaderMap[pluginId] = resourcesLoader
@@ -151,7 +155,7 @@ class PluginResourcesManager(
             Timber.tag(TAG).d("使用 addAssetPath 反射API加载资源: $pluginId")
 
             // 获取当前 AssetManager
-            val assetManager = mResources.assets
+            val assetManager = _mResources.value.assets
 
             // 使用反射调用 addAssetPath 方法
             val addAssetPathMethod = AssetManager::class.java.getDeclaredMethod("addAssetPath", String::class.java)
@@ -164,10 +168,10 @@ class PluginResourcesManager(
             }
 
             // 重新创建资源实例以包含新的资源
-            val configuration = mResources.configuration
-            val displayMetrics = mResources.displayMetrics
+            val configuration = _mResources.value.configuration
+            val displayMetrics = _mResources.value.displayMetrics
             @Suppress("DEPRECATION")
-            mResources = Resources(assetManager, displayMetrics, configuration)
+            _mResources.value = Resources(assetManager, displayMetrics, configuration)
 
             true
         } catch (e: Exception) {
@@ -218,7 +222,7 @@ class PluginResourcesManager(
             val resourcesLoader = resourcesLoaderMap.remove(pluginId)
             if (resourcesLoader != null) {
                 // 从系统资源中移除这个 ResourcesLoader
-                mResources.removeLoaders(resourcesLoader)
+                _mResources.value.removeLoaders(resourcesLoader)
                 Timber.tag(TAG).d("ResourcesLoader 已从系统资源中移除: $pluginId")
             } else {
                 Timber.tag(TAG).w("未找到插件对应的 ResourcesLoader: $pluginId")
@@ -239,7 +243,7 @@ class PluginResourcesManager(
 
             // 重新创建 AssetManager 和 Resources 实例
             // 从原始应用资源开始
-            mResources = context.resources
+            _mResources.value = context.resources
 
             // 重新加载所有剩余的插件资源
             val remainingPlugins = loadedPluginFiles.toMap()
@@ -257,7 +261,7 @@ class PluginResourcesManager(
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "重新构建资源失败")
             // 发生错误时，重置为原始应用资源
-            mResources = context.resources
+            _mResources.value = context.resources
         }
     }
 
@@ -331,13 +335,13 @@ class PluginResourcesManager(
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
                     // Android 11+: 移除所有 ResourcesLoader
                     resourcesLoaderMap.values.forEach { loader ->
-                        mResources.removeLoaders(loader)
+                        _mResources.value.removeLoaders(loader)
                     }
                     resourcesLoaderMap.clear()
                 }
                 else -> {
                     // Android 11以下: 重置为原始应用资源
-                    mResources = context.resources
+                    _mResources.value = context.resources
                     Timber.tag(TAG).d("资源已重置为原始应用资源")
                 }
             }
@@ -349,7 +353,7 @@ class PluginResourcesManager(
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "清理插件资源失败")
             // 发生错误时，强制重置为原始资源
-            mResources = context.resources
+            _mResources.value = context.resources
             loadedPluginFiles.clear()
             resourcesLoaderMap.clear()
         }

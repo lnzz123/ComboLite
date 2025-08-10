@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-<!--    <application>-->
-<!--        &lt;!&ndash; 插件配置元数据 &ndash;&gt;-->
-<!--        <meta-data-->
-<!--            android:name="plugin.id"-->
-<!--            android:value="example_common" />-->
-<!--        <meta-data-->
-<!--            android:name="plugin.version"-->
-<!--            android:value="1.0.1" />-->
-<!--        <meta-data-->
-<!--            android:name="plugin.description"-->
-<!--            android:value="这是一个示例插件，支持中文。" />-->
-<!--        <meta-data-->
-<!--            android:name="plugin.entryClass"-->
-<!--            android:value="com.jctech.plugin.sample.common.PluginEntryClass" />-->
-<!--    </application>-->
+    <application>
+        <!-- 插件配置元数据 -->
+        <meta-data
+            android:name="plugin.id"
+            android:value="example_common" />
+        <meta-data
+            android:name="plugin.version"
+            android:value="1.0.1" />
+        <meta-data
+            android:name="plugin.description"
+            android:value="这是一个示例插件，支持中文。" />
+        <meta-data
+            android:name="plugin.entryClass"
+            android:value="com.jctech.plugin.sample.common.PluginEntryClass" />
+    </application>
 </manifest>

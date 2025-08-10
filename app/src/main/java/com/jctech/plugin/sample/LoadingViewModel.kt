@@ -14,8 +14,7 @@ import java.io.File
 import java.io.FileOutputStream
 
 class LoadingViewModel(
-    context: Context,
-    private val pluginManager: PluginManager
+    context: Context
 ) : ViewModel() {
     @SuppressLint("StaticFieldLeak")
     private val context = context.applicationContext
@@ -36,10 +35,9 @@ class LoadingViewModel(
     fun init(){
         viewModelScope.launch {
             setLoading(true)
-            _pluginCount.value = pluginManager.initialize()
+            _pluginCount.value = PluginManager.getPluginInstances().size
             if (pluginCount.value > 0) {
-                pluginManager.getPluginEntryInstance("example_common")
-                _entryClass.value = pluginManager.getPluginEntryInstance("example_home")
+                _entryClass.value = PluginManager.getPluginInstance("example_home")
             }
             setLoading(false)
         }
@@ -62,9 +60,14 @@ class LoadingViewModel(
                     }
                 }
                 // 安装插件
-                pluginManager.installPlugin(pluginFile)
+                PluginManager.getInstallerManager().installPlugin(pluginFile)
             }
-            init()
+            PluginManager.loadEnabledPlugins()
+            _pluginCount.value = PluginManager.getPluginInstances().size
+            if (pluginCount.value > 0) {
+                _entryClass.value = PluginManager.getPluginInstance("example_home")
+            }
+            setLoading(false)
         }
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import com.jctech.plugin.core.interfaces.IPluginEntryClass
 import com.jctech.plugin.sample.common.navigation.IHubComposeNavigator
 import com.jctech.plugin.sample.common.navigation.LocalComposeNavigator
+import com.jctech.plugin.sample.home.di.diModule
 import org.koin.core.module.Module
 import org.koin.java.KoinJavaComponent.inject
 
@@ -24,7 +25,9 @@ import org.koin.java.KoinJavaComponent.inject
  */
 class PluginEntryClass() : IPluginEntryClass {
     override val pluginModule: List<Module>
-        get() = emptyList()
+        get() = listOf(
+            diModule
+        )
 
     @Composable
     override fun Content() {

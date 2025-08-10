@@ -17,7 +17,7 @@
 
 package com.jctech.plugin.core.installer
 
-import android.content.Context
+import android.app.Application
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Xml
@@ -48,7 +48,7 @@ import kotlin.concurrent.withLock
  *
  * 注意：此类已改造为支持Koin依赖注入
  */
-class XmlManager(private val context: Context) {
+class XmlManager(private val context: Application) {
 
     companion object {
         private const val TAG = "InstallerXmlManager" // 用于日志记录的TAG
@@ -441,7 +441,7 @@ class XmlManager(private val context: Context) {
 
             pluginCache[plugin.pluginId] = plugin
             scheduleDelayedWrite()
-            Timber.tag(TAG).d("插件已添加: ${plugin.pluginId}")
+            Timber.tag(TAG).d("插件信息已添加: ${plugin.pluginId}")
         }
     }
 
@@ -462,12 +462,12 @@ class XmlManager(private val context: Context) {
 
             pluginCache[plugin.pluginId] = plugin
             scheduleDelayedWrite()
-            Timber.tag(TAG).d("插件已更新: ${plugin.pluginId}")
+            Timber.tag(TAG).d("插件信息已更新: ${plugin.pluginId}")
         }
     }
 
     /**
-     * 删除插件
+     * 删除插件信息
      * @param pluginId 要删除的插件ID
      * @return 是否成功删除
      */
@@ -480,172 +480,11 @@ class XmlManager(private val context: Context) {
             val removed = pluginCache.remove(pluginId) != null
             if (removed) {
                 scheduleDelayedWrite()
-                Timber.tag(TAG).d("插件已删除: $pluginId")
+                Timber.tag(TAG).d("插件信息已移除: $pluginId")
             } else {
                 Timber.tag(TAG).d("未找到要删除的插件: $pluginId")
             }
             removed
         }
-    }
-
-    /**
-     * 批量添加插件
-     * 适用于连续安装多个插件的场景，减少磁盘I/O次数
-     * @param plugins 要添加的插件列表
-     * @return 成功添加的插件数量
-     */
-    fun addPluginsBatch(plugins: List<PluginInfo>): Int {
-        return write {
-            if (!cacheInitialized) {
-                initializeCache()
-            }
-
-            var addedCount = 0
-            plugins.forEach { plugin ->
-                if (!pluginCache.containsKey(plugin.pluginId)) {
-                    pluginCache[plugin.pluginId] = plugin
-                    addedCount++
-                } else {
-                    Timber.tag(TAG)
-                        .w("跳过批量添加: ID为 ${plugin.pluginId} 的插件已存在。")
-                }
-            }
-
-            if (addedCount > 0) {
-                scheduleDelayedWrite()
-                Timber.tag(TAG).d("批量添加了 $addedCount 个插件。")
-            }
-            addedCount
-        }
-    }
-
-    /**
-     * 批量更新插件
-     * @param plugins 要更新的插件列表
-     * @return 成功更新的插件数量
-     */
-    fun updatePluginsBatch(plugins: List<PluginInfo>): Int {
-        return write {
-            if (!cacheInitialized) {
-                initializeCache()
-            }
-
-            var updatedCount = 0
-            plugins.forEach { plugin ->
-                if (pluginCache.containsKey(plugin.pluginId)) {
-                    pluginCache[plugin.pluginId] = plugin
-                    updatedCount++
-                } else {
-                    Timber.tag(TAG)
-                        .w("跳过批量更新: 未找到ID为 ${plugin.pluginId} 的插件。")
-                }
-            }
-
-            if (updatedCount > 0) {
-                scheduleDelayedWrite()
-                Timber.tag(TAG).d("批量更新了 $updatedCount 个插件。")
-            }
-            updatedCount
-        }
-    }
-
-    /**
-     * 批量删除插件
-     * @param pluginIds 要删除的插件ID列表
-     * @return 成功删除的插件数量
-     */
-    fun removePluginsBatch(pluginIds: List<String>): Int {
-        return write {
-            if (!cacheInitialized) {
-                initializeCache()
-            }
-
-            var removedCount = 0
-            pluginIds.forEach { pluginId ->
-                if (pluginCache.remove(pluginId) != null) {
-                    removedCount++
-                } else {
-                    Timber.tag(TAG).w("跳过批量删除: 未找到ID为 $pluginId 的插件。")
-                }
-            }
-
-            if (removedCount > 0) {
-                scheduleDelayedWrite()
-                Timber.tag(TAG).d("批量删除了 $removedCount 个插件。")
-            }
-            removedCount
-        }
-    }
-
-    /**
-     * 检查插件是否存在
-     * @param pluginId 插件ID
-     * @return 是否存在
-     */
-    fun containsPlugin(pluginId: String): Boolean {
-        return read {
-            if (!cacheInitialized) {
-                initializeCache()
-            }
-            pluginCache.containsKey(pluginId)
-        }
-    }
-
-    /**
-     * 获取插件数量
-     * @return 插件总数
-     */
-    fun getPluginCount(): Int {
-        return read {
-            if (!cacheInitialized) {
-                initializeCache()
-            }
-            pluginCache.size
-        }
-    }
-
-    /**
-     * 清空所有插件
-     */
-    fun clearAllPlugins() {
-        write {
-            if (!cacheInitialized) {
-                initializeCache()
-            }
-
-            if (pluginCache.isNotEmpty()) {
-                pluginCache.clear()
-                scheduleDelayedWrite()
-                Timber.tag(TAG).d("所有插件已从缓存中清除。")
-            } else {
-                Timber.tag(TAG).d("缓存已为空，无需清除操作。")
-            }
-        }
-    }
-
-    /**
-     * 获取缓存统计信息
-     * @return 包含缓存状态的Map
-     */
-    fun getCacheStats(): Map<String, Any> {
-        return read {
-            mapOf(
-                "cacheInitialized" to cacheInitialized,
-                "hasUnsavedChanges" to hasUnsavedChanges.get(),
-                "cacheSize" to pluginCache.size,
-                "configFileExists" to pluginsConfigFile.exists(),
-                "backupFileExists" to backupConfigFile.exists(),
-                "tempFileExists" to tempConfigFile.exists(), // 新增统计
-            )
-        }
-    }
-
-    /**
-     * 在实例不再需要时调用此方法，以清理资源（尤其是HandlerThread）
-     */
-    fun release() {
-        writeHandler.removeCallbacksAndMessages(null) // 移除所有待处理任务
-        handlerThread.quitSafely() // 安全退出线程
-        Timber.tag(TAG).i("InstallerXmlManager 资源已释放。")
     }
 }
