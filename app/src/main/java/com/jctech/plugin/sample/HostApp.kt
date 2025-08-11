@@ -18,10 +18,8 @@
 package com.jctech.plugin.sample
 
 import com.jctech.plugin.core.BuildConfig
-import com.jctech.plugin.core.base.BaseComposeApplication
-import org.koin.android.ext.koin.androidContext
+import com.jctech.plugin.core.base.BaseHostApplication
 import org.koin.core.context.loadKoinModules
-import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import timber.log.Timber
@@ -48,7 +46,7 @@ import timber.log.Timber
  * @author IHUB Plugin Framework
  * @since 2.0.0
  */
-class ComposeApp : BaseComposeApplication() {
+class HostApp : BaseHostApplication() {
     override fun onCreate() {
         super.onCreate()
 

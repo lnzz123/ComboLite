@@ -1,0 +1,99 @@
+/*
+ * Copyright © 2025. 贵州君城网络科技有限公司 版权所有
+ * 保留所有权利。
+ *
+ * 本软件（包括但不限于代码、文档、资源文件等）受《中华人民共和国著作权法》及相关法律法规保护。
+ * 未经本公司书面授权，任何单位或个人不得：
+ * 1. 以任何形式复制、传播、修改、分发本软件的全部或部分内容；
+ * 2. 将本软件用于商业目的或未经授权的第三方项目；
+ * 3. 删除或篡改本软件中的版权声明、商标标识及技术标识。
+ *
+ * 违反上述条款者，本公司将依法追究其民事及刑事责任，并有权要求赔偿因此造成的全部经济损失。
+ *
+ * 授权许可请联系：贵州君城网络科技有限公司法律事务部
+ * 邮箱：1755858138@qq.com
+ * 电话：+86-175-85074415
+ */
+
+package com.jctech.plugin.core.base
+
+import android.content.res.AssetManager
+import android.content.res.Resources
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import com.jctech.plugin.core.interfaces.IPluginActivity
+import com.jctech.plugin.core.manager.PluginManager
+
+/**
+ * Compose插件框架Activity基类
+ * 重写Resources获取逻辑
+ */
+open class BaseHostActivity : ComponentActivity() {
+
+    protected var pluginActivity: IPluginActivity? = null
+        private set
+
+    /**
+     * 提供一个给子类调用的、受保护的插件初始化方法。
+     * 子类在自己的 onCreate 中调用此方法来"尝试"加载插件。
+     */
+    protected fun initPluginActivity() {
+        // 尝试从Intent中获取插件类名
+        val pluginClassName = intent.getStringExtra("pluginClassName") ?: return
+        try {
+            val pluginClass = PluginManager.getPluginClassLoader().loadClass(pluginClassName)
+            val instance = pluginClass.newInstance() as IPluginActivity
+            instance.onAttach(this)
+            // 赋值给基类的属性
+            pluginActivity = instance
+        } catch (e: Exception) {
+            e.printStackTrace()
+            pluginActivity = null
+        }
+    }
+    /**
+     * 重写getResources方法，返回插件资源
+     */
+    override fun getResources(): Resources {
+        return if (PluginManager.isInitialized())
+            PluginManager.getResourcesManager().getResources()
+        else super.getResources()
+    }
+    /**
+     * 重写getAssets方法，返回插件资源
+     */
+    override fun getAssets(): AssetManager {
+        return if (PluginManager.isInitialized())
+            PluginManager.getResourcesManager().getResources().assets
+        else super.getAssets()
+    }
+    /**
+     * 标准生命周期
+     */
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        initPluginActivity()
+        pluginActivity?.onCreate(savedInstanceState)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        pluginActivity?.onStart()
+    }
+    override fun onResume() {
+        super.onResume()
+        pluginActivity?.onResume()
+    }
+    override fun onPause() {
+        super.onPause()
+        pluginActivity?.onPause()
+    }
+    override fun onStop() {
+        super.onStop()
+        pluginActivity?.onStop()
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        pluginActivity?.onDestroy()
+    }
+}

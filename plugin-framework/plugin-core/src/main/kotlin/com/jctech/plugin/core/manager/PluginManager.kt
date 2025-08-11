@@ -33,10 +33,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 import org.koin.core.context.GlobalContext
 import timber.log.Timber
 import java.io.File
@@ -85,6 +85,10 @@ object PluginManager : IPluginFinder {
 
     // 初始化完成的锁对象
     private val initializationLock = Any()
+
+    fun isInitialized(): Boolean {
+        return isInitializedInternal
+    }
 
     /**
      * 初始化插件管理器

@@ -29,11 +29,11 @@ import org.koin.core.context.startKoin
  * Compose插件框架Application基类
  * 用于初始化插件框架，加载插件
  */
-open class BaseComposeApplication : Application() {
+open class BaseHostApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         startKoin {
-            androidContext(this@BaseComposeApplication)
+            androidContext(this@BaseHostApplication)
         }
         PluginManager.initialize(this) {
             CoroutineScope(Dispatchers.Default).launch {

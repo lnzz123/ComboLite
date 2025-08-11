@@ -10,21 +10,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.jctech.plugin.core.base.BaseComposeActivity
+import com.jctech.plugin.core.base.BaseHostActivity
 import com.jctech.plugin.core.manager.PluginManager
 import com.jctech.plugin.sample.ui.theme.ComposePluginSampleTheme
 
-class MainActivity : BaseComposeActivity() {
+class MainActivity : BaseHostActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            val resources by PluginManager.getResourcesManager().mResourcesFlow.collectAsState()
-            key(resources) {
-                LoadingScreen()
-            }
+        if (super.pluginActivity == null) {
+            enableEdgeToEdge()
+            setContent {
+                val resources by PluginManager.getResourcesManager().mResourcesFlow.collectAsState()
+                key(resources) {
+                    LoadingScreen()
+                }
 
-            //ComposeContent()
+                //ComposeContent()
+            }
         }
     }
 }
