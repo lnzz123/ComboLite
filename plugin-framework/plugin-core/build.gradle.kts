@@ -97,4 +97,7 @@ dependencies {
     // Koin依赖注入（用于插件模块管理）
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
+
+    // Dexlib2 库
+    implementation(libs.dexlib2)
 }

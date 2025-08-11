@@ -1,6 +1,5 @@
 package com.jctech.plugin.core.base
 
-import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.KeyEvent
@@ -37,23 +36,12 @@ open class BasePluginActivity : IPluginActivity {
 
     override fun onRestart() {}
 
-    override fun onBackPressed(): Boolean {
-        return false
-    }
-
-    override fun onActivityResult(
-        requestCode: Int,
-        resultCode: Int,
-        data: Intent?
-    ) {}
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
+        permissions: Array<out String?>,
+        grantResults: IntArray,
+        deviceId: Int
     ) {}
-
-    override fun onNewIntent(intent: Intent?) {}
 
     override fun onSaveInstanceState(outState: Bundle) {}
 
@@ -63,17 +51,15 @@ open class BasePluginActivity : IPluginActivity {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {}
 
-    override fun onLowMemory() {}
-
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        return false
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean? {
+        return null
     }
 
-    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        return false
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean? {
+        return null
     }
 
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        return false
+    override fun onTouchEvent(event: MotionEvent?): Boolean? {
+        return null
     }
 }

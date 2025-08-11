@@ -31,29 +31,10 @@ interface IPluginActivity {
     // 交互与结果处理
 
     /**
-     * 处理物理返回键事件。这是实现自定义返回逻辑的关键。
-     * @return 返回 true 表示事件已被消费，宿主不再执行默认的返回操作。
-     * 返回 false 表示事件未被消费，宿主将执行默认操作（通常是关闭Activity）。
-     */
-    fun onBackPressed(): Boolean
-
-    /**
-     * 当通过 startActivityForResult 启动的Activity返回结果时调用。
-     */
-    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?)
-
-    /**
      * 当通过 requestPermissions 请求权限后，系统返回结果时调用。
      */
-    fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray)
+    fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String?>, grantResults: IntArray, deviceId: Int)
 
-    /**
-     * 当Activity的launchMode为singleTop或singleTask时，再次启动该Activity会调用此方法。
-     * 常用于处理通知点击、深层链接等场景。
-     */
-    fun onNewIntent(intent: Intent?)
-
-    
     // 状态保存与恢复
 
     /**
@@ -79,11 +60,6 @@ interface IPluginActivity {
      * 当Activity的窗口焦点发生变化时调用（例如，弹出对话框或下拉通知栏）。
      */
     fun onWindowFocusChanged(hasFocus: Boolean)
-
-    /**
-     * 当系统内存不足，要求应用释放内存时调用。
-     */
-    fun onLowMemory()
     
     // 底层输入事件
 
@@ -91,17 +67,17 @@ interface IPluginActivity {
      * 处理物理按键按下事件。仅在需要全局拦截或处理特殊按键时使用。
      * @return true 表示消费事件，false 表示不消费。
      */
-    fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean
+    fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean?
 
     /**
      * 处理物理按键抬起事件。
      */
-    fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean
+    fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean?
 
     /**
      * 处理触摸事件。通常由Compose手势修饰符处理，仅在需要进行全局触摸拦截时使用。
      */
-    fun onTouchEvent(event: MotionEvent?): Boolean
+    fun onTouchEvent(event: MotionEvent?): Boolean?
 }
 
 

@@ -1,5 +1,10 @@
 package com.jctech.plugin.core.loader
 
 interface IPluginFinder {
-    fun findClass(pluginId: String, className: String): Class<*>?
+    /**
+     * 在所有插件中查找类。
+     * @param className 类的完整名称
+     * @return 如果找到，则返回 Class 对象，否则返回 null。
+     */
+    fun findClass(className: String): Class<*>?
 }

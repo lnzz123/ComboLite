@@ -14,6 +14,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
     // ========== 基础Compose依赖（通过api暴露） ==========
     api(libs.androidx.compose.runtime)
     api(libs.androidx.compose.ui)

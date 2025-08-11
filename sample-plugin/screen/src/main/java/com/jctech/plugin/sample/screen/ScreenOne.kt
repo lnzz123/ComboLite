@@ -1,5 +1,6 @@
 package com.jctech.plugin.sample.screen
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -20,9 +21,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jctech.plugin.core.ext.startPluginActivity
 import com.jctech.plugin.sample.common.navigation.AppScreen
 import com.jctech.plugin.sample.common.navigation.currentComposeNavigator
 
@@ -35,7 +38,7 @@ import com.jctech.plugin.sample.common.navigation.currentComposeNavigator
 @Composable
 fun ScreenOne() {
     val navigator = currentComposeNavigator
-    
+    val context = LocalContext.current
     Scaffold(
         topBar = {
             TopAppBar(
@@ -80,10 +83,12 @@ fun ScreenOne() {
             }
             
             OutlinedButton(
-                onClick = { navigator.navigate(AppScreen.Home) },
+                onClick = {
+                    context.startPluginActivity(TestPluginActivity::class.java)
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("返回主页")
+                Text("跳转Activity")
             }
             
             Spacer(modifier = Modifier.weight(1f))

@@ -17,38 +17,33 @@
 
 package com.jctech.plugin.core.ext
 
-import kotlinx.coroutines.flow.MutableStateFlow
+import android.content.Context
+import android.content.Intent
+import com.jctech.plugin.core.interfaces.IPluginActivity
+import com.jctech.plugin.core.manager.PluginManager
 import timber.log.Timber
 
-fun <T> ClassLoader.getInterface(interfaceClass: Class<T>, className: String): T? {
-    return try {
-        // 加载指定的实现类
-        val clazz = loadClass(className)
 
-        // 使用默认构造函数创建实例
-        val instance = clazz.getDeclaredConstructor().newInstance()
-
-        // 验证实例是否实现了指定接口
-        if (interfaceClass.isInstance(instance)) {
-            @Suppress("UNCHECKED_CAST")
-            instance as T
-        } else {
-            Timber.e("类 $className 未实现接口 ${interfaceClass.name}")
-            null
-        }
-    } catch (e: Exception) {
-        Timber.e(e, "加载接口实现类失败: $className")
-        null
+/**
+ * 从Intent中获取插件Activity
+ */
+fun Intent.getPluginActivity(): IPluginActivity? {
+    return getStringExtra("pluginClassName")?.let {
+        PluginManager.getInterface(IPluginActivity::class.java, it)
     }
 }
 
 /**
- * 这是一个为 MutableStateFlow<Map> 类型设计的扩展函数。
- * 它能够安全且原子性地更新 Map 中的数据，避免直接修改状态流的 value 属性。
- * 这种方式可以确保在并发环境下正确地更新不可变 Map。
- *
- * @param mutator 一个 Lambda 函数，接收一个可变的 Map，你可以在其中执行任何修改操作。
+ * 跳转插件Activity
+ * @param cls 插件Activity的Class
  */
-fun <K, V> MutableStateFlow<Map<K, V>>.update(mutator: MutableMap<K, V>.() -> Unit) {
-    this.value = this.value.toMutableMap().apply(mutator).toMap()
+fun Context.startPluginActivity(cls: Class<out IPluginActivity>) {
+    val hostActivity = PluginManager.getHostActivity()
+    if (hostActivity == null) {
+        Timber.e("插件Activity宿主未设置")
+        return
+    }
+    val intent = Intent(this, hostActivity)
+    intent.putExtra("pluginClassName", cls.name)
+    startActivity(intent)
 }

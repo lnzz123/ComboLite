@@ -20,7 +20,7 @@ package com.jctech.plugin.core.manager
 import android.app.Application
 import android.content.res.loader.ResourcesLoader
 import android.os.Build
-import com.jctech.plugin.core.ext.update
+import com.jctech.plugin.core.base.BaseHostActivity
 import com.jctech.plugin.core.installer.InstallerManager
 import com.jctech.plugin.core.installer.XmlManager
 import com.jctech.plugin.core.interfaces.IPluginEntryClass
@@ -32,16 +32,20 @@ import com.jctech.plugin.core.resources.PluginResourcesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import org.jf.dexlib2.DexFileFactory
+import org.jf.dexlib2.Opcodes
 import org.koin.core.context.GlobalContext
 import timber.log.Timber
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.jvm.java
 
 /**
  * 插件管理器
@@ -54,12 +58,17 @@ import java.io.FileOutputStream
  */
 object PluginManager : IPluginFinder {
     private const val TAG = "PluginManager"
-    
-    // 使用lateinit var声明依赖，并在init方法中初始化
+    private const val CLASS_INDEX_TAG = "ClassIndex"
+    private const val RUNTIME_CACHE_DIR_NAME = "plugins_runtime"
+    private const val PLUGIN_FILE_EXTENSION = ".apk"
+
     private lateinit var context: Application
     private lateinit var xmlManager: XmlManager
     private lateinit var installerManager: InstallerManager
     private lateinit var resourcesManager: PluginResourcesManager
+
+    // 定义四大组件宿主
+    private var _hostActivity: Class<out BaseHostActivity>? = null
     
     // 初始化状态标识
     @Volatile
@@ -67,7 +76,7 @@ object PluginManager : IPluginFinder {
 
     // 运行时缓存目录
     private val runtimeCacheDir: File by lazy {
-        File(context.cacheDir, "plugins_runtime").apply {
+        File(context.cacheDir, RUNTIME_CACHE_DIR_NAME).apply {
             if (!exists()) {
                 mkdirs()
                 Timber.tag(TAG).d("创建运行时插件缓存目录: $absolutePath")
@@ -82,6 +91,9 @@ object PluginManager : IPluginFinder {
     // 存储插件实例的缓存 - 使用StateFlow
     private val _pluginInstances = MutableStateFlow<Map<String, IPluginEntryClass>>(emptyMap())
     val pluginInstancesFlow: StateFlow<Map<String, IPluginEntryClass>> = _pluginInstances.asStateFlow()
+
+    // 插件类名索引
+    private val classIndex = ConcurrentHashMap<String, String>()
 
     // 初始化完成的锁对象
     private val initializationLock = Any()
@@ -99,33 +111,39 @@ object PluginManager : IPluginFinder {
     fun initialize(context: Application, callback: () -> Unit = {}) {
         if (isInitializedInternal) {
             Timber.tag(TAG).w("PluginManager已经初始化，跳过重复初始化")
+            callback()
             return
         }
-        
+
         synchronized(initializationLock) {
             if (isInitializedInternal) {
-                return
+                return // 再次检查，防止多线程竞争
             }
-            
+
             try {
                 Timber.tag(TAG).i("开始初始化PluginManager")
-                
+
                 this.context = context
                 this.xmlManager = XmlManager(this.context)
                 this.installerManager = InstallerManager(this.context, xmlManager)
                 this.resourcesManager = PluginResourcesManager(this.context)
 
                 clearRuntimeCache()
-                
+
                 isInitializedInternal = true
 
-                callback()
-                
                 Timber.tag(TAG).i("PluginManager初始化完成")
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "PluginManager初始化失败: ${e.message}")
-                throw e
+                // 失败时重置状态
+                isInitializedInternal = false
+                throw e // 仍然抛出异常，让上层知道初始化失败
             }
+        }
+
+        // 将回调移出同步块
+        if (isInitializedInternal) {
+            callback()
         }
     }
 
@@ -139,14 +157,16 @@ object PluginManager : IPluginFinder {
         val runtimeCacheFile: File? = null, // 运行时缓存文件路径
     )
 
+
     /**
      * 异步加载所有已启用的插件
      *
      * 该方法会按顺序执行以下操作：
      * 1. 从 xmlManager 读取所有已启用的插件信息
      * 2. 并发加载所有插件的 dex 和资源文件
-     * 3. 实例化所有插件的入口类对象
-     * 4. 加载插件的 Koin 模块
+     * 3. 并发实例化所有插件的入口类对象
+     * 4. 原子地更新插件和实例的缓存
+     * 5. 加载所有插件的 Koin 模块
      *
      * @return 成功加载的插件数量
      */
@@ -155,62 +175,57 @@ object PluginManager : IPluginFinder {
             Timber.tag(TAG).i("开始异步初始化所有已启用的插件")
 
             // 1. 获取所有已启用的插件
-            val enabledPlugins = getEnabledPlugins()
+            val enabledPlugins = getEnabledPlugins().filter { !isPluginLoaded(it.pluginId) }
             if (enabledPlugins.isEmpty()) {
-                Timber.tag(TAG).i("没有找到已启用的插件")
+                Timber.tag(TAG).i("没有找到需要加载的新插件")
                 return@withContext 0
             }
 
-            Timber.tag(TAG).i("找到 ${enabledPlugins.size} 个已启用的插件，开始并发加载")
+            Timber.tag(TAG).i("找到 ${enabledPlugins.size} 个已启用的插件，开始加载")
 
             // 2. 并发加载所有插件的 dex 和资源文件
-            val loadJobs = enabledPlugins.filter { !isPluginLoaded(it.pluginId) }.map { plugin ->
+            val loadJobs = enabledPlugins.map { plugin ->
                 async(Dispatchers.IO) {
-                    loadPlugin(plugin)?.also {
-                        _loadedPlugins.update { this[plugin.pluginId] = it }
-                        Timber.tag(TAG).d("插件 ${plugin.pluginId} 加载成功")
-                    } ?: run {
-                        Timber.tag(TAG).e("插件 ${plugin.pluginId} 加载失败")
-                        null
-                    }
+                    loadPlugin(plugin)
                 }
             }
-
             val loadedPluginsList = loadJobs.awaitAll().filterNotNull()
+            if (loadedPluginsList.isEmpty()){
+                Timber.tag(TAG).w("所有插件均加载失败")
+                return@withContext 0
+            }
             Timber.tag(TAG).i("插件加载阶段完成，成功加载 ${loadedPluginsList.size} 个插件")
 
-            // 3. 并发实例化所有插件的入口类对象（CPU密集型操作）
+
+            // 3. 并发实例化所有插件的入口类对象
             val instantiateJobs = loadedPluginsList.map { loadedPlugin ->
                 async(Dispatchers.Default) {
-                    val pluginId = loadedPlugin.pluginInfo.pluginId
-                    try {
-                        val instance = instantiatePlugin(loadedPlugin)
-                        if (instance != null) {
-                            _pluginInstances.update { this[pluginId] = instance }
-                            Timber.tag(TAG).d("插件 $pluginId 实例化成功")
-                            pluginId to instance
-                        } else {
-                            Timber.tag(TAG).e("插件 $pluginId 实例化失败")
-                            _loadedPlugins.update { remove(pluginId) }
-                            null
-                        }
-                    } catch (e: Exception) {
-                        Timber.tag(TAG).e(e, "插件 $pluginId 实例化异常: ${e.message}")
-                        _loadedPlugins.update { remove(pluginId) }
-                        _pluginInstances.update { remove(pluginId) }
-                        null
+                    instantiatePlugin(loadedPlugin)?.let { instance ->
+                        loadedPlugin.pluginInfo.pluginId to instance // 返回 PluginId 和 实例的 Pair
                     }
                 }
             }
+            val successfulInstances = instantiateJobs.awaitAll().filterNotNull().toMap()
+            if (successfulInstances.isEmpty()){
+                Timber.tag(TAG).e("所有已加载的插件均实例化失败")
+                loadedPluginsList.forEach{ unloadPlugin(it.pluginInfo.pluginId) }
+                return@withContext 0
+            }
 
-            val instances = instantiateJobs.awaitAll().filterNotNull()
+            // 优化点 3: 集中进行状态更新，保证原子性
+            val successfulLoadedInfo = loadedPluginsList
+                .filter { successfulInstances.containsKey(it.pluginInfo.pluginId) }
+                .associateBy { it.pluginInfo.pluginId }
+
+            _loadedPlugins.update { it + successfulLoadedInfo }
+            _pluginInstances.update { it + successfulInstances }
 
             // 4. 加载插件的 Koin 模块
-            instances.forEach { (pluginId, instance) ->
+            successfulInstances.forEach { (pluginId, instance) ->
                 loadKoinModules(pluginId, instance)
             }
 
-            val successCount = instances.size
+            val successCount = successfulInstances.size
             Timber.tag(TAG).i("插件异步加载完成，成功加载 $successCount 个插件")
 
             successCount
@@ -230,25 +245,10 @@ object PluginManager : IPluginFinder {
         try {
             Timber.tag(TAG).i("开始异步启动插件: $pluginId")
 
-            // 如果插件已经启动，执行重启逻辑
+            // 如果插件已经启动，执行卸载逻辑
             if (isPluginLoaded(pluginId)) {
                 Timber.tag(TAG).i("插件 $pluginId 已启动，执行重启逻辑")
-                
-                // 从Koin中移除插件实例
-                _pluginInstances.value[pluginId]?.let { unloadKoinModules(pluginId, it) }
-
-                // 从 PluginResourcesManager 中移除插件资源
-                resourcesManager.removePluginResources(pluginId)
-
-                // 清理运行时缓存文件
-                cleanupCacheFile(pluginId)
-
-                // 移除插件相关缓存
-                _loadedPlugins.update { remove(pluginId) }
-                _pluginInstances.update { remove(pluginId) }
-
-                // 使用协程延迟确保资源完全释放
-                delay(100)
+                unloadPlugin(pluginId)
             }
 
             // 获取插件信息
@@ -258,33 +258,38 @@ object PluginManager : IPluginFinder {
                 return@withContext false
             }
 
-            // 异步加载插件
+            // 加载插件
             val loadedPlugin = loadPlugin(pluginInfo)
             if (loadedPlugin == null) {
                 Timber.tag(TAG).e("插件加载失败: $pluginId")
                 return@withContext false
             }
 
-            // 在Default线程池实例化插件入口类（CPU密集型操作）
+            // 实例化插件入口类
             val instance = withContext(Dispatchers.Default) {
                 instantiatePlugin(loadedPlugin)
             }
             if (instance == null) {
                 Timber.tag(TAG).e("插件实例化失败: $pluginId")
+                unloadPlugin(pluginId)
                 return@withContext false
             }
 
-            // 保存到缓存
-            _loadedPlugins.update { this[pluginId] = loadedPlugin }
-            _pluginInstances.update { this[pluginId] = instance }
+            _loadedPlugins.update { it + (pluginId to loadedPlugin) }
+            _pluginInstances.update { it + (pluginId to instance) }
 
-            // 在主线程加载插件的Koin模块
+            Timber.tag(TAG).d("StateFlows for $pluginId 更新完成。")
+
+            // 加载插件的Koin模块
             loadKoinModules(pluginId, instance)
 
             Timber.tag(TAG).i("插件异步启动成功: $pluginId")
             true
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "启动插件 $pluginId 时发生错误: ${e.message}")
+            if (isPluginLoaded(pluginId)) {
+                unloadPlugin(pluginId)
+            }
             false
         }
     }
@@ -416,6 +421,9 @@ object PluginManager : IPluginFinder {
                 return@withContext null
             }
 
+            // 索引插件类（使用缓存文件）
+            indexPluginClasses(plugin.pluginId, runtimeCacheFile)
+
             // 使用缓存文件创建类加载器
             val classLoader = PluginClassLoader(
                 pluginId = plugin.pluginId,
@@ -526,6 +534,26 @@ object PluginManager : IPluginFinder {
         }
     }
 
+    /**
+     * 卸载指定插件
+     *
+     * @param pluginId 插件ID
+     */
+    private suspend fun unloadPlugin(pluginId: String) = withContext(Dispatchers.IO) {
+        Timber.tag(TAG).i("开始卸载插件: $pluginId")
+        _pluginInstances.value[pluginId]?.let { unloadKoinModules(pluginId, it) }
+
+        // 原子地移除实例和加载信息
+        _loadedPlugins.update { it - pluginId }
+        _pluginInstances.update { it - pluginId }
+
+        resourcesManager.removePluginResources(pluginId)
+        removePluginFromIndex(pluginId)
+        cleanupCacheFile(pluginId)
+        Timber.tag(TAG).i("插件 $pluginId 卸载完成")
+    }
+
+
     // ========== 运行时缓存管理方法 ==========
 
     /**
@@ -570,19 +598,11 @@ object PluginManager : IPluginFinder {
             }
 
             // 生成缓存文件名
-            val cacheFileName = "${pluginId}_${System.currentTimeMillis()}.apk"
-            val cacheFile = File(runtimeCacheDir, cacheFileName)
-
+            val cacheFile = File(runtimeCacheDir, "${pluginId}_${System.currentTimeMillis()}$PLUGIN_FILE_EXTENSION")
             Timber.tag(TAG).d("创建运行时缓存文件: $pluginId -> ${cacheFile.absolutePath}")
-
-            // 异步复制文件到缓存目录
-            val buffer = ByteArray(8192)
-            FileInputStream(sourceFile).use { input ->
-                FileOutputStream(cacheFile).use { output ->
-                    var bytesRead: Int
-                    while (input.read(buffer).also { bytesRead = it } != -1) {
-                        output.write(buffer, 0, bytesRead)
-                    }
+            FileInputStream(sourceFile).channel.use { sourceChannel ->
+                FileOutputStream(cacheFile).channel.use { destinationChannel ->
+                    sourceChannel.transferTo(0, sourceChannel.size(), destinationChannel)
                 }
             }
 
@@ -617,7 +637,7 @@ object PluginManager : IPluginFinder {
         try {
             // 查找所有匹配的缓存文件（可能有多个历史缓存）
             val cacheFiles = runtimeCacheDir.listFiles { _, fileName ->
-                fileName.startsWith("${pluginId}_") && fileName.endsWith(".apk")
+                fileName.startsWith("${pluginId}_") && fileName.endsWith(PLUGIN_FILE_EXTENSION)
             }
 
             if (cacheFiles != null && cacheFiles.isNotEmpty()) {
@@ -687,27 +707,135 @@ object PluginManager : IPluginFinder {
     }
 
     /**
-     * 查找类
+     * 设置插件Activity宿主
+     */
+    fun setHostActivity(hostActivity: Class<out BaseHostActivity>) {
+        _hostActivity = hostActivity
+    }
+
+    /**
+     * 获取插件Activity宿主
+     */
+    fun getHostActivity(): Class<out BaseHostActivity>? {
+        return _hostActivity
+    }
+
+    // ==================== 核心 findClass 优化实现 ====================
+
+    /**
+     * 为插件建立类索引
      *
-     * 该方法会遍历所有已加载的插件，查找指定插件ID下的类。
-     * 如果找到，会返回类对象；如果未找到，会返回null。
+     * 此方法能够健壮地处理单Dex和多Dex的APK文件。
      *
      * @param pluginId 插件ID
-     * @param className 类名
-     * @return 类对象，未找到返回null
+     * @param pluginFile 插件的APK文件
      */
-    override fun findClass(pluginId: String, className: String): Class<*>? {
-        _loadedPlugins.value.forEach { (loadedPluginId, loadedPluginInfo) ->
-            if (loadedPluginId != pluginId) {
-                try {
-                    return loadedPluginInfo.classLoader.findClassLocally(className)
-                } catch (_: ClassNotFoundException) {
-                    Timber.tag(TAG).d("插件 $loadedPluginId 未找到类 $className")
-                } catch (e: Exception) {
-                    Timber.tag(TAG).e(e, "在插件 $loadedPluginId 中查找类 $className 时出错")
+    private fun indexPluginClasses(pluginId: String, pluginFile: File) {
+        Timber.tag(CLASS_INDEX_TAG).d("开始为插件 [$pluginId] 建立类索引...")
+        var totalIndexedClasses = 0
+        try {
+            val multiDexFile = DexFileFactory.loadDexFile(pluginFile, Opcodes.forApi(Build.VERSION.SDK_INT))
+            multiDexFile.classes.forEach { classDef ->
+                val className = convertDexTypeToClassName(classDef.type)
+
+                Timber.tag(CLASS_INDEX_TAG).d("为类 [$className] 建立索引...")
+                val existingPluginId = classIndex.putIfAbsent(className, pluginId)
+                if (existingPluginId == null) {
+                    totalIndexedClasses++
                 }
             }
+        } catch (e: Exception) {
+            Timber.tag(CLASS_INDEX_TAG).e(e, "为插件 [$pluginId] 建立类索引失败: ${pluginFile.absolutePath}")
         }
-        return null
+        Timber.tag(CLASS_INDEX_TAG).d("插件 [$pluginId] 的类索引建立完成，共创建 $totalIndexedClasses 个类索引。")
+    }
+
+    /**
+     * 辅助方法，将类型描述符 转换为标准的Java类名
+     */
+    private fun convertDexTypeToClassName(dexType: String): String {
+        if (dexType.startsWith("L") && dexType.endsWith(";")) {
+            return dexType.substring(1, dexType.length - 1).replace('/', '.')
+        }
+        return dexType.replace('/', '.')
+    }
+
+    /**
+     * 从类索引中移除指定插件的所有类
+     */
+    private fun removePluginFromIndex(pluginId: String) {
+        Timber.tag(CLASS_INDEX_TAG).d("正在从类索引中移除插件 [$pluginId] 的条目...")
+        var removedCount = 0
+        val iterator = classIndex.entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            if (entry.value == pluginId) {
+                iterator.remove()
+                removedCount++
+            }
+        }
+        Timber.tag(CLASS_INDEX_TAG).d("从索引中移除了插件 [$pluginId] 的 $removedCount 个类。")
+    }
+
+
+    /**
+     * 实现新的 IPluginFinder 接口
+     * 该方法通过全局类索引实现O(1)时间复杂度的查找
+     *
+     * @param className 类的完整名称
+     * @return 如果找到，则返回 Class 对象，否则返回 null
+     */
+    override fun findClass(className: String): Class<*>? {
+        val targetPluginId = classIndex[className] ?: return null
+
+        val targetPluginInfo = _loadedPlugins.value[targetPluginId]
+        if (targetPluginInfo == null) {
+            Timber.tag(TAG).e("类索引不一致: 类 '$className' 指向插件 '$targetPluginId'，但该插件未加载。可能索引已过期。")
+            return null
+        }
+
+        return try {
+            targetPluginInfo.classLoader.findClassLocally(className)
+        } catch (_: ClassNotFoundException) {
+            Timber.tag(TAG).e("类索引不一致: 在插件 '$targetPluginId' 的dex中未找到其索引的类 '$className'。")
+            null
+        }
+    }
+
+    /**
+     * 从所有已加载的插件中，获取指定接口的实现实例。
+     *
+     * 这是一个便捷的顶层API方法，它利用全局类索引自动查找并加载类，
+     * 无需调用者关心该类具体属于哪个插件。
+     *
+     * @param T 接口类型泛型。请确保 T 为非空类型，例如 `IYourInterface::class.java`
+     * @param interfaceClass 接口的Class对象
+     * @param className 实现该接口的完整类名
+     * @return 接口实现的实例，如果类未找到、插件未加载或实例化失败，则返回null
+     */
+    fun <T : Any> getInterface(interfaceClass: Class<T>, className: String): T? {
+        try {
+            // 使用全局类索引，快速定位此类属于哪个插件
+            val targetPluginId = classIndex[className]
+            if (targetPluginId == null) {
+                Timber.tag(TAG).w("无法找到类 '$className' 的宿主插件，类索引中不存在该条目。")
+                return null
+            }
+
+            // 获取该插件的已加载信息
+            val loadedPlugin = _loadedPlugins.value[targetPluginId]
+            if (loadedPlugin == null) {
+                Timber.tag(TAG).e("类索引不一致：类 '$className' 指向插件 '$targetPluginId'，但该插件当前未加载。")
+                return null
+            }
+
+            // 调用具体的 PluginClassLoader 来加载并实例化接口
+            Timber.tag(TAG).d("正在从插件 '$targetPluginId' 中获取接口 '${interfaceClass.simpleName}' 的实现 '$className'...")
+            return loadedPlugin.classLoader.getInterface(interfaceClass, className)
+
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "通过 PluginManager 获取接口 '$className' 的实例时发生未知错误。")
+            return null
+        }
     }
 }

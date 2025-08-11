@@ -49,8 +49,12 @@ koin = "4.1.0"
 appcompatVersion = "1.7.1"
 materialVersion = "1.12.0"
 material3AdaptiveNavigationSuite = "1.3.2"
+dexlib2 = "2.5.2"
 
 [libraries]
+# Dexlib2 库
+dexlib2 = { group = "org.smali", name = "dexlib2", version.ref = "dexlib2" }
+
 # Timber 日志库
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 # Accompanist 库

@@ -18,6 +18,7 @@ class MainActivity : BaseHostActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (super.pluginActivity == null) {
+            PluginManager.setHostActivity(this::class.java)
             enableEdgeToEdge()
             setContent {
                 val resources by PluginManager.getResourcesManager().mResourcesFlow.collectAsState()

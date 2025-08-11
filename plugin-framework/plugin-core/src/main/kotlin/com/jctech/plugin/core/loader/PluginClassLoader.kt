@@ -68,7 +68,7 @@ open class PluginClassLoader(
         try {
             return super.findClass(name)
         } catch (e: ClassNotFoundException) {
-            val otherPluginClass = pluginFinder?.findClass(pluginId, name)
+            val otherPluginClass = pluginFinder?.findClass(name)
             if (otherPluginClass != null) {
                 return otherPluginClass
             }

@@ -17,10 +17,16 @@
 
 package com.jctech.plugin.core.base
 
+import android.content.Intent
 import android.content.res.AssetManager
+import android.content.res.Configuration
 import android.content.res.Resources
 import android.os.Bundle
+import android.os.PersistableBundle
+import android.view.KeyEvent
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
+import com.jctech.plugin.core.ext.getPluginActivity
 import com.jctech.plugin.core.interfaces.IPluginActivity
 import com.jctech.plugin.core.manager.PluginManager
 
@@ -38,19 +44,15 @@ open class BaseHostActivity : ComponentActivity() {
      * 子类在自己的 onCreate 中调用此方法来"尝试"加载插件。
      */
     protected fun initPluginActivity() {
-        // 尝试从Intent中获取插件类名
-        val pluginClassName = intent.getStringExtra("pluginClassName") ?: return
         try {
-            val pluginClass = PluginManager.getPluginClassLoader().loadClass(pluginClassName)
-            val instance = pluginClass.newInstance() as IPluginActivity
-            instance.onAttach(this)
-            // 赋值给基类的属性
-            pluginActivity = instance
+            pluginActivity = intent.getPluginActivity()
+            pluginActivity?.onAttach(this@BaseHostActivity)
         } catch (e: Exception) {
             e.printStackTrace()
             pluginActivity = null
         }
     }
+
     /**
      * 重写getResources方法，返回插件资源
      */
@@ -95,5 +97,49 @@ open class BaseHostActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         pluginActivity?.onDestroy()
+    }
+    override fun onRestart() {
+        super.onRestart()
+        pluginActivity?.onRestart()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String?>,
+        grantResults: IntArray,
+        deviceId: Int
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
+        pluginActivity?.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
+        super.onSaveInstanceState(outState, outPersistentState)
+        pluginActivity?.onSaveInstanceState(outState)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        pluginActivity?.onRestoreInstanceState(savedInstanceState)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        pluginActivity?.onConfigurationChanged(newConfig)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        pluginActivity?.onWindowFocusChanged(hasFocus)
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        return pluginActivity?.onKeyDown(keyCode, event) ?: super.onKeyDown(keyCode, event)
+    }
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        return pluginActivity?.onKeyUp(keyCode, event) ?: super.onKeyUp(keyCode, event)
+    }
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        return pluginActivity?.onTouchEvent(event) ?: super.onTouchEvent(event)
     }
 }
