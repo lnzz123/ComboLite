@@ -45,7 +45,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.jvm.java
 
 /**
  * 插件管理器
@@ -398,7 +397,7 @@ object PluginManager : IPluginFinder {
     private fun getEnabledPlugins(): List<PluginInfo> {
         return try {
             val allPlugins = xmlManager.getAllPlugins()
-            val enabledPlugins = allPlugins.filter { it.status == PluginState.enabled }
+            val enabledPlugins = allPlugins.filter { it.status == PluginState.Enabled }
 
             Timber.tag(TAG).d("从plugins.xml读取到 ${allPlugins.size} 个插件，其中 ${enabledPlugins.size} 个已启用")
 
@@ -680,7 +679,7 @@ object PluginManager : IPluginFinder {
                 return false
             }
 
-            val newStatus = if (autoLaunch) PluginState.enabled else PluginState.disabled
+            val newStatus = if (autoLaunch) PluginState.Enabled else PluginState.Disabled
             if (pluginInfo.status == newStatus) {
                 Timber.tag(TAG).d("插件 $pluginId 自动启动状态无需更改: $autoLaunch")
                 return true

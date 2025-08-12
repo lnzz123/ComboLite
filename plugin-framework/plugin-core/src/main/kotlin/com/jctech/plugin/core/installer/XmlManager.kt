@@ -220,10 +220,10 @@ class XmlManager(private val context: Application) {
                                     version = parser.getAttributeValue(null, ATTR_VERSION) ?: "",
                                     entryClass = parser.getAttributeValue(null, ATTR_ENTRY_CLASS) ?: "",
                                     path = parser.getAttributeValue(null, ATTR_PATH) ?: "",
-                                    status = if (parser.getAttributeValue(null, ATTR_STATUS) == PluginState.enabled.name) {
-                                        PluginState.enabled
+                                    status = if (parser.getAttributeValue(null, ATTR_STATUS) == PluginState.Enabled.name) {
+                                        PluginState.Enabled
                                     } else {
-                                        PluginState.disabled
+                                        PluginState.Disabled
                                     },
                                     installTime = parser.getAttributeValue(null, ATTR_INSTALL_TIME).toLongOrNull() ?: 0L,
                                     description = "",

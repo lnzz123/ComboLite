@@ -170,7 +170,7 @@ class InstallerManager(
                 path = targetFile.absolutePath,
                 entryClass = pluginConfig.entryClass,
                 description = pluginConfig.pluginDescription,
-                status = existingPlugin?.status ?: PluginState.enabled,
+                status = existingPlugin?.status ?: PluginState.Enabled,
                 installTime = existingPlugin?.installTime ?: System.currentTimeMillis(), // 更新保持原安装时间
             )
 

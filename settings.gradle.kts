@@ -45,7 +45,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ComposePluginSample"
+rootProject.name = "ArcLite"
 include(":app")
 // 插件框架模块
 include(":plugin-framework:plugin-core")

@@ -32,6 +32,6 @@ data class PluginInfo(
 
 @Serializable
 enum class PluginState {
-    enabled,
-    disabled
+    Enabled,
+    Disabled
 }
