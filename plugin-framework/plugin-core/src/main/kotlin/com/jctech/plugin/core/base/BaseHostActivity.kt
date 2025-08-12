@@ -31,8 +31,8 @@ import com.jctech.plugin.core.interfaces.IPluginActivity
 import com.jctech.plugin.core.manager.PluginManager
 
 /**
- * Compose插件框架Activity基类
- * 重写Resources获取逻辑
+ * 宿主端的代理Activity基类
+ * 它负责加载插件Activity并代理其所有生命周期方法。
  */
 open class BaseHostActivity : ComponentActivity() {
 
@@ -43,8 +43,9 @@ open class BaseHostActivity : ComponentActivity() {
      * 提供一个给子类调用的、受保护的插件初始化方法。
      * 子类在自己的 onCreate 中调用此方法来"尝试"加载插件。
      */
-    protected fun initPluginActivity() {
+    protected fun initPluginActivity(intent: Intent?) {
         try {
+            intent ?: return
             pluginActivity = intent.getPluginActivity()
             pluginActivity?.onAttach(this@BaseHostActivity)
         } catch (e: Exception) {
@@ -58,7 +59,7 @@ open class BaseHostActivity : ComponentActivity() {
      */
     override fun getResources(): Resources {
         return if (PluginManager.isInitialized())
-            PluginManager.getResourcesManager().getResources()
+            PluginManager.resourcesManager.getResources()
         else super.getResources()
     }
     /**
@@ -66,7 +67,7 @@ open class BaseHostActivity : ComponentActivity() {
      */
     override fun getAssets(): AssetManager {
         return if (PluginManager.isInitialized())
-            PluginManager.getResourcesManager().getResources().assets
+            PluginManager.resourcesManager.getResources().assets
         else super.getAssets()
     }
     /**
@@ -74,7 +75,7 @@ open class BaseHostActivity : ComponentActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        initPluginActivity()
+        initPluginActivity(intent)
         pluginActivity?.onCreate(savedInstanceState)
     }
 

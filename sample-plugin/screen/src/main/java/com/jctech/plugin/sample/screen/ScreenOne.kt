@@ -26,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jctech.plugin.core.ext.startPluginActivity
+import com.jctech.plugin.core.ext.startPluginService
+import com.jctech.plugin.core.ext.stopPluginService
 import com.jctech.plugin.sample.common.navigation.AppScreen
 import com.jctech.plugin.sample.common.navigation.currentComposeNavigator
 
@@ -90,7 +92,26 @@ fun ScreenOne() {
             ) {
                 Text("跳转Activity")
             }
-            
+
+            OutlinedButton(
+                onClick = {
+                    context.startPluginService(TestPluginService::class.java)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("启动插件服务")
+            }
+
+            OutlinedButton(
+                onClick = {
+                    context.stopPluginService(TestPluginService::class.java)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("关闭插件服务")
+            }
+
+
             Spacer(modifier = Modifier.weight(1f))
             
             Card(

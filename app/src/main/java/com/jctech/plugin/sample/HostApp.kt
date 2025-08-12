@@ -19,10 +19,12 @@ package com.jctech.plugin.sample
 
 import com.jctech.plugin.core.BuildConfig
 import com.jctech.plugin.core.base.BaseHostApplication
+import com.jctech.plugin.core.manager.PluginManager
 import org.koin.core.context.loadKoinModules
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import timber.log.Timber
+import kotlin.jvm.java
 
 /**
  * IHUB Compose应用入口
@@ -49,6 +51,22 @@ import timber.log.Timber
 class HostApp : BaseHostApplication() {
     override fun onCreate() {
         super.onCreate()
+        // 配置代理
+        PluginManager.proxyManager.setHostActivity(HostActivity::class.java)
+        PluginManager.proxyManager.setServicePool(
+            listOf(
+                HostService1::class.java,
+                HostService2::class.java,
+                HostService3::class.java,
+                HostService4::class.java,
+                HostService5::class.java,
+                HostService6::class.java,
+                HostService7::class.java,
+                HostService8::class.java,
+                HostService9::class.java,
+                HostService10::class.java,
+            )
+        )
 
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())

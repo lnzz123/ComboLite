@@ -20,7 +20,6 @@ package com.jctech.plugin.core.manager
 import android.app.Application
 import android.content.res.loader.ResourcesLoader
 import android.os.Build
-import com.jctech.plugin.core.base.BaseHostActivity
 import com.jctech.plugin.core.installer.InstallerManager
 import com.jctech.plugin.core.installer.XmlManager
 import com.jctech.plugin.core.interfaces.IPluginEntryClass
@@ -28,6 +27,7 @@ import com.jctech.plugin.core.loader.IPluginFinder
 import com.jctech.plugin.core.loader.PluginClassLoader
 import com.jctech.plugin.core.model.PluginInfo
 import com.jctech.plugin.core.model.PluginState
+import com.jctech.plugin.core.proxy.ProxyManager
 import com.jctech.plugin.core.resources.PluginResourcesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -63,12 +63,14 @@ object PluginManager : IPluginFinder {
 
     private lateinit var context: Application
     private lateinit var xmlManager: XmlManager
-    private lateinit var installerManager: InstallerManager
-    private lateinit var resourcesManager: PluginResourcesManager
+    lateinit var installerManager: InstallerManager
+        private set
+    lateinit var resourcesManager: PluginResourcesManager
+        private set
+    lateinit var proxyManager: ProxyManager
+        private set
 
-    // 定义四大组件宿主
-    private var _hostActivity: Class<out BaseHostActivity>? = null
-    
+
     // 初始化状态标识
     @Volatile
     private var isInitializedInternal = false
@@ -116,7 +118,7 @@ object PluginManager : IPluginFinder {
 
         synchronized(initializationLock) {
             if (isInitializedInternal) {
-                return // 再次检查，防止多线程竞争
+                return
             }
 
             try {
@@ -126,6 +128,7 @@ object PluginManager : IPluginFinder {
                 this.xmlManager = XmlManager(this.context)
                 this.installerManager = InstallerManager(this.context, xmlManager)
                 this.resourcesManager = PluginResourcesManager(this.context)
+                this.proxyManager = ProxyManager()
 
                 clearRuntimeCache()
 
@@ -371,23 +374,6 @@ object PluginManager : IPluginFinder {
         return xmlManager.getAllPlugins()
     }
 
-    /**
-     * 获取插件安装器实例
-     *
-     * @return PluginInstaller 实例
-     */
-    fun getInstallerManager(): InstallerManager {
-        return installerManager
-    }
-
-    /**
-     * 获取插件资源管理器实例
-     *
-     * @return PluginResourcesManager 实例
-     */
-    fun getResourcesManager(): PluginResourcesManager {
-        return resourcesManager
-    }
 
     // ==================== 私有方法 ====================
 
@@ -703,20 +689,6 @@ object PluginManager : IPluginFinder {
             Timber.tag(TAG).e(e, "设置插件自动启动状态时发生错误: $pluginId - ${e.message}")
             false
         }
-    }
-
-    /**
-     * 设置插件Activity宿主
-     */
-    fun setHostActivity(hostActivity: Class<out BaseHostActivity>) {
-        _hostActivity = hostActivity
-    }
-
-    /**
-     * 获取插件Activity宿主
-     */
-    fun getHostActivity(): Class<out BaseHostActivity>? {
-        return _hostActivity
     }
 
     // ==================== 核心 findClass 优化实现 ====================

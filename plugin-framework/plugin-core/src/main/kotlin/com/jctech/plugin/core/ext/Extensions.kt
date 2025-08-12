@@ -19,16 +19,24 @@ package com.jctech.plugin.core.ext
 
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
+import com.jctech.plugin.core.ext.ExtConstant.PLUGIN_ACTIVITY_CLASS_NAME
 import com.jctech.plugin.core.interfaces.IPluginActivity
+import com.jctech.plugin.core.interfaces.IPluginService
 import com.jctech.plugin.core.manager.PluginManager
 import timber.log.Timber
 
+internal object ExtConstant {
+    const val PLUGIN_ACTIVITY_CLASS_NAME = "plugin_activity_class_name"
+    const val PLUGIN_SERVICE_CLASS_NAME = "plugin_service_class_name"
+}
 
 /**
  * 从Intent中获取插件Activity
+ * @return IPluginActivity的实例，如果找不到则返回null。
  */
 fun Intent.getPluginActivity(): IPluginActivity? {
-    return getStringExtra("pluginClassName")?.let {
+    return getStringExtra(PLUGIN_ACTIVITY_CLASS_NAME)?.let {
         PluginManager.getInterface(IPluginActivity::class.java, it)
     }
 }
@@ -38,12 +46,64 @@ fun Intent.getPluginActivity(): IPluginActivity? {
  * @param cls 插件Activity的Class
  */
 fun Context.startPluginActivity(cls: Class<out IPluginActivity>) {
-    val hostActivity = PluginManager.getHostActivity()
+    val hostActivity = PluginManager.proxyManager.getHostActivity()
     if (hostActivity == null) {
-        Timber.e("插件Activity宿主未设置")
+        Timber.e("跳转失败：未在PluginManager中配置宿主Activity。")
         return
     }
     val intent = Intent(this, hostActivity)
-    intent.putExtra("pluginClassName", cls.name)
+    intent.putExtra(PLUGIN_ACTIVITY_CLASS_NAME, cls.name)
     startActivity(intent)
+}
+
+/**
+ * 从Intent中获取插件Service的实例。
+ * @return IPluginService的实例，如果找不到则返回null。
+ */
+fun Intent.getPluginService(): IPluginService? {
+    return getStringExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME)?.let {
+        PluginManager.getInterface(IPluginService::class.java, it)
+    }
+}
+
+/**
+ * 启动一个插件Service。
+ */
+fun Context.startPluginService(cls: Class<out IPluginService>) {
+    val hostServiceClass = PluginManager.proxyManager.acquireServiceProxy(cls.name)
+    if (hostServiceClass == null) {
+        Timber.e("启动失败 [${cls.name}]：没有可用的代理Service。")
+        return
+    }
+    val intent = Intent(this, hostServiceClass)
+    intent.putExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME, cls.name)
+    startService(intent)
+}
+
+/**
+ * 绑定到一个插件Service。
+ */
+fun Context.bindPluginService(cls: Class<out IPluginService>, connection: ServiceConnection, flags: Int): Boolean {
+    val hostServiceClass = PluginManager.proxyManager.acquireServiceProxy(cls.name)
+    if (hostServiceClass == null) {
+        Timber.e("绑定失败 [${cls.name}]：没有可用的代理Service。")
+        return false
+    }
+    val intent = Intent(this, hostServiceClass)
+    intent.putExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME, cls.name)
+    return bindService(intent, connection, flags)
+}
+
+/**
+ * 停止一个插件Service。
+ */
+fun Context.stopPluginService(cls: Class<out IPluginService>): Boolean {
+    val hostServiceClass = PluginManager.proxyManager.getServiceProxyFor(cls.name)
+    if (hostServiceClass == null) {
+        Timber.w("尝试停止一个未在运行的插件服务: ${cls.name}")
+        return false
+    }
+    val intent = Intent(this, hostServiceClass)
+    intent.putExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME, cls.name)
+    return stopService(intent)
 }

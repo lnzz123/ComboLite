@@ -60,7 +60,7 @@ class LoadingViewModel(
                     }
                 }
                 // 安装插件
-                PluginManager.getInstallerManager().installPlugin(pluginFile)
+                PluginManager.installerManager.installPlugin(pluginFile)
             }
             PluginManager.loadEnabledPlugins()
             _pluginCount.value = PluginManager.getPluginInstances().size
