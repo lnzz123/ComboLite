@@ -25,7 +25,6 @@ import com.jctech.plugin.core.interfaces.IPluginEntryClass
 import com.jctech.plugin.core.loader.IPluginFinder
 import com.jctech.plugin.core.loader.PluginClassLoader
 import com.jctech.plugin.core.model.PluginInfo
-import com.jctech.plugin.core.model.PluginState
 import com.jctech.plugin.core.proxy.ProxyManager
 import com.jctech.plugin.core.resources.PluginResourcesManager
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +37,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.jf.dexlib2.DexFileFactory
 import org.jf.dexlib2.Opcodes
+import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext
+import org.koin.core.context.startKoin
 import timber.log.Timber
 import java.io.File
 import java.io.FileInputStream
@@ -122,6 +123,10 @@ object PluginManager : IPluginFinder {
 
             try {
                 Timber.tag(TAG).i("开始初始化PluginManager")
+
+                startKoin {
+                    androidContext(context)
+                }
 
                 this.context = context
                 this.xmlManager = XmlManager(this.context)
@@ -374,7 +379,7 @@ object PluginManager : IPluginFinder {
     private fun getEnabledPlugins(): List<PluginInfo> =
         try {
             val allPlugins = xmlManager.getAllPlugins()
-            val enabledPlugins = allPlugins.filter { it.status == PluginState.Enabled }
+            val enabledPlugins = allPlugins.filter { it.enabled }
 
             Timber.tag(TAG)
                 .d("从plugins.xml读取到 ${allPlugins.size} 个插件，其中 ${enabledPlugins.size} 个已启用")
@@ -400,8 +405,14 @@ object PluginManager : IPluginFinder {
 
                 // 索引插件类（使用缓存文件）
                 indexPluginClasses(plugin.pluginId, runtimeCacheFile)
-                // 注册插件的静态广播
-                proxyManager.registerStaticReceivers(plugin.pluginId, plugin.staticReceivers)
+
+                // 过滤出所有 enabled 的静态广播和内容提供者
+                val enabledReceivers = plugin.staticReceivers.filter { it.enabled }
+                val enabledProviders = plugin.providers.filter { it.enabled }
+
+                // 过滤后的列表注册到 ProxyManager
+                proxyManager.registerStaticReceivers(plugin.pluginId, enabledReceivers)
+                // proxyManager.registerProviders(plugin.pluginId, enabledProviders)
 
                 // 使用缓存文件创建类加载器
                 val classLoader =
@@ -651,15 +662,15 @@ object PluginManager : IPluginFinder {
      * 设置插件是否自动启动
      *
      * @param pluginId 插件ID
-     * @param autoLaunch 是否自动启动
+     * @param enabled 是否自动启动
      * @return 设置是否成功
      */
-    fun setPluginAutoLaunch(
+    fun setPluginEnabled(
         pluginId: String,
-        autoLaunch: Boolean,
+        enabled: Boolean,
     ): Boolean {
         return try {
-            Timber.tag(TAG).i("设置插件自动启动状态: $pluginId = $autoLaunch")
+            Timber.tag(TAG).i("设置插件自动启动状态: $pluginId = $enabled")
 
             val pluginInfo = xmlManager.getPluginById(pluginId)
             if (pluginInfo == null) {
@@ -667,9 +678,8 @@ object PluginManager : IPluginFinder {
                 return false
             }
 
-            val newStatus = if (autoLaunch) PluginState.Enabled else PluginState.Disabled
-            if (pluginInfo.status == newStatus) {
-                Timber.tag(TAG).d("插件 $pluginId 自动启动状态无需更改: $autoLaunch")
+            if (pluginInfo.enabled == enabled) {
+                Timber.tag(TAG).d("插件 $pluginId 自动启动状态无需更改: $enabled")
                 return true
             }
 
@@ -680,13 +690,15 @@ object PluginManager : IPluginFinder {
                     path = pluginInfo.path,
                     entryClass = pluginInfo.entryClass,
                     description = pluginInfo.description,
-                    status = newStatus,
+                    enabled = enabled,
                     installTime = pluginInfo.installTime,
+                    staticReceivers = pluginInfo.staticReceivers,
+                    providers = pluginInfo.providers
                 )
 
             xmlManager.updatePlugin(updatedPluginInfo)
             xmlManager.flushToDisk()
-            Timber.tag(TAG).i("插件 $pluginId 自动启动状态设置成功: $autoLaunch")
+            Timber.tag(TAG).i("插件 $pluginId 自动启动状态设置成功: $enabled")
             true
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "设置插件自动启动状态时发生错误: $pluginId - ${e.message}")

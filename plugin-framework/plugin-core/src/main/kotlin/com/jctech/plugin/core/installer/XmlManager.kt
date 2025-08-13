@@ -20,9 +20,9 @@ package com.jctech.plugin.core.installer
 import android.app.Application
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Log
 import android.util.Xml
 import com.jctech.plugin.core.model.PluginInfo
-import com.jctech.plugin.core.model.PluginState
 import com.jctech.plugin.core.model.ProviderInfo
 import com.jctech.plugin.core.model.StaticReceiverInfo
 import org.xmlpull.v1.XmlPullParser
@@ -69,7 +69,7 @@ class XmlManager(
         private const val ATTR_VERSION = "version"
         private const val ATTR_ENTRY_CLASS = "entryClass"
         private const val ATTR_PATH = "path"
-        private const val ATTR_STATUS = "status"
+        private const val ATTR_ENABLED = "enabled"
         private const val ATTR_INSTALL_TIME = "installTime"
 
         // 插件静态广播接收器的标签和属性
@@ -81,7 +81,6 @@ class XmlManager(
         // Provider 相关标签
         private const val TAG_PROVIDERS = "providers"
         private const val TAG_PROVIDER = "provider"
-        private const val TAG_AUTHORITY = "authority"
         private const val ATTR_AUTHORITIES = "authorities"
 
         // 延迟写入时间（毫秒）
@@ -221,6 +220,13 @@ class XmlManager(
 
         val pluginList = mutableListOf<PluginInfo>()
         try {
+            // 【修改】为了打印日志，我们先将文件完整读入一个字符串
+            val xmlContent = targetFile.readText(StandardCharsets.UTF_8)
+
+            // 【新增】打印完整的 XML 文本内容
+            // 使用一个清晰的边界，方便在 Logcat 中查看
+            Log.d(TAG,"--- 开始加载 ${targetFile.name} 内容 ---\n$xmlContent\n--- ${targetFile.name} 内容结束 ---")
+
             FileInputStream(targetFile).use { fis ->
                 val parser =
                     XmlPullParserFactory
@@ -239,11 +245,12 @@ class XmlManager(
                 var currentProviders: MutableList<ProviderInfo>? = null
 
                 var currentReceiverName: String? = null
+                var currentReceiverEnabled: Boolean = true
                 var currentActions: MutableList<String>? = null
 
                 var currentProviderName: String? = null
+                var currentProviderEnabled: Boolean = true
                 var currentAuthorities: List<String>? = null
-
 
                 while (eventType != XmlPullParser.END_DOCUMENT) {
                     when (eventType) {
@@ -253,12 +260,12 @@ class XmlManager(
                                 TAG_PLUGIN -> {
                                     currentPlugin =
                                         PluginInfo(
-                                            pluginId = parser.getAttributeValue(null, ATTR_ID) ?: "",
-                                            version = parser.getAttributeValue(null, ATTR_VERSION) ?: "",
-                                            entryClass = parser.getAttributeValue(null, ATTR_ENTRY_CLASS) ?: "",
-                                            path = parser.getAttributeValue(null, ATTR_PATH) ?: "",
-                                            status = if (parser.getAttributeValue(null, ATTR_STATUS) == PluginState.Enabled.name) PluginState.Enabled else PluginState.Disabled,
-                                            installTime = parser.getAttributeValue(null, ATTR_INSTALL_TIME).toLongOrNull() ?: 0L,
+                                            pluginId = parser.getAttributeValue(null, ATTR_ID)?: "",
+                                            version = parser.getAttributeValue(null, ATTR_VERSION)?: "",
+                                            entryClass = parser.getAttributeValue(null, ATTR_ENTRY_CLASS)?: "",
+                                            path = parser.getAttributeValue(null, ATTR_PATH)?: "",
+                                            enabled = parser.getAttributeValue(null, ATTR_ENABLED)?.toBoolean() ?: true,
+                                            installTime = parser.getAttributeValue(null, ATTR_INSTALL_TIME).toLongOrNull()?: 0L,
                                             description = ""
                                         )
                                 }
@@ -266,6 +273,7 @@ class XmlManager(
                                 TAG_RECEIVER -> {
                                     currentActions = mutableListOf()
                                     currentReceiverName = parser.getAttributeValue(null, ATTR_NAME)
+                                    currentReceiverEnabled = parser.getAttributeValue(null, ATTR_ENABLED)?.toBoolean() ?: true
                                 }
                                 TAG_ACTION -> currentActions?.add(parser.getAttributeValue(null, ATTR_NAME) ?: "")
                                 TAG_PROVIDERS -> currentProviders = mutableListOf()
@@ -273,6 +281,7 @@ class XmlManager(
                                     currentProviderName = parser.getAttributeValue(null, ATTR_NAME)
                                     val authoritiesStr = parser.getAttributeValue(null, ATTR_AUTHORITIES) ?: ""
                                     currentAuthorities = authoritiesStr.split(";").filter { it.isNotBlank() }
+                                    currentProviderEnabled = parser.getAttributeValue(null, ATTR_ENABLED)?.toBoolean() ?: true
                                 }
                             }
                         }
@@ -303,7 +312,8 @@ class XmlManager(
                                 TAG_RECEIVER -> {
                                     if (currentReceiverName != null && currentActions != null) {
                                         currentReceivers?.add(StaticReceiverInfo(currentReceiverName,
-                                            currentActions
+                                            currentActions,
+                                            currentReceiverEnabled
                                         ))
                                     }
                                     currentReceiverName = null
@@ -312,7 +322,8 @@ class XmlManager(
                                 TAG_PROVIDER -> {
                                     if (currentProviderName != null && currentAuthorities != null) {
                                         currentProviders?.add(ProviderInfo(currentProviderName,
-                                            currentAuthorities
+                                            currentAuthorities,
+                                            currentProviderEnabled
                                         ))
                                     }
                                     currentProviderName = null
@@ -386,6 +397,7 @@ class XmlManager(
                 val serializer = Xml.newSerializer()
                 serializer.setOutput(writer)
                 serializer.startDocument(StandardCharsets.UTF_8.name(), true)
+                serializer.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true) // 美化输出，方便调试
                 serializer.startTag(null, TAG_PLUGINS)
 
                 plugins.forEach { plugin ->
@@ -394,7 +406,7 @@ class XmlManager(
                     serializer.attribute(null, ATTR_VERSION, plugin.version)
                     serializer.attribute(null, ATTR_ENTRY_CLASS, plugin.entryClass)
                     serializer.attribute(null, ATTR_PATH, plugin.path)
-                    serializer.attribute(null, ATTR_STATUS, plugin.status.name)
+                    serializer.attribute(null, ATTR_ENABLED, plugin.enabled.toString())
                     serializer.attribute(null, ATTR_INSTALL_TIME, plugin.installTime.toString())
                     if (plugin.description.isNotBlank()) {
                         serializer.startTag(null, TAG_DESCRIPTION)
@@ -406,6 +418,7 @@ class XmlManager(
                         plugin.staticReceivers.forEach { receiverInfo ->
                             serializer.startTag(null, TAG_RECEIVER)
                             serializer.attribute(null, ATTR_NAME, receiverInfo.className)
+                            serializer.attribute(null, ATTR_ENABLED, receiverInfo.enabled.toString())
                             receiverInfo.actions.forEach { action ->
                                 serializer.startTag(null, TAG_ACTION)
                                 serializer.attribute(null, ATTR_NAME, action)
@@ -415,16 +428,20 @@ class XmlManager(
                         }
                         serializer.endTag(null, TAG_RECEIVERS)
                     }
+
+                    // 完整写入 Providers 信息
                     if (plugin.providers.isNotEmpty()) {
                         serializer.startTag(null, TAG_PROVIDERS)
                         plugin.providers.forEach { providerInfo ->
                             serializer.startTag(null, TAG_PROVIDER)
                             serializer.attribute(null, ATTR_NAME, providerInfo.className)
                             serializer.attribute(null, ATTR_AUTHORITIES, providerInfo.authorities.joinToString(";"))
+                            serializer.attribute(null, ATTR_ENABLED, providerInfo.enabled.toString())
                             serializer.endTag(null, TAG_PROVIDER)
                         }
                         serializer.endTag(null, TAG_PROVIDERS)
                     }
+
                     serializer.endTag(null, TAG_PLUGIN)
                 }
 

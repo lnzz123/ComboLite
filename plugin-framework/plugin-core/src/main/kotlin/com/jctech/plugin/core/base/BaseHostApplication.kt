@@ -22,8 +22,6 @@ import com.jctech.plugin.core.manager.PluginManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.koin.android.ext.koin.androidContext
-import org.koin.core.context.startKoin
 
 /**
  * 宿主端的插件框架Application基类
@@ -32,9 +30,6 @@ import org.koin.core.context.startKoin
 open class BaseHostApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        startKoin {
-            androidContext(this@BaseHostApplication)
-        }
         PluginManager.initialize(this) {
             CoroutineScope(Dispatchers.Default).launch {
                 PluginManager.loadEnabledPlugins()

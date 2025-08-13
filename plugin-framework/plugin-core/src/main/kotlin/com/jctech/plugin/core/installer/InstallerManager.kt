@@ -18,16 +18,17 @@
 package com.jctech.plugin.core.installer
 
 import android.app.Application
-import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.content.res.AssetManager
+import android.content.res.XmlResourceParser
 import com.jctech.plugin.core.model.PluginInfo
-import com.jctech.plugin.core.model.PluginState
 import com.jctech.plugin.core.model.ProviderInfo
 import com.jctech.plugin.core.model.StaticReceiverInfo
 import com.jctech.plugin.core.security.SignatureValidator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import org.xmlpull.v1.XmlPullParser
 import timber.log.Timber
 import java.io.File
 import java.io.FileInputStream
@@ -191,7 +192,7 @@ class InstallerManager(
                         path = targetFile.absolutePath,
                         entryClass = pluginConfig.entryClass,
                         description = pluginConfig.pluginDescription,
-                        status = existingPlugin?.status ?: PluginState.Enabled,
+                        enabled = existingPlugin?.enabled ?: true,
                         installTime = existingPlugin?.installTime ?: System.currentTimeMillis(),
                         staticReceivers = staticReceivers,
                         providers = providers,
@@ -398,38 +399,78 @@ class InstallerManager(
      * @return 解析出的静态广播信息列表。
      */
     private fun parseStaticReceivers(apkPath: String): List<StaticReceiverInfo> {
-        val pm = context.packageManager
+        Timber.tag(TAG).d("开始解析 StaticReceivers: $apkPath")
+        var parser: XmlResourceParser? = null
         try {
-            val packageInfo = pm.getPackageArchiveInfo(apkPath, PackageManager.GET_RECEIVERS)
+            val assetManager = AssetManager::class.java.newInstance()
+            val addAssetPathMethod = AssetManager::class.java.getMethod("addAssetPath", String::class.java)
+            val cookie = addAssetPathMethod.invoke(assetManager, apkPath) as Int
+            if (cookie == 0) {
+                Timber.tag(TAG).e("无法为 APK 添加资源路径: $apkPath")
+                return emptyList()
+            }
+
+            parser = assetManager.openXmlResourceParser(cookie, "AndroidManifest.xml")
+
             val receivers = mutableListOf<StaticReceiverInfo>()
-            packageInfo?.receivers?.forEach { activityInfo ->
-                val className = activityInfo.name
-                val actions = mutableListOf<String>()
+            val androidNamespace = "http://schemas.android.com/apk/res/android"
 
-                try {
-                    val intentFilterField = activityInfo.javaClass.getDeclaredField("intents")
-                    intentFilterField.isAccessible = true
-                    @Suppress("UNCHECKED_CAST")
-                    val intents = intentFilterField.get(activityInfo) as? Array<IntentFilter>
+            var eventType = parser.eventType
+            var currentReceiverName: String? = null
+            var currentReceiverEnabled = true
+            var currentActions: MutableList<String>? = null
+            var inReceiverTag = false
 
-                    intents?.forEach { filter ->
-                        for (i in 0 until filter.countActions()) {
-                            actions.add(filter.getAction(i))
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        when (parser.name) {
+                            "receiver" -> {
+                                inReceiverTag = true
+                                currentActions = mutableListOf()
+                                currentReceiverName = parser.getAttributeValue(androidNamespace, "name")
+                                currentReceiverEnabled = parser.getAttributeBooleanValue(androidNamespace, "enabled", true)
+                            }
+                            "action" -> {
+                                if (inReceiverTag && currentActions != null) {
+                                    val actionName = parser.getAttributeValue(androidNamespace, "name")
+                                    if (!actionName.isNullOrBlank()) {
+                                        currentActions.add(actionName)
+                                    }
+                                }
+                            }
                         }
                     }
-                } catch (e: Exception) {
-                    Timber.tag(TAG).e(e, "解析Action失败: $className")
-                }
+                    XmlPullParser.END_TAG -> {
+                        if (parser.name == "receiver") {
+                            if (!currentReceiverName.isNullOrBlank() && !currentActions.isNullOrEmpty()) {
+                                val finalClassName = currentReceiverName
+                                val finalActions = currentActions
 
-                if (actions.isNotEmpty()) {
-                    receivers.add(StaticReceiverInfo(className, actions))
-                    Timber.tag(TAG).d("解析到静态广播: $className, actions: $actions")
+                                val receiverInfo = StaticReceiverInfo(
+                                    className = finalClassName,
+                                    actions = finalActions,
+                                    enabled = currentReceiverEnabled
+                                )
+                                receivers.add(receiverInfo)
+                                Timber.tag(TAG).d("解析到静态广播: ${receiverInfo.className}, actions: ${receiverInfo.actions}")
+                            }
+                            inReceiverTag = false
+                            currentReceiverName = null
+                            currentActions = null
+                            currentReceiverEnabled = true
+                        }
+                    }
                 }
+                eventType = parser.next()
             }
             return receivers
         } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "解析APK文件静态广播失败: $apkPath")
+            Timber.tag(TAG).e(e, "使用 AXmlResourceParser 解析静态广播失败: $apkPath")
             return emptyList()
+        } finally {
+            // 确保解析器被关闭
+            parser?.close()
         }
     }
 
@@ -448,9 +489,10 @@ class InstallerManager(
             packageInfo?.providers?.forEach { providerInfo ->
                 val className = providerInfo.name
                 val authorities = providerInfo.authority?.split(";")?.filter { it.isNotBlank() }
+                val enabled = providerInfo.enabled
 
                 if (!authorities.isNullOrEmpty()) {
-                    providerList.add(ProviderInfo(className, authorities))
+                    providerList.add(ProviderInfo(className, authorities, enabled))
                     Timber.tag(TAG).d("解析到 ContentProvider: $className, authorities: $authorities")
                 }
             }

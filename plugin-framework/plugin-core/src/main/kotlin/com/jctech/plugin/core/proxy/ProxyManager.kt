@@ -15,7 +15,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * - **Activity**: 采用单一宿主模式，整个应用共享一个代理 Activity 类。
  * - **Service**: 采用代理池模式，通过一个预设的代理 Service 池来支持多个插件 Service 并发运行。
  * - **BroadcastReceiver**: 采用解析注册模式。
- * - **ContentProvider**: 采用解析注册模式。
  *
  * 该类的设计目标是提供一种灵活、可扩展的组件代理机制，
  * 以支持插件化架构中的组件通信和生命周期管理。
@@ -45,12 +44,37 @@ class ProxyManager {
      */
     private val staticReceiverRegistry = ConcurrentHashMap<String, MutableList<ReceiverInfo>>()
 
+
+    /**
+     * 用于存储 ContentProvider 的注册表。
+     * Key: 插件 Provider 的完整类名 (方便通过类名快速查找)。
+     * Value: Provider 的详细注册信息。
+     */
+    private val providerRegistry = ConcurrentHashMap<String, ProviderInfo>()
+
+    /**
+     * 用于从 Authority 快速映射到 Provider 的类名。
+     * 在需要根据 URI 的 Authority 查找目标时非常有用。
+     * Key: 插件 Provider 的 Authority。
+     * Value: 插件 Provider 的完整类名。
+     */
+    private val authorityToProviderMap = ConcurrentHashMap<String, String>()
+
     /**
      * 一个内部数据类，用于在注册表中存储接收器的关键信息
      */
     data class ReceiverInfo(
         val pluginId: String,
         val className: String,
+    )
+
+    /**
+     * Provider 注册信息的数据类
+     */
+    data class ProviderInfo(
+        val pluginId: String,
+        val className: String,
+        val authorities: List<String>,
     )
 
     /**
@@ -191,4 +215,61 @@ class ProxyManager {
      */
     fun findReceiversForAction(action: String): List<ReceiverInfo> =
         staticReceiverRegistry[action]?.toList() ?: emptyList()
+
+    /**
+     * 注册一个插件的所有 ContentProvider。
+     * 在插件安装或启用时调用。
+     *
+     * @param pluginId 插件的 ID。
+     * @param providers 插件中包含的 ProviderInfo 列表。
+     */
+    fun registerProviders(pluginId: String, providers: List<ProviderInfo>) {
+        if (providers.isEmpty()) return
+
+        providers.forEach { provider ->
+            val info = ProviderInfo(
+                pluginId = pluginId,
+                className = provider.className,
+                authorities = provider.authorities
+            )
+            // 注册到两个表中，方便不同方式的查询
+            providerRegistry[provider.className] = info
+            provider.authorities.forEach { authority ->
+                authorityToProviderMap[authority] = provider.className
+                Timber.d("注册 Provider Authority: [$authority] -> ${provider.className}")
+            }
+        }
+    }
+
+    /**
+     * 注销一个插件的所有 ContentProvider。
+     * 在插件卸载或禁用时调用。
+     *
+     * @param pluginId 要注销的插件 ID。
+     */
+    fun unregisterProviders(pluginId: String) {
+        // 从主注册表中移除
+        val providersToRemove = providerRegistry.filter { it.value.pluginId == pluginId }
+        providersToRemove.forEach { (className, info) ->
+            providerRegistry.remove(className)
+            // 从 authority 映射中移除
+            info.authorities.forEach { authority ->
+                authorityToProviderMap.remove(authority)
+                Timber.d("注销 Provider Authority: [$authority]")
+            }
+        }
+        if (providersToRemove.isNotEmpty()) {
+            Timber.i("已完成插件 [$pluginId] 的所有 Provider 的注销。")
+        }
+    }
+
+    /**
+     * 根据插件 Provider 的类名查找其注册信息。
+     * 主要由 BaseHostProvider 内部使用。
+     *
+     * @param className 插件 Provider 的完整类名。
+     * @return 匹配的 ProviderInfo，如果未注册则返回 null。
+     */
+    fun findProviderInfoByClassName(className: String): ProviderInfo? =
+        providerRegistry[className]
 }
