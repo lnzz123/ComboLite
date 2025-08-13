@@ -23,6 +23,7 @@ import android.os.HandlerThread
 import android.util.Xml
 import com.jctech.plugin.core.model.PluginInfo
 import com.jctech.plugin.core.model.PluginState
+import com.jctech.plugin.core.model.ProviderInfo
 import com.jctech.plugin.core.model.StaticReceiverInfo
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
@@ -76,6 +77,12 @@ class XmlManager(
         private const val TAG_RECEIVER = "receiver"
         private const val TAG_ACTION = "action"
         private const val ATTR_NAME = "name"
+
+        // Provider 相关标签
+        private const val TAG_PROVIDERS = "providers"
+        private const val TAG_PROVIDER = "provider"
+        private const val TAG_AUTHORITY = "authority"
+        private const val ATTR_AUTHORITIES = "authorities"
 
         // 延迟写入时间（毫秒）
         private const val WRITE_DELAY_MS = 500L
@@ -207,7 +214,7 @@ class XmlManager(
         val targetFile = if (useBackup) backupConfigFile else pluginsConfigFile
         Timber.tag(TAG).d("正在尝试从以下位置加载插件: ${targetFile.absolutePath}")
 
-        if (! targetFile.exists()) {
+        if (!targetFile.exists()) {
             Timber.tag(TAG).d("${targetFile.name} 不存在。返回空列表。")
             return emptyList()
         }
@@ -226,9 +233,17 @@ class XmlManager(
                 var eventType = parser.eventType
                 var currentPlugin: PluginInfo? = null
                 var lastStartTag: String? = null
+
+                // --- 用于解析嵌套结构的临时状态变量 ---
                 var currentReceivers: MutableList<StaticReceiverInfo>? = null
-                var currentActions: MutableList<String>? = null
+                var currentProviders: MutableList<ProviderInfo>? = null
+
                 var currentReceiverName: String? = null
+                var currentActions: MutableList<String>? = null
+
+                var currentProviderName: String? = null
+                var currentAuthorities: List<String>? = null
+
 
                 while (eventType != XmlPullParser.END_DOCUMENT) {
                     when (eventType) {
@@ -238,52 +253,33 @@ class XmlManager(
                                 TAG_PLUGIN -> {
                                     currentPlugin =
                                         PluginInfo(
-                                            pluginId = parser.getAttributeValue(null, ATTR_ID)
-                                                ?: "",
-                                            version = parser.getAttributeValue(null, ATTR_VERSION)
-                                                ?: "",
-                                            entryClass = parser.getAttributeValue(
-                                                null,
-                                                ATTR_ENTRY_CLASS
-                                            ) ?: "",
+                                            pluginId = parser.getAttributeValue(null, ATTR_ID) ?: "",
+                                            version = parser.getAttributeValue(null, ATTR_VERSION) ?: "",
+                                            entryClass = parser.getAttributeValue(null, ATTR_ENTRY_CLASS) ?: "",
                                             path = parser.getAttributeValue(null, ATTR_PATH) ?: "",
-                                            status =
-                                                if (parser.getAttributeValue(null, ATTR_STATUS) ==
-                                                    PluginState.Enabled.name
-                                                ) {
-                                                    PluginState.Enabled
-                                                } else {
-                                                    PluginState.Disabled
-                                                },
-                                            installTime = parser.getAttributeValue(
-                                                null,
-                                                ATTR_INSTALL_TIME
-                                            ).toLongOrNull() ?: 0L,
-                                            description = "",
-                                            staticReceivers = emptyList(),
+                                            status = if (parser.getAttributeValue(null, ATTR_STATUS) == PluginState.Enabled.name) PluginState.Enabled else PluginState.Disabled,
+                                            installTime = parser.getAttributeValue(null, ATTR_INSTALL_TIME).toLongOrNull() ?: 0L,
+                                            description = ""
                                         )
                                 }
-
-                                TAG_RECEIVERS -> {
-                                    currentReceivers = mutableListOf()
-                                }
-
+                                TAG_RECEIVERS -> currentReceivers = mutableListOf()
                                 TAG_RECEIVER -> {
                                     currentActions = mutableListOf()
                                     currentReceiverName = parser.getAttributeValue(null, ATTR_NAME)
                                 }
-
-                                TAG_ACTION -> {
-                                    currentActions?.add(
-                                        parser.getAttributeValue(null, ATTR_NAME) ?: ""
-                                    )
+                                TAG_ACTION -> currentActions?.add(parser.getAttributeValue(null, ATTR_NAME) ?: "")
+                                TAG_PROVIDERS -> currentProviders = mutableListOf()
+                                TAG_PROVIDER -> {
+                                    currentProviderName = parser.getAttributeValue(null, ATTR_NAME)
+                                    val authoritiesStr = parser.getAttributeValue(null, ATTR_AUTHORITIES) ?: ""
+                                    currentAuthorities = authoritiesStr.split(";").filter { it.isNotBlank() }
                                 }
                             }
                         }
 
                         XmlPullParser.TEXT -> {
                             val text = parser.text?.trim()
-                            if (currentPlugin != null && ! text.isNullOrEmpty()) {
+                            if (currentPlugin != null && !text.isNullOrEmpty()) {
                                 if (lastStartTag == TAG_DESCRIPTION) {
                                     currentPlugin.description = text
                                 }
@@ -295,25 +291,32 @@ class XmlManager(
                                 TAG_PLUGIN -> {
                                     if (currentPlugin != null) {
                                         val finalPlugin = currentPlugin.copy(
-                                            staticReceivers = currentReceivers ?: emptyList()
+                                            staticReceivers = currentReceivers ?: emptyList(),
+                                            providers = currentProviders ?: emptyList()
                                         )
                                         pluginList.add(finalPlugin)
                                         currentPlugin = null
                                         currentReceivers = null
+                                        currentProviders = null
                                     }
                                 }
-
                                 TAG_RECEIVER -> {
                                     if (currentReceiverName != null && currentActions != null) {
-                                        currentReceivers?.add(
-                                            StaticReceiverInfo(
-                                                currentReceiverName,
-                                                currentActions,
-                                            ),
-                                        )
+                                        currentReceivers?.add(StaticReceiverInfo(currentReceiverName,
+                                            currentActions
+                                        ))
                                     }
                                     currentReceiverName = null
                                     currentActions = null
+                                }
+                                TAG_PROVIDER -> {
+                                    if (currentProviderName != null && currentAuthorities != null) {
+                                        currentProviders?.add(ProviderInfo(currentProviderName,
+                                            currentAuthorities
+                                        ))
+                                    }
+                                    currentProviderName = null
+                                    currentAuthorities = null
                                 }
                             }
                             lastStartTag = null
@@ -411,6 +414,16 @@ class XmlManager(
                             serializer.endTag(null, TAG_RECEIVER)
                         }
                         serializer.endTag(null, TAG_RECEIVERS)
+                    }
+                    if (plugin.providers.isNotEmpty()) {
+                        serializer.startTag(null, TAG_PROVIDERS)
+                        plugin.providers.forEach { providerInfo ->
+                            serializer.startTag(null, TAG_PROVIDER)
+                            serializer.attribute(null, ATTR_NAME, providerInfo.className)
+                            serializer.attribute(null, ATTR_AUTHORITIES, providerInfo.authorities.joinToString(";"))
+                            serializer.endTag(null, TAG_PROVIDER)
+                        }
+                        serializer.endTag(null, TAG_PROVIDERS)
                     }
                     serializer.endTag(null, TAG_PLUGIN)
                 }

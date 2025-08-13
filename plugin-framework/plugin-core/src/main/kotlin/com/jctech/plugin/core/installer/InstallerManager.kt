@@ -22,6 +22,7 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import com.jctech.plugin.core.model.PluginInfo
 import com.jctech.plugin.core.model.PluginState
+import com.jctech.plugin.core.model.ProviderInfo
 import com.jctech.plugin.core.model.StaticReceiverInfo
 import com.jctech.plugin.core.security.SignatureValidator
 import kotlinx.coroutines.Dispatchers
@@ -145,8 +146,9 @@ class InstallerManager(
                         .i("检测到插件版本升级: ${pluginConfig.pluginId} ($currentVersion -> $newVersion)")
                 }
 
-                // 5. 解析静态广播接收器
+                // 5. 解析静态广播接收器和ContentProvider
                 val staticReceivers = parseStaticReceivers(pluginApkFile.absolutePath)
+                val providers = parseProviders(pluginApkFile.absolutePath)
 
                 // 6. 如果是更新安装，备份当前插件文件
                 var backupFile: File? = null
@@ -192,6 +194,7 @@ class InstallerManager(
                         status = existingPlugin?.status ?: PluginState.Enabled,
                         installTime = existingPlugin?.installTime ?: System.currentTimeMillis(),
                         staticReceivers = staticReceivers,
+                        providers = providers,
                     )
 
                 if (existingPlugin != null) {
@@ -426,6 +429,34 @@ class InstallerManager(
             return receivers
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "解析APK文件静态广播失败: $apkPath")
+            return emptyList()
+        }
+    }
+
+    /**
+     * 使用 PackageManager 解析 APK 文件中的 ContentProvider 信息。
+     * @param apkPath 插件 APK 的文件路径。
+     * @return 解析出的 Provider 信息列表。
+     */
+    private fun parseProviders(apkPath: String): List<ProviderInfo> {
+        Timber.tag(TAG).d("开始解析 ContentProvider: $apkPath")
+        val pm = context.packageManager
+        try {
+            val packageInfo = pm.getPackageArchiveInfo(apkPath, PackageManager.GET_PROVIDERS)
+
+            val providerList = mutableListOf<ProviderInfo>()
+            packageInfo?.providers?.forEach { providerInfo ->
+                val className = providerInfo.name
+                val authorities = providerInfo.authority?.split(";")?.filter { it.isNotBlank() }
+
+                if (!authorities.isNullOrEmpty()) {
+                    providerList.add(ProviderInfo(className, authorities))
+                    Timber.tag(TAG).d("解析到 ContentProvider: $className, authorities: $authorities")
+                }
+            }
+            return providerList
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "解析APK文件ContentProvider失败: $apkPath")
             return emptyList()
         }
     }

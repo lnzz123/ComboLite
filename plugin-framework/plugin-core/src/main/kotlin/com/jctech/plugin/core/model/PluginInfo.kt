@@ -29,7 +29,14 @@ data class PluginInfo(
     val status: PluginState,
     val installTime: Long,
     val staticReceivers: List<StaticReceiverInfo> = emptyList(),
+    val providers: List<ProviderInfo> = emptyList()
 )
+
+@Serializable
+enum class PluginState {
+    Enabled,
+    Disabled,
+}
 
 /**
  * 描述一个静态广播接收器的信息
@@ -42,8 +49,13 @@ data class StaticReceiverInfo(
     val actions: List<String>,
 )
 
+/**
+ * 描述一个插件 ContentProvider 的元数据信息
+ * @param className Provider 的完整类名
+ * @param authorities 它声明的授权列表 (例如 "com.myplugin.notes")
+ */
 @Serializable
-enum class PluginState {
-    Enabled,
-    Disabled,
-}
+data class ProviderInfo(
+    val className: String,
+    val authorities: List<String>
+)

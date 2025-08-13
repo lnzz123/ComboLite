@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * - **Activity**: 采用单一宿主模式，整个应用共享一个代理 Activity 类。
  * - **Service**: 采用代理池模式，通过一个预设的代理 Service 池来支持多个插件 Service 并发运行。
  * - **BroadcastReceiver**: 采用解析注册模式。
+ * - **ContentProvider**: 采用解析注册模式。
  *
  * 该类的设计目标是提供一种灵活、可扩展的组件代理机制，
  * 以支持插件化架构中的组件通信和生命周期管理。
