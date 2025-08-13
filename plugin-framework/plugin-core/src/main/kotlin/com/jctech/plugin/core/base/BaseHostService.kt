@@ -13,10 +13,6 @@ import com.jctech.plugin.core.manager.PluginManager
 import timber.log.Timber
 
 /**
- * Compose插件框架Service基类
- * 定义插件Service的基本行为和生命周期
- */
-/**
  * 宿主端的代理Service基类。
  * 这个Service需要在宿主应用的AndroidManifest.xml中注册。
  * 它负责加载插件Service并代理其所有生命周期方法。
@@ -42,7 +38,7 @@ open class BaseHostService : Service() {
      * 重写getResources方法，返回插件资源
      */
     override fun getResources(): Resources {
-        return if (PluginManager.isInitialized())
+        return if (PluginManager.isInitialized)
             PluginManager.resourcesManager.getResources()
         else super.getResources()
     }
@@ -50,7 +46,7 @@ open class BaseHostService : Service() {
      * 重写getAssets方法，返回插件资源
      */
     override fun getAssets(): AssetManager {
-        return if (PluginManager.isInitialized())
+        return if (PluginManager.isInitialized)
             PluginManager.resourcesManager.getResources().assets
         else super.getAssets()
     }

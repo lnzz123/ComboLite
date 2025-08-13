@@ -2,6 +2,7 @@ package com.jctech.plugin.core.proxy
 
 import com.jctech.plugin.core.base.BaseHostActivity
 import com.jctech.plugin.core.base.BaseHostService
+import com.jctech.plugin.core.model.StaticReceiverInfo
 import timber.log.Timber
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -24,12 +25,25 @@ class ProxyManager {
      * 存储当前可用的代理 Service。这是一个线程安全的队列，用于快速分配。
      */
     private val availableServiceProxies = ConcurrentLinkedQueue<Class<out BaseHostService>>()
+
     /**
      * 存储正在运行的插件 Service 与其占用的代理 Service 之间的映射关系。
      * Key: 插件 Service 的完整类名。
      * Value: 正在代理它的 HostService 的 Class 对象。
      */
     private val activeServiceProxies = ConcurrentHashMap<String, Class<out BaseHostService>>()
+
+    /**
+     * 用于分发静态广播的注册表
+     * Key: 广播 Action
+     * Value: 一个列表，包含所有监听此 Action 的接收器信息
+     */
+    private val staticReceiverRegistry = ConcurrentHashMap<String, MutableList<ReceiverInfo>>()
+
+    /**
+     * 一个内部数据类，用于在注册表中存储接收器的关键信息
+     */
+    data class ReceiverInfo(val pluginId: String, val className: String)
 
     /**
      * 设置 Activity 组件的代理宿主。
@@ -119,5 +133,52 @@ class ProxyManager {
      */
     fun getServiceProxyFor(pluginServiceClassName: String): Class<out BaseHostService>? {
         return activeServiceProxies[pluginServiceClassName]
+    }
+
+    /**
+     * 注册一个插件的所有静态广播
+     * @param pluginId 插件的ID
+     * @param receivers 该插件包含的静态广播列表
+     */
+    fun registerStaticReceivers(pluginId: String, receivers: List<StaticReceiverInfo>) {
+        if (receivers.isEmpty()) return
+
+        receivers.forEach { receiverInfo ->
+            receiverInfo.actions.forEach { action ->
+                val receiverList = staticReceiverRegistry.getOrPut(action) { mutableListOf() }
+                synchronized(receiverList) {
+                    val exists = receiverList.any { it.pluginId == pluginId && it.className == receiverInfo.className }
+                    if (!exists) {
+                        receiverList.add(ReceiverInfo(pluginId, receiverInfo.className))
+                    }
+                }
+                Timber.d("注册静态广播 Action: [$action] -> ${receiverInfo.className}")
+            }
+        }
+    }
+
+    /**
+     * 卸载一个插件的所有静态广播
+     * @param pluginId 要卸载的插件ID
+     */
+    fun unregisterStaticReceivers(pluginId: String) {
+        staticReceiverRegistry.forEach { (_, receiverList) ->
+            synchronized(receiverList) {
+                val removed = receiverList.removeAll { it.pluginId == pluginId }
+                if (removed) {
+                    Timber.d("从 Action 中注销了插件 [$pluginId] 的广播。")
+                }
+            }
+        }
+        Timber.i("已完成插件 [$pluginId] 的所有静态广播的注销。")
+    }
+
+    /**
+     * 为给定的 Action 查找所有匹配的插件接收器
+     * @param action 广播的动作
+     * @return 匹配的接收器信息列表
+     */
+    fun findReceiversForAction(action: String): List<ReceiverInfo> {
+        return staticReceiverRegistry[action]?.toList() ?: emptyList()
     }
 }

@@ -26,7 +26,6 @@ import org.koin.core.module.Module
  * @property Content 插件主界面
  */
 interface IPluginEntryClass {
-
     val pluginModule: List<Module>
 
     @Composable

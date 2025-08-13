@@ -27,7 +27,19 @@ data class PluginInfo(
     val entryClass: String,
     var description: String,
     val status: PluginState,
-    val installTime: Long
+    val installTime: Long,
+    val staticReceivers: List<StaticReceiverInfo> = emptyList()
+)
+
+/**
+ * 描述一个静态广播接收器的信息
+ * @param className 接收器的完整类名
+ * @param actions 它监听的所有广播动作 (action)
+ */
+@Serializable
+data class StaticReceiverInfo(
+    val className: String,
+    val actions: List<String>
 )
 
 @Serializable

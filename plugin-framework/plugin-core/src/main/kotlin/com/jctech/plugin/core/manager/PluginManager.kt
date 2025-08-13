@@ -18,7 +18,6 @@
 package com.jctech.plugin.core.manager
 
 import android.app.Application
-import android.content.res.loader.ResourcesLoader
 import android.os.Build
 import com.jctech.plugin.core.installer.InstallerManager
 import com.jctech.plugin.core.installer.XmlManager
@@ -73,7 +72,8 @@ object PluginManager : IPluginFinder {
 
     // 初始化状态标识
     @Volatile
-    private var isInitializedInternal = false
+    var isInitialized = false
+        private set
 
     // 运行时缓存目录
     private val runtimeCacheDir: File by lazy {
@@ -99,10 +99,6 @@ object PluginManager : IPluginFinder {
     // 初始化完成的锁对象
     private val initializationLock = Any()
 
-    fun isInitialized(): Boolean {
-        return isInitializedInternal
-    }
-
     /**
      * 初始化插件管理器
      *
@@ -110,14 +106,14 @@ object PluginManager : IPluginFinder {
      * @param callback 初始化完成回调
      */
     fun initialize(context: Application, callback: () -> Unit = {}) {
-        if (isInitializedInternal) {
+        if (isInitialized) {
             Timber.tag(TAG).w("PluginManager已经初始化，跳过重复初始化")
             callback()
             return
         }
 
         synchronized(initializationLock) {
-            if (isInitializedInternal) {
+            if (isInitialized) {
                 return
             }
 
@@ -132,19 +128,19 @@ object PluginManager : IPluginFinder {
 
                 clearRuntimeCache()
 
-                isInitializedInternal = true
+                isInitialized = true
 
                 Timber.tag(TAG).i("PluginManager初始化完成")
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "PluginManager初始化失败: ${e.message}")
                 // 失败时重置状态
-                isInitializedInternal = false
+                isInitialized = false
                 throw e // 仍然抛出异常，让上层知道初始化失败
             }
         }
 
         // 将回调移出同步块
-        if (isInitializedInternal) {
+        if (isInitialized) {
             callback()
         }
     }
@@ -155,7 +151,6 @@ object PluginManager : IPluginFinder {
     data class LoadedPluginInfo(
         val pluginInfo: PluginInfo,
         val classLoader: PluginClassLoader,
-        val resourcesLoader: ResourcesLoader? = null,
         val runtimeCacheFile: File? = null, // 运行时缓存文件路径
     )
 
@@ -408,6 +403,8 @@ object PluginManager : IPluginFinder {
 
             // 索引插件类（使用缓存文件）
             indexPluginClasses(plugin.pluginId, runtimeCacheFile)
+            // 注册插件的静态广播
+            proxyManager.registerStaticReceivers(plugin.pluginId, plugin.staticReceivers)
 
             // 使用缓存文件创建类加载器
             val classLoader = PluginClassLoader(
@@ -417,8 +414,8 @@ object PluginManager : IPluginFinder {
                 pluginFinder = this@PluginManager
             )
 
-            // 加载插件资源（支持所有Android版本）
-            val resourcesLoaded = try {
+            // 加载插件资源
+            try {
                 // 使用 PluginResourcesManager 加载资源（支持所有Android版本）
                 val success = resourcesManager.loadPluginResources(plugin.pluginId, runtimeCacheFile)
 
@@ -434,22 +431,9 @@ object PluginManager : IPluginFinder {
                 false
             }
 
-            // ResourcesLoader 字段现在仅用于标记是否成功加载资源
-            val resourcesLoader = if (resourcesLoaded) {
-                // 创建一个占位符，实际资源管理由 PluginResourcesManager 处理
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    ResourcesLoader() // 占位符
-                } else {
-                    null // 低版本不使用 ResourcesLoader
-                }
-            } else {
-                null
-            }
-
             LoadedPluginInfo(
                 pluginInfo = plugin,
                 classLoader = classLoader,
-                resourcesLoader = resourcesLoader,
                 runtimeCacheFile = runtimeCacheFile,
             )
         } catch (e: Exception) {
@@ -527,6 +511,8 @@ object PluginManager : IPluginFinder {
     private suspend fun unloadPlugin(pluginId: String) = withContext(Dispatchers.IO) {
         Timber.tag(TAG).i("开始卸载插件: $pluginId")
         _pluginInstances.value[pluginId]?.let { unloadKoinModules(pluginId, it) }
+        // 注销插件的静态广播
+        proxyManager.unregisterStaticReceivers(pluginId)
 
         // 原子地移除实例和加载信息
         _loadedPlugins.update { it - pluginId }

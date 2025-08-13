@@ -72,7 +72,7 @@ fun Intent.getPluginService(): IPluginService? {
 fun Context.startPluginService(cls: Class<out IPluginService>) {
     val hostServiceClass = PluginManager.proxyManager.acquireServiceProxy(cls.name)
     if (hostServiceClass == null) {
-        Timber.e("启动失败 [${cls.name}]：没有可用的代理Service。")
+        Timber.e("启动失败 [${cls.name}]：Service服务繁忙。")
         return
     }
     val intent = Intent(this, hostServiceClass)
@@ -86,7 +86,7 @@ fun Context.startPluginService(cls: Class<out IPluginService>) {
 fun Context.bindPluginService(cls: Class<out IPluginService>, connection: ServiceConnection, flags: Int): Boolean {
     val hostServiceClass = PluginManager.proxyManager.acquireServiceProxy(cls.name)
     if (hostServiceClass == null) {
-        Timber.e("绑定失败 [${cls.name}]：没有可用的代理Service。")
+        Timber.e("绑定失败 [${cls.name}]：Service服务繁忙。")
         return false
     }
     val intent = Intent(this, hostServiceClass)
@@ -100,10 +100,11 @@ fun Context.bindPluginService(cls: Class<out IPluginService>, connection: Servic
 fun Context.stopPluginService(cls: Class<out IPluginService>): Boolean {
     val hostServiceClass = PluginManager.proxyManager.getServiceProxyFor(cls.name)
     if (hostServiceClass == null) {
-        Timber.w("尝试停止一个未在运行的插件服务: ${cls.name}")
+        Timber.w("插件服务未在运行: ${cls.name}")
         return false
     }
     val intent = Intent(this, hostServiceClass)
     intent.putExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME, cls.name)
     return stopService(intent)
 }
+

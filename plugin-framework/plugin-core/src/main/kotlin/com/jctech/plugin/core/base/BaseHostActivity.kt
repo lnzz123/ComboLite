@@ -17,7 +17,6 @@
 
 package com.jctech.plugin.core.base
 
-import android.content.Intent
 import android.content.res.AssetManager
 import android.content.res.Configuration
 import android.content.res.Resources
@@ -40,10 +39,27 @@ open class BaseHostActivity : ComponentActivity() {
         private set
 
     /**
+     * 重写getResources方法，返回插件资源
+     */
+    override fun getResources(): Resources {
+        return if (PluginManager.isInitialized)
+            PluginManager.resourcesManager.getResources()
+        else super.getResources()
+    }
+    /**
+     * 重写getAssets方法，返回插件资源
+     */
+    override fun getAssets(): AssetManager {
+        return if (PluginManager.isInitialized)
+            PluginManager.resourcesManager.getResources().assets
+        else super.getAssets()
+    }
+
+    /**
      * 提供一个给子类调用的、受保护的插件初始化方法。
      * 子类在自己的 onCreate 中调用此方法来"尝试"加载插件。
      */
-    protected fun initPluginActivity(intent: Intent?) {
+    protected fun initPluginActivity() {
         try {
             intent ?: return
             pluginActivity = intent.getPluginActivity()
@@ -55,27 +71,11 @@ open class BaseHostActivity : ComponentActivity() {
     }
 
     /**
-     * 重写getResources方法，返回插件资源
-     */
-    override fun getResources(): Resources {
-        return if (PluginManager.isInitialized())
-            PluginManager.resourcesManager.getResources()
-        else super.getResources()
-    }
-    /**
-     * 重写getAssets方法，返回插件资源
-     */
-    override fun getAssets(): AssetManager {
-        return if (PluginManager.isInitialized())
-            PluginManager.resourcesManager.getResources().assets
-        else super.getAssets()
-    }
-    /**
      * 标准生命周期
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        initPluginActivity(intent)
+        initPluginActivity()
         pluginActivity?.onCreate(savedInstanceState)
     }
 

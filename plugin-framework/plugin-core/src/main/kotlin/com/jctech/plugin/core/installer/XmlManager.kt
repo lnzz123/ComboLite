@@ -23,6 +23,7 @@ import android.os.HandlerThread
 import android.util.Xml
 import com.jctech.plugin.core.model.PluginInfo
 import com.jctech.plugin.core.model.PluginState
+import com.jctech.plugin.core.model.StaticReceiverInfo
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import timber.log.Timber
@@ -51,10 +52,10 @@ import kotlin.concurrent.withLock
 class XmlManager(private val context: Application) {
 
     companion object {
-        private const val TAG = "InstallerXmlManager" // 用于日志记录的TAG
+        private const val TAG = "InstallerXmlManager"
         private const val FILENAME = "plugins.xml"
         private const val BACKUP_FILENAME = "plugins.xml.bak"
-        private const val TEMP_FILENAME = "plugins.xml.tmp" // 新增：用于原子写入的临时文件
+        private const val TEMP_FILENAME = "plugins.xml.tmp" // 用于原子写入的临时文件
 
         // XML标签常量
         private const val TAG_PLUGINS = "plugins"
@@ -68,6 +69,12 @@ class XmlManager(private val context: Application) {
         private const val ATTR_PATH = "path"
         private const val ATTR_STATUS = "status"
         private const val ATTR_INSTALL_TIME = "installTime"
+
+        // 插件静态广播接收器的标签和属性
+        private const val TAG_RECEIVERS = "receivers"
+        private const val TAG_RECEIVER = "receiver"
+        private const val TAG_ACTION = "action"
+        private const val ATTR_NAME = "name"
 
         // 延迟写入时间（毫秒）
         private const val WRITE_DELAY_MS = 500L
@@ -209,25 +216,37 @@ class XmlManager(private val context: Application) {
                 var eventType = parser.eventType
                 var currentPlugin: PluginInfo? = null
                 var lastStartTag: String? = null
+                var currentReceivers: MutableList<StaticReceiverInfo>? = null
+                var currentActions: MutableList<String>? = null
+                var currentReceiverName: String? = null
 
                 while (eventType != XmlPullParser.END_DOCUMENT) {
                     when (eventType) {
                         XmlPullParser.START_TAG -> {
                             lastStartTag = parser.name
-                            if (lastStartTag == TAG_PLUGIN) {
-                                currentPlugin = PluginInfo(
-                                    pluginId = parser.getAttributeValue(null, ATTR_ID) ?: "",
-                                    version = parser.getAttributeValue(null, ATTR_VERSION) ?: "",
-                                    entryClass = parser.getAttributeValue(null, ATTR_ENTRY_CLASS) ?: "",
-                                    path = parser.getAttributeValue(null, ATTR_PATH) ?: "",
-                                    status = if (parser.getAttributeValue(null, ATTR_STATUS) == PluginState.Enabled.name) {
-                                        PluginState.Enabled
-                                    } else {
-                                        PluginState.Disabled
-                                    },
-                                    installTime = parser.getAttributeValue(null, ATTR_INSTALL_TIME).toLongOrNull() ?: 0L,
-                                    description = "",
-                                )
+                            when (lastStartTag) {
+                                TAG_PLUGIN -> {
+                                    currentPlugin = PluginInfo(
+                                        pluginId = parser.getAttributeValue(null, ATTR_ID) ?: "",
+                                        version = parser.getAttributeValue(null, ATTR_VERSION) ?: "",
+                                        entryClass = parser.getAttributeValue(null, ATTR_ENTRY_CLASS) ?: "",
+                                        path = parser.getAttributeValue(null, ATTR_PATH) ?: "",
+                                        status = if (parser.getAttributeValue(null, ATTR_STATUS) == PluginState.Enabled.name) PluginState.Enabled else PluginState.Disabled,
+                                        installTime = parser.getAttributeValue(null, ATTR_INSTALL_TIME).toLongOrNull() ?: 0L,
+                                        description = "",
+                                        staticReceivers = emptyList()
+                                    )
+                                }
+                                TAG_RECEIVERS -> {
+                                    currentReceivers = mutableListOf()
+                                }
+                                TAG_RECEIVER -> {
+                                    currentActions = mutableListOf()
+                                    currentReceiverName = parser.getAttributeValue(null, ATTR_NAME)
+                                }
+                                TAG_ACTION -> {
+                                    currentActions?.add(parser.getAttributeValue(null, ATTR_NAME) ?: "")
+                                }
                             }
                         }
                         XmlPullParser.TEXT -> {
@@ -239,9 +258,24 @@ class XmlManager(private val context: Application) {
                             }
                         }
                         XmlPullParser.END_TAG -> {
-                            if (parser.name == TAG_PLUGIN && currentPlugin != null) {
-                                pluginList.add(currentPlugin)
-                                currentPlugin = null
+                            when (parser.name) {
+                                TAG_PLUGIN -> {
+                                    if (currentPlugin != null) {
+                                        val finalPlugin = currentPlugin.copy(staticReceivers = currentReceivers ?: emptyList())
+                                        pluginList.add(finalPlugin)
+                                        currentPlugin = null
+                                        currentReceivers = null
+                                    }
+                                }
+                                TAG_RECEIVER -> {
+                                    if (currentReceiverName != null && currentActions != null) {
+                                        currentReceivers?.add(StaticReceiverInfo(currentReceiverName,
+                                            currentActions
+                                        ))
+                                    }
+                                    currentReceiverName = null
+                                    currentActions = null
+                                }
                             }
                             lastStartTag = null
                         }
@@ -322,6 +356,20 @@ class XmlManager(private val context: Application) {
                         serializer.text(plugin.description)
                         serializer.endTag(null, TAG_DESCRIPTION)
                     }
+                    if (plugin.staticReceivers.isNotEmpty()) {
+                        serializer.startTag(null, TAG_RECEIVERS)
+                        plugin.staticReceivers.forEach { receiverInfo ->
+                            serializer.startTag(null, TAG_RECEIVER)
+                            serializer.attribute(null, ATTR_NAME, receiverInfo.className)
+                            receiverInfo.actions.forEach { action ->
+                                serializer.startTag(null, TAG_ACTION)
+                                serializer.attribute(null, ATTR_NAME, action)
+                                serializer.endTag(null, TAG_ACTION)
+                            }
+                            serializer.endTag(null, TAG_RECEIVER)
+                        }
+                        serializer.endTag(null, TAG_RECEIVERS)
+                    }
                     serializer.endTag(null, TAG_PLUGIN)
                 }
 
@@ -367,11 +415,9 @@ class XmlManager(private val context: Application) {
      * 在短时间内的多次修改只会触发一次磁盘写入
      */
     private fun scheduleDelayedWrite() {
-        // 先移除所有之前未执行的延迟写入任务
         writeHandler.removeCallbacks(delayedWriteRunnable)
-        // 调度新的延迟写入任务
         writeHandler.postDelayed(delayedWriteRunnable, WRITE_DELAY_MS)
-        hasUnsavedChanges.set(true) // 标记有未保存的更改
+        hasUnsavedChanges.set(true)
         Timber.tag(TAG).d("延迟写入已调度。")
     }
 

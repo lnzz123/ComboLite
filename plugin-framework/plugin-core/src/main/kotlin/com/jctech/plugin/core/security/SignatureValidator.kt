@@ -61,14 +61,14 @@ class SignatureValidator(context: Context) {
         }
 
         // 2. 获取插件的签名
-        val pluginSigs = getSigningSignatures(context, pluginApkFile.absolutePath, isApkFile = true)
-        if (pluginSigs.isNullOrEmpty()) {
+        val pluginSigns = getSigningSignatures(context, pluginApkFile.absolutePath, isApkFile = true)
+        if (pluginSigns.isNullOrEmpty()) {
             Timber.e("Could not get plugin signatures from %s. Validation failed.", pluginApkFile.name)
             return false
         }
 
         // 3. 比对签名集合
-        val isValid = hostSigns.containsAll(pluginSigs)
+        val isValid = hostSigns.containsAll(pluginSigns)
         Timber.i("Validation result for '%s': %s", pluginApkFile.name, if (isValid) "SUCCESS" else "FAILED")
 
         return isValid
@@ -102,17 +102,12 @@ class SignatureValidator(context: Context) {
 
             if (packageInfo == null) return null
 
-            // 从 Android P (API 28) 开始，推荐使用 signingInfo
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 val signingInfo = packageInfo.signingInfo
                 if (signingInfo == null) return null
-
-                // hasMultipleSigners()会检查是否存在多个签名者证书
                 if (signingInfo.hasMultipleSigners()) {
-                    // 如果有多个签名者，返回APK轮换签名方案(v3)的所有历史签名
                     signingInfo.apkContentsSigners.toMutableSet()
                 } else {
-                    // 如果是单一签名者，返回其签名
                     signingInfo.signingCertificateHistory?.firstOrNull()?.let { mutableSetOf(it) }
                 }
             } else {

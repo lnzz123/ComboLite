@@ -26,7 +26,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
 /**
- * Compose插件框架Application基类
+ * 宿主端的插件框架Application基类
  * 用于初始化插件框架，加载插件
  */
 open class BaseHostApplication : Application() {

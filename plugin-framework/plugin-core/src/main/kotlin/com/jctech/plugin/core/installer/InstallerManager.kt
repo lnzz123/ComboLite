@@ -18,9 +18,11 @@
 package com.jctech.plugin.core.installer
 
 import android.app.Application
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import com.jctech.plugin.core.model.PluginInfo
 import com.jctech.plugin.core.model.PluginState
+import com.jctech.plugin.core.model.StaticReceiverInfo
 import com.jctech.plugin.core.security.SignatureValidator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -44,7 +46,6 @@ class InstallerManager(
     private val context: Application,
     private val xmlManager: XmlManager,
 ) {
-
     companion object {
         private const val TAG = "PluginInstaller"
         private const val PLUGINS_DIR = "plugins"
@@ -130,7 +131,10 @@ class InstallerManager(
                 Timber.tag(TAG).i("检测到插件版本升级: ${pluginConfig.pluginId} ($currentVersion -> $newVersion)")
             }
 
-            // 5. 如果是更新安装，备份当前插件文件
+            // 5. 解析静态广播接收器
+            val staticReceivers = parseStaticReceivers(pluginApkFile.absolutePath)
+
+            // 6. 如果是更新安装，备份当前插件文件
             var backupFile: File? = null
             if (existingPlugin != null) {
                 val currentPluginFile = File(existingPlugin.path)
@@ -146,7 +150,7 @@ class InstallerManager(
                 }
             }
 
-            // 6. 异步复制插件文件到目标目录
+            // 7. 异步复制插件文件到目标目录
             val targetFile = copyPluginFile(pluginApkFile, pluginConfig.pluginId)
             if (targetFile == null) {
                 // 恢复备份文件
@@ -163,7 +167,7 @@ class InstallerManager(
                 return@withContext InstallResult.Failure("插件文件复制失败")
             }
 
-            // 7. 记录或更新插件信息到plugins.xml
+            // 8. 记录或更新插件信息到plugins.xml
             val pluginInfo = PluginInfo(
                 pluginId = pluginConfig.pluginId,
                 version = pluginConfig.pluginVersion,
@@ -171,7 +175,8 @@ class InstallerManager(
                 entryClass = pluginConfig.entryClass,
                 description = pluginConfig.pluginDescription,
                 status = existingPlugin?.status ?: PluginState.Enabled,
-                installTime = existingPlugin?.installTime ?: System.currentTimeMillis(), // 更新保持原安装时间
+                installTime = existingPlugin?.installTime ?: System.currentTimeMillis(),
+                staticReceivers = staticReceivers
             )
 
             if (existingPlugin != null) {
@@ -184,7 +189,7 @@ class InstallerManager(
             
             xmlManager.flushToDisk() // 立即保存到磁盘
 
-            // 8. 清理备份文件
+            // 9. 清理备份文件
             if (backupFile?.exists() == true) {
                 backupFile.delete()
                 Timber.tag(TAG).d("备份文件已清理")
@@ -243,8 +248,6 @@ class InstallerManager(
             return false
         }
     }
-
-
 
     /**
      * 比较两个版本号
@@ -359,6 +362,47 @@ class InstallerManager(
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "解析插件元数据配置失败: ${e.message}")
             return null
+        }
+    }
+
+    /**
+     * 使用 PackageManager 解析 APK 文件中的静态广播接收器信息。
+     * @param apkPath 插件 APK 的文件路径。
+     * @return 解析出的静态广播信息列表。
+     */
+    private fun parseStaticReceivers(apkPath: String): List<StaticReceiverInfo> {
+        val pm = context.packageManager
+        try {
+            val packageInfo = pm.getPackageArchiveInfo(apkPath, PackageManager.GET_RECEIVERS)
+            val receivers = mutableListOf<StaticReceiverInfo>()
+            packageInfo?.receivers?.forEach { activityInfo ->
+                val className = activityInfo.name
+                val actions = mutableListOf<String>()
+
+                try {
+                    val intentFilterField = activityInfo.javaClass.getDeclaredField("intents")
+                    intentFilterField.isAccessible = true
+                    @Suppress("UNCHECKED_CAST")
+                    val intents = intentFilterField.get(activityInfo) as? Array<IntentFilter>
+
+                    intents?.forEach { filter ->
+                        for (i in 0 until filter.countActions()) {
+                            actions.add(filter.getAction(i))
+                        }
+                    }
+                } catch (e: Exception) {
+                    Timber.tag(TAG).e(e, "解析Action失败: $className")
+                }
+
+                if (actions.isNotEmpty()) {
+                    receivers.add(StaticReceiverInfo(className, actions))
+                    Timber.tag(TAG).d("解析到静态广播: $className, actions: $actions")
+                }
+            }
+            return receivers
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "解析APK文件静态广播失败: $apkPath")
+            return emptyList()
         }
     }
 
