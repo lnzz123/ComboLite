@@ -24,7 +24,6 @@ import org.koin.core.context.loadKoinModules
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import timber.log.Timber
-import kotlin.jvm.java
 
 /**
  * IHUB Compose应用入口

@@ -19,7 +19,6 @@ package com.jctech.plugin.core.resources
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.content.Context
 import android.content.res.AssetManager
 import android.content.res.Resources
 import android.content.res.loader.ResourcesLoader
@@ -73,9 +72,7 @@ class PluginResourcesManager(
      * 这个方法会被 BaseComposeActivity.getResources() 调用
      * 绕过系统缓存机制，始终返回包含所有插件资源的最新实例
      */
-    fun getResources(): Resources {
-        return _mResources.value
-    }
+    fun getResources(): Resources = _mResources.value
 
     /**
      * 从插件文件加载并添加资源到宿主应用
@@ -83,24 +80,28 @@ class PluginResourcesManager(
      * @param pluginFile 插件文件
      * @return 是否加载成功
      */
-    fun loadPluginResources(pluginId: String, pluginFile: File): Boolean {
+    fun loadPluginResources(
+        pluginId: String,
+        pluginFile: File,
+    ): Boolean {
         return try {
             Timber.tag(TAG).d("开始加载插件资源: $pluginId (Android ${Build.VERSION.SDK_INT})")
 
             // 检查插件文件是否存在
-            if (!pluginFile.exists()) {
+            if (! pluginFile.exists()) {
                 Timber.tag(TAG).e("插件文件不存在: ${pluginFile.absolutePath}")
                 return false
             }
 
             // 根据 Android 版本选择不同的资源加载策略
-            val success = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // Android 11+: 使用官方 ResourcesLoader AP
-                loadResourcesWithResourcesLoader(pluginId, pluginFile)
-            } else {
-                // Android11以下: 使用 AssetManager.addAssetPath 反射API
-                loadResourcesWithAddAssetPath(pluginId, pluginFile)
-            }
+            val success =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    // Android 11+: 使用官方 ResourcesLoader AP
+                    loadResourcesWithResourcesLoader(pluginId, pluginFile)
+                } else {
+                    // Android11以下: 使用 AssetManager.addAssetPath 反射API
+                    loadResourcesWithAddAssetPath(pluginId, pluginFile)
+                }
 
             if (success) {
                 // 记录插件文件
@@ -121,7 +122,10 @@ class PluginResourcesManager(
      * Android 11+ 使用 ResourcesLoader API 加载资源
      */
     @RequiresApi(Build.VERSION_CODES.R)
-    private fun loadResourcesWithResourcesLoader(pluginId: String, pluginFile: File): Boolean {
+    private fun loadResourcesWithResourcesLoader(
+        pluginId: String,
+        pluginFile: File,
+    ): Boolean {
         return try {
             Timber.tag(TAG).d("使用 ResourcesLoader API 加载资源: $pluginId")
 
@@ -150,7 +154,10 @@ class PluginResourcesManager(
      * Android 11以下使用 AssetManager.addAssetPath 反射API加载资源
      */
     @SuppressLint("DiscouragedPrivateApi")
-    private fun loadResourcesWithAddAssetPath(pluginId: String, pluginFile: File): Boolean {
+    private fun loadResourcesWithAddAssetPath(
+        pluginId: String,
+        pluginFile: File,
+    ): Boolean {
         return try {
             Timber.tag(TAG).d("使用 addAssetPath 反射API加载资源: $pluginId")
 
@@ -158,7 +165,8 @@ class PluginResourcesManager(
             val assetManager = _mResources.value.assets
 
             // 使用反射调用 addAssetPath 方法
-            val addAssetPathMethod = AssetManager::class.java.getDeclaredMethod("addAssetPath", String::class.java)
+            val addAssetPathMethod =
+                AssetManager::class.java.getDeclaredMethod("addAssetPath", String::class.java)
             addAssetPathMethod.isAccessible = true
             val result = addAssetPathMethod.invoke(assetManager, pluginFile.absolutePath) as Int
 
@@ -200,6 +208,7 @@ class PluginResourcesManager(
                     // Android 11+: 移除特定的 ResourcesLoader
                     removeResourcesLoaderForPlugin(pluginId)
                 }
+
                 else -> {
                     // Android 11以下: 需要重新构建整个 AssetManager
                     rebuildAllResourcesForLowerVersions()
@@ -278,6 +287,7 @@ class PluginResourcesManager(
                     // Android 11+: ResourcesLoader 已经自动刷新，无需额外操作
                     Timber.tag(TAG).d("Android 11+ 资源自动更新")
                 }
+
                 else -> {
                     // Android 11以下: 重新构建资源
                     rebuildAllResourcesForLowerVersions()
@@ -296,8 +306,11 @@ class PluginResourcesManager(
      * @param pluginFile 新的插件文件
      * @return 是否更新成功
      */
-    fun updatePluginResources(pluginId: String, pluginFile: File): Boolean {
-        return try {
+    fun updatePluginResources(
+        pluginId: String,
+        pluginFile: File,
+    ): Boolean =
+        try {
             Timber.tag(TAG).d("更新插件资源: $pluginId")
 
             // 先移除旧资源，再加载新资源
@@ -315,14 +328,11 @@ class PluginResourcesManager(
             Timber.tag(TAG).e(e, "更新插件资源失败: $pluginId")
             false
         }
-    }
 
     /**
      * 获取已加载的插件ID列表
      */
-    fun getLoadedPluginIds(): Set<String> {
-        return loadedPluginFiles.keys.toSet()
-    }
+    fun getLoadedPluginIds(): Set<String> = loadedPluginFiles.keys.toSet()
 
     /**
      * 清理所有插件资源
@@ -339,6 +349,7 @@ class PluginResourcesManager(
                     }
                     resourcesLoaderMap.clear()
                 }
+
                 else -> {
                     // Android 11以下: 重置为原始应用资源
                     _mResources.value = context.resources

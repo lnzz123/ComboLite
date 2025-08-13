@@ -27,17 +27,15 @@ open class BasePluginService : IPluginService {
 
     override fun onCreate() {}
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return Service.START_NOT_STICKY
-    }
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int = Service.START_NOT_STICKY
 
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
-    }
+    override fun onBind(intent: Intent?): IBinder? = null
 
-    override fun onUnbind(intent: Intent?): Boolean {
-        return false
-    }
+    override fun onUnbind(intent: Intent?): Boolean = false
 
     override fun onRebind(intent: Intent?) {}
 

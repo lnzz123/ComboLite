@@ -15,14 +15,14 @@ import com.jctech.plugin.sample.common.navigation.AppScreen
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun AppNavHost(
-  navHostController: NavHostController,
+    navHostController: NavHostController,
 ) {
-  SharedTransitionLayout {
-    NavHost(
-      navController = navHostController,
-      startDestination = AppScreen.Home,
-    ) {
-      appNavigation(sharedTransitionScope = this@SharedTransitionLayout)
+    SharedTransitionLayout {
+        NavHost(
+            navController = navHostController,
+            startDestination = AppScreen.Home,
+        ) {
+            appNavigation(sharedTransitionScope = this@SharedTransitionLayout)
+        }
     }
-  }
 }

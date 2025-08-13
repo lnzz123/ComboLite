@@ -11,8 +11,10 @@ import com.jctech.plugin.sample.common.viewmodel.BaseUiState
 enum class PluginStatus {
     /** 插件未安装 */
     NOT_INSTALLED,
+
     /** 插件已安装但未启动 */
     INSTALLED_NOT_STARTED,
+
     /** 插件已安装且已启动 */
     INSTALLED_AND_STARTED
 }

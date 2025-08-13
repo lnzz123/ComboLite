@@ -10,14 +10,14 @@ import kotlinx.serialization.Serializable
  */
 sealed interface AppScreen {
 
-  @Serializable
-  data object Home : AppScreen
+    @Serializable
+    data object Home : AppScreen
 
 
-  @Serializable
-  data object ScreenTwo : AppScreen
+    @Serializable
+    data object ScreenTwo : AppScreen
 
 
-  @Serializable
-  data object ScreenOne : AppScreen
+    @Serializable
+    data object ScreenOne : AppScreen
 }

@@ -37,7 +37,6 @@ import java.io.File
  * - 不涉及资源的生命周期管理
  */
 object PluginResourcesLoader {
-
     private const val TAG = "PluginResourcesLoader"
 
     /**
@@ -49,7 +48,7 @@ object PluginResourcesLoader {
     @RequiresApi(Build.VERSION_CODES.R)
     fun loadPluginResources(pluginFile: File): ResourcesLoader? {
         return try {
-            if (!pluginFile.exists()) {
+            if (! pluginFile.exists()) {
                 Timber.tag(TAG).e("插件文件未找到: ${pluginFile.path}")
                 return null
             }
@@ -58,7 +57,8 @@ object PluginResourcesLoader {
 
             try {
                 val assetsProvider = PluginAssetsProvider(pluginFile)
-                val parcelFd = ParcelFileDescriptor.open(pluginFile, ParcelFileDescriptor.MODE_READ_ONLY)
+                val parcelFd =
+                    ParcelFileDescriptor.open(pluginFile, ParcelFileDescriptor.MODE_READ_ONLY)
                 val resourcesProvider = ResourcesProvider.loadFromApk(parcelFd, assetsProvider)
                 resourcesLoader.addProvider(resourcesProvider)
                 Timber.tag(TAG).d("插件资源提供器配置成功: ${pluginFile.name}")

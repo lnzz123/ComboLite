@@ -18,7 +18,6 @@ import timber.log.Timber
  * 然后将广播事件分发给一个或多个匹配的插件 IPluginReceiver。
  */
 open class BaseHostReceiver : BroadcastReceiver() {
-
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     /**
@@ -26,10 +25,13 @@ open class BaseHostReceiver : BroadcastReceiver() {
      * @param context 上下文
      * @param intent 包含广播动作和数据的Intent
      */
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(
+        context: Context,
+        intent: Intent,
+    ) {
         val action = intent.action ?: return
         Timber.d("BaseHostReceiver 接收到广播: $action")
-        
+
         val pendingResult = goAsync()
 
         coroutineScope.launch {
@@ -49,10 +51,12 @@ open class BaseHostReceiver : BroadcastReceiver() {
                 targetReceivers.forEach { receiverInfo ->
                     Timber.d("准备分发广播 [$action] 到插件 [${receiverInfo.pluginId}] 的 [${receiverInfo.className}]")
                     try {
-                        val pluginReceiver = PluginManager.getInterface(IPluginReceiver::class.java, receiverInfo.className)
+                        val pluginReceiver = PluginManager.getInterface(
+                            IPluginReceiver::class.java,
+                            receiverInfo.className
+                        )
 
                         pluginReceiver?.onReceive(context, intent)
-
                     } catch (e: Exception) {
                         Timber.e(e, "分发广播到 [${receiverInfo.className}] 时发生错误。")
                     }

@@ -12,11 +12,11 @@ import androidx.compose.runtime.compositionLocalOf
  * 这是使用Composition Local机制让导航器可在整个Composable层次结构中使用的关键部分
  */
 val LocalComposeNavigator: ProvidableCompositionLocal<AppComposeNavigator<AppScreen>> =
-  compositionLocalOf {
-    error(
-      "未提供 AppComposeNavigator！",
-    )
-  }
+    compositionLocalOf {
+        error(
+            "未提供 AppComposeNavigator！",
+        )
+    }
 
 /**
  * 当前导航器访问扩展属性
@@ -25,6 +25,6 @@ val LocalComposeNavigator: ProvidableCompositionLocal<AppComposeNavigator<AppScr
  * 使用@Composable和@ReadOnlyComposable注解确保在组合阶段安全访问
  */
 val currentComposeNavigator: AppComposeNavigator<AppScreen>
-  @Composable
-  @ReadOnlyComposable
-  get() = LocalComposeNavigator.current
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalComposeNavigator.current

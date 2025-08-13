@@ -40,23 +40,23 @@ open class PluginClassLoader(
     optimizedDirectory: String?,
     librarySearchPath: String?,
     parent: ClassLoader?,
-    private val pluginFinder: IPluginFinder?
+    private val pluginFinder: IPluginFinder?,
 ) : DexClassLoader(dexPath, optimizedDirectory, librarySearchPath, parent) {
-
     constructor(
         pluginId: String,
         pluginFile: File,
         parent: ClassLoader,
-        pluginFinder: IPluginFinder?
+        pluginFinder: IPluginFinder?,
     ) : this(
         pluginId = pluginId,
         dexPath = pluginFile.absolutePath,
-        optimizedDirectory = File(pluginFile.parent, "dex_opt").absolutePath.also {
-            File(it).mkdirs()
-        },
+        optimizedDirectory =
+            File(pluginFile.parent, "dex_opt").absolutePath.also {
+                File(it).mkdirs()
+            },
         librarySearchPath = null,
         parent = parent,
-        pluginFinder = pluginFinder
+        pluginFinder = pluginFinder,
     )
 
     /**
@@ -82,9 +82,7 @@ open class PluginClassLoader(
      * 它打破了递归链，因为它不会再回调 pluginFinder。
      */
     @Throws(ClassNotFoundException::class)
-    fun findClassLocally(name: String): Class<*> {
-        return super.findClass(name)
-    }
+    fun findClassLocally(name: String): Class<*> = super.findClass(name)
 
     /**
      * 获取指定接口的实现实例
@@ -106,8 +104,11 @@ open class PluginClassLoader(
      *
      * @throws SecurityException 当访问被安全管理器拒绝时
      */
-    fun <T> getInterface(interfaceClass: Class<T>, className: String): T? {
-        return try {
+    fun <T> getInterface(
+        interfaceClass: Class<T>,
+        className: String,
+    ): T? =
+        try {
             // 加载指定的实现类
             val clazz = loadClass(className)
 
@@ -126,5 +127,4 @@ open class PluginClassLoader(
             Timber.e(e, "加载接口实现类失败: $className")
             null
         }
-    }
 }

@@ -35,11 +35,10 @@ internal object ExtConstant {
  * 从Intent中获取插件Activity
  * @return IPluginActivity的实例，如果找不到则返回null。
  */
-fun Intent.getPluginActivity(): IPluginActivity? {
-    return getStringExtra(PLUGIN_ACTIVITY_CLASS_NAME)?.let {
+fun Intent.getPluginActivity(): IPluginActivity? =
+    getStringExtra(PLUGIN_ACTIVITY_CLASS_NAME)?.let {
         PluginManager.getInterface(IPluginActivity::class.java, it)
     }
-}
 
 /**
  * 跳转插件Activity
@@ -60,11 +59,10 @@ fun Context.startPluginActivity(cls: Class<out IPluginActivity>) {
  * 从Intent中获取插件Service的实例。
  * @return IPluginService的实例，如果找不到则返回null。
  */
-fun Intent.getPluginService(): IPluginService? {
-    return getStringExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME)?.let {
+fun Intent.getPluginService(): IPluginService? =
+    getStringExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME)?.let {
         PluginManager.getInterface(IPluginService::class.java, it)
     }
-}
 
 /**
  * 启动一个插件Service。
@@ -83,7 +81,11 @@ fun Context.startPluginService(cls: Class<out IPluginService>) {
 /**
  * 绑定到一个插件Service。
  */
-fun Context.bindPluginService(cls: Class<out IPluginService>, connection: ServiceConnection, flags: Int): Boolean {
+fun Context.bindPluginService(
+    cls: Class<out IPluginService>,
+    connection: ServiceConnection,
+    flags: Int,
+): Boolean {
     val hostServiceClass = PluginManager.proxyManager.acquireServiceProxy(cls.name)
     if (hostServiceClass == null) {
         Timber.e("绑定失败 [${cls.name}]：Service服务繁忙。")
@@ -107,4 +109,3 @@ fun Context.stopPluginService(cls: Class<out IPluginService>): Boolean {
     intent.putExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME, cls.name)
     return stopService(intent)
 }
-

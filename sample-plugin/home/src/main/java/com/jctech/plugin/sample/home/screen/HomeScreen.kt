@@ -16,13 +16,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.jctech.plugin.sample.common.component.EmptyPage
-import com.jctech.plugin.sample.home.viewmodel.HomeViewModel
 import com.jctech.plugin.sample.home.state.PluginStatus
+import com.jctech.plugin.sample.home.viewmodel.HomeViewModel
 import org.koin.androidx.compose.koinViewModel
 
 /**
  * 主页屏幕
- * 
+ *
  * 提供插件测试功能的主界面，包含导航、插件管理等功能
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,9 +65,10 @@ fun HomeScreen(
                         PluginStatus.INSTALLED_NOT_STARTED -> "启动插件"
                         PluginStatus.INSTALLED_AND_STARTED -> "进入插件"
                     },
-                    onButtonClick = {  }
+                    onButtonClick = { }
                 )
             }
+
             AppDestinations.SAMPLE -> {
                 val pluginStatus = viewModel.getPluginStatus("sample")
                 EmptyPage(
@@ -82,9 +83,10 @@ fun HomeScreen(
                         PluginStatus.INSTALLED_NOT_STARTED -> "启动插件"
                         PluginStatus.INSTALLED_AND_STARTED -> "进入插件"
                     },
-                    onButtonClick = {  }
+                    onButtonClick = { }
                 )
             }
+
             AppDestinations.SETTING -> {
                 val pluginStatus = viewModel.getPluginStatus("setting")
                 EmptyPage(
@@ -99,7 +101,7 @@ fun HomeScreen(
                         PluginStatus.INSTALLED_NOT_STARTED -> "启动插件"
                         PluginStatus.INSTALLED_AND_STARTED -> "进入插件"
                     },
-                    onButtonClick = {  }
+                    onButtonClick = { }
                 )
             }
         }

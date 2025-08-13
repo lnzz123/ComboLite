@@ -13,6 +13,7 @@ open class BasePluginActivity : IPluginActivity {
      */
     protected var proxyActivity: ComponentActivity? = null
         private set
+
     /**
      * 当宿主加载插件时，会通过这个方法把自身（代理Activity）传递进来。
      */
@@ -40,8 +41,9 @@ open class BasePluginActivity : IPluginActivity {
         requestCode: Int,
         permissions: Array<out String?>,
         grantResults: IntArray,
-        deviceId: Int
-    ) {}
+        deviceId: Int,
+    ) {
+    }
 
     override fun onSaveInstanceState(outState: Bundle) {}
 
@@ -51,15 +53,15 @@ open class BasePluginActivity : IPluginActivity {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {}
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean? {
-        return null
-    }
+    override fun onKeyDown(
+        keyCode: Int,
+        event: KeyEvent?,
+    ): Boolean? = null
 
-    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean? {
-        return null
-    }
+    override fun onKeyUp(
+        keyCode: Int,
+        event: KeyEvent?,
+    ): Boolean? = null
 
-    override fun onTouchEvent(event: MotionEvent?): Boolean? {
-        return null
-    }
+    override fun onTouchEvent(event: MotionEvent?): Boolean? = null
 }

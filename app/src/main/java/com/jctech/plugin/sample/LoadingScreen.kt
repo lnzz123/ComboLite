@@ -22,7 +22,7 @@ import org.koin.androidx.compose.koinViewModel
 
 /**
  * 加载页面
- * 
+ *
  * 在插件框架初始化期间显示的加载界面
  */
 @Composable

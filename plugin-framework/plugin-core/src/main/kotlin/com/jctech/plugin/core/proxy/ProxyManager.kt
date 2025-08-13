@@ -14,13 +14,17 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * 它被设计为一个可配置的管理器，通过独立的 set 方法来注册不同组件的代理。
  * - **Activity**: 采用单一宿主模式，整个应用共享一个代理 Activity 类。
  * - **Service**: 采用代理池模式，通过一个预设的代理 Service 池来支持多个插件 Service 并发运行。
+ * - **BroadcastReceiver**: 采用解析注册模式。
+ *
+ * 该类的设计目标是提供一种灵活、可扩展的组件代理机制，
+ * 以支持插件化架构中的组件通信和生命周期管理。
  */
 class ProxyManager {
     /**
      * 存储已注册的、用于代理所有插件 Activity 的单一宿主 Activity 类。
      */
     private var hostActivityClass: Class<out BaseHostActivity>? = null
-    
+
     /**
      * 存储当前可用的代理 Service。这是一个线程安全的队列，用于快速分配。
      */
@@ -43,7 +47,10 @@ class ProxyManager {
     /**
      * 一个内部数据类，用于在注册表中存储接收器的关键信息
      */
-    data class ReceiverInfo(val pluginId: String, val className: String)
+    data class ReceiverInfo(
+        val pluginId: String,
+        val className: String,
+    )
 
     /**
      * 设置 Activity 组件的代理宿主。
@@ -131,24 +138,27 @@ class ProxyManager {
      * @param pluginServiceClassName 插件 Service 的完整类名。
      * @return 正在代理它的 HostService 的 Class 对象；如果该插件未运行，则返回 null。
      */
-    fun getServiceProxyFor(pluginServiceClassName: String): Class<out BaseHostService>? {
-        return activeServiceProxies[pluginServiceClassName]
-    }
+    fun getServiceProxyFor(pluginServiceClassName: String): Class<out BaseHostService>? =
+        activeServiceProxies[pluginServiceClassName]
 
     /**
      * 注册一个插件的所有静态广播
      * @param pluginId 插件的ID
      * @param receivers 该插件包含的静态广播列表
      */
-    fun registerStaticReceivers(pluginId: String, receivers: List<StaticReceiverInfo>) {
+    fun registerStaticReceivers(
+        pluginId: String,
+        receivers: List<StaticReceiverInfo>,
+    ) {
         if (receivers.isEmpty()) return
 
         receivers.forEach { receiverInfo ->
             receiverInfo.actions.forEach { action ->
                 val receiverList = staticReceiverRegistry.getOrPut(action) { mutableListOf() }
                 synchronized(receiverList) {
-                    val exists = receiverList.any { it.pluginId == pluginId && it.className == receiverInfo.className }
-                    if (!exists) {
+                    val exists =
+                        receiverList.any { it.pluginId == pluginId && it.className == receiverInfo.className }
+                    if (! exists) {
                         receiverList.add(ReceiverInfo(pluginId, receiverInfo.className))
                     }
                 }
@@ -178,7 +188,6 @@ class ProxyManager {
      * @param action 广播的动作
      * @return 匹配的接收器信息列表
      */
-    fun findReceiversForAction(action: String): List<ReceiverInfo> {
-        return staticReceiverRegistry[action]?.toList() ?: emptyList()
-    }
+    fun findReceiversForAction(action: String): List<ReceiverInfo> =
+        staticReceiverRegistry[action]?.toList() ?: emptyList()
 }

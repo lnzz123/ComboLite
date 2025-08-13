@@ -22,7 +22,7 @@ import com.jctech.plugin.core.interfaces.IPluginEntryClass
 import com.jctech.plugin.sample.common.di.navigationModule
 import org.koin.core.module.Module
 
-class PluginEntryClass: IPluginEntryClass {
+class PluginEntryClass : IPluginEntryClass {
     override val pluginModule: List<Module>
         get() = listOf(
             navigationModule

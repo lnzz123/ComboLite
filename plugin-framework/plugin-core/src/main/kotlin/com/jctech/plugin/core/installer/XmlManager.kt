@@ -49,8 +49,9 @@ import kotlin.concurrent.withLock
  *
  * 注意：此类已改造为支持Koin依赖注入
  */
-class XmlManager(private val context: Application) {
-
+class XmlManager(
+    private val context: Application,
+) {
     companion object {
         private const val TAG = "InstallerXmlManager"
         private const val FILENAME = "plugins.xml"
@@ -88,7 +89,8 @@ class XmlManager(private val context: Application) {
         File(context.filesDir, BACKUP_FILENAME)
     }
 
-    private val tempConfigFile: File by lazy { // 新增：临时文件
+    private val tempConfigFile: File by lazy {
+        // 新增：临时文件
         File(context.filesDir, TEMP_FILENAME)
     }
 
@@ -113,20 +115,22 @@ class XmlManager(private val context: Application) {
     private val writeHandler = Handler(handlerThread.looper)
 
     // 延迟写入任务 (使用 val，每次取消并重新 post)
-    private val delayedWriteRunnable = Runnable {
-        writeLock.withLock { // 直接尝试获取写锁，确保独占访问
-            if (hasUnsavedChanges.get()) { // 在获取写锁后再次检查
-                try {
-                    Timber.tag(TAG).d("正在执行延迟写入到磁盘...")
-                    writePluginsToDisk()
-                    hasUnsavedChanges.set(false) // 写入成功后清除标记
-                    Timber.tag(TAG).d("延迟写入成功。")
-                } catch (e: Exception) {
-                    Timber.tag(TAG).e(e, "延迟写入到磁盘时发生错误: ${e.message}")
+    private val delayedWriteRunnable =
+        Runnable {
+            writeLock.withLock {
+                // 直接尝试获取写锁，确保独占访问
+                if (hasUnsavedChanges.get()) { // 在获取写锁后再次检查
+                    try {
+                        Timber.tag(TAG).d("正在执行延迟写入到磁盘...")
+                        writePluginsToDisk()
+                        hasUnsavedChanges.set(false) // 写入成功后清除标记
+                        Timber.tag(TAG).d("延迟写入成功。")
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).e(e, "延迟写入到磁盘时发生错误: ${e.message}")
+                    }
                 }
             }
         }
-    }
 
     init {
         // 初始化时加载缓存
@@ -159,7 +163,7 @@ class XmlManager(private val context: Application) {
      */
     private fun initializeCache() {
         write {
-            if (!cacheInitialized) {
+            if (! cacheInitialized) {
                 try {
                     val plugins = loadPluginsFromDisk()
                     pluginCache.clear()
@@ -168,15 +172,18 @@ class XmlManager(private val context: Application) {
                     }
                     cacheInitialized = true
                     hasUnsavedChanges.set(false)
-                    Timber.tag(TAG)
+                    Timber
+                        .tag(TAG)
                         .i("缓存已从 $FILENAME 初始化，已加载 ${pluginCache.size} 个插件。")
-                } catch (e: IOException) { // 捕获更具体的 IOException
+                } catch (e: IOException) {
+                    // 捕获更具体的 IOException
                     Timber.tag(TAG).e(
                         e,
                         "从主文件加载插件失败: ${e.message}。正在尝试从备份文件恢复。",
                     )
                     tryRestoreFromBackup()
-                } catch (e: Exception) { // 捕获其他未知异常
+                } catch (e: Exception) {
+                    // 捕获其他未知异常
                     Timber.tag(TAG).e(
                         e,
                         "缓存初始化过程中发生意外错误: ${e.message}。",
@@ -200,7 +207,7 @@ class XmlManager(private val context: Application) {
         val targetFile = if (useBackup) backupConfigFile else pluginsConfigFile
         Timber.tag(TAG).d("正在尝试从以下位置加载插件: ${targetFile.absolutePath}")
 
-        if (!targetFile.exists()) {
+        if (! targetFile.exists()) {
             Timber.tag(TAG).d("${targetFile.name} 不存在。返回空列表。")
             return emptyList()
         }
@@ -208,9 +215,12 @@ class XmlManager(private val context: Application) {
         val pluginList = mutableListOf<PluginInfo>()
         try {
             FileInputStream(targetFile).use { fis ->
-                val parser = XmlPullParserFactory.newInstance().apply {
-                    isNamespaceAware = true
-                }.newPullParser()
+                val parser =
+                    XmlPullParserFactory
+                        .newInstance()
+                        .apply {
+                            isNamespaceAware = true
+                        }.newPullParser()
                 parser.setInput(fis, StandardCharsets.UTF_8.name())
 
                 var eventType = parser.eventType
@@ -226,52 +236,81 @@ class XmlManager(private val context: Application) {
                             lastStartTag = parser.name
                             when (lastStartTag) {
                                 TAG_PLUGIN -> {
-                                    currentPlugin = PluginInfo(
-                                        pluginId = parser.getAttributeValue(null, ATTR_ID) ?: "",
-                                        version = parser.getAttributeValue(null, ATTR_VERSION) ?: "",
-                                        entryClass = parser.getAttributeValue(null, ATTR_ENTRY_CLASS) ?: "",
-                                        path = parser.getAttributeValue(null, ATTR_PATH) ?: "",
-                                        status = if (parser.getAttributeValue(null, ATTR_STATUS) == PluginState.Enabled.name) PluginState.Enabled else PluginState.Disabled,
-                                        installTime = parser.getAttributeValue(null, ATTR_INSTALL_TIME).toLongOrNull() ?: 0L,
-                                        description = "",
-                                        staticReceivers = emptyList()
-                                    )
+                                    currentPlugin =
+                                        PluginInfo(
+                                            pluginId = parser.getAttributeValue(null, ATTR_ID)
+                                                ?: "",
+                                            version = parser.getAttributeValue(null, ATTR_VERSION)
+                                                ?: "",
+                                            entryClass = parser.getAttributeValue(
+                                                null,
+                                                ATTR_ENTRY_CLASS
+                                            ) ?: "",
+                                            path = parser.getAttributeValue(null, ATTR_PATH) ?: "",
+                                            status =
+                                                if (parser.getAttributeValue(null, ATTR_STATUS) ==
+                                                    PluginState.Enabled.name
+                                                ) {
+                                                    PluginState.Enabled
+                                                } else {
+                                                    PluginState.Disabled
+                                                },
+                                            installTime = parser.getAttributeValue(
+                                                null,
+                                                ATTR_INSTALL_TIME
+                                            ).toLongOrNull() ?: 0L,
+                                            description = "",
+                                            staticReceivers = emptyList(),
+                                        )
                                 }
+
                                 TAG_RECEIVERS -> {
                                     currentReceivers = mutableListOf()
                                 }
+
                                 TAG_RECEIVER -> {
                                     currentActions = mutableListOf()
                                     currentReceiverName = parser.getAttributeValue(null, ATTR_NAME)
                                 }
+
                                 TAG_ACTION -> {
-                                    currentActions?.add(parser.getAttributeValue(null, ATTR_NAME) ?: "")
+                                    currentActions?.add(
+                                        parser.getAttributeValue(null, ATTR_NAME) ?: ""
+                                    )
                                 }
                             }
                         }
+
                         XmlPullParser.TEXT -> {
                             val text = parser.text?.trim()
-                            if (currentPlugin != null && !text.isNullOrEmpty()) {
+                            if (currentPlugin != null && ! text.isNullOrEmpty()) {
                                 if (lastStartTag == TAG_DESCRIPTION) {
                                     currentPlugin.description = text
                                 }
                             }
                         }
+
                         XmlPullParser.END_TAG -> {
                             when (parser.name) {
                                 TAG_PLUGIN -> {
                                     if (currentPlugin != null) {
-                                        val finalPlugin = currentPlugin.copy(staticReceivers = currentReceivers ?: emptyList())
+                                        val finalPlugin = currentPlugin.copy(
+                                            staticReceivers = currentReceivers ?: emptyList()
+                                        )
                                         pluginList.add(finalPlugin)
                                         currentPlugin = null
                                         currentReceivers = null
                                     }
                                 }
+
                                 TAG_RECEIVER -> {
                                     if (currentReceiverName != null && currentActions != null) {
-                                        currentReceivers?.add(StaticReceiverInfo(currentReceiverName,
-                                            currentActions
-                                        ))
+                                        currentReceivers?.add(
+                                            StaticReceiverInfo(
+                                                currentReceiverName,
+                                                currentActions,
+                                            ),
+                                        )
                                     }
                                     currentReceiverName = null
                                     currentActions = null
@@ -295,7 +334,8 @@ class XmlManager(private val context: Application) {
      * 尝试从备份文件恢复数据
      */
     private fun tryRestoreFromBackup() {
-        Timber.tag(TAG)
+        Timber
+            .tag(TAG)
             .w("正在尝试从备份文件恢复: ${backupConfigFile.absolutePath}")
         try {
             if (backupConfigFile.exists()) {
@@ -307,7 +347,8 @@ class XmlManager(private val context: Application) {
                 cacheInitialized = true
                 hasUnsavedChanges.set(true) // 标记需要重新保存主文件
                 scheduleDelayedWrite()
-                Timber.tag(TAG)
+                Timber
+                    .tag(TAG)
                     .i("成功从备份文件恢复。已加载 ${pluginCache.size} 个插件。主文件将被重写。")
             } else {
                 Timber.tag(TAG).w("备份文件不存在。无法恢复。")
@@ -317,7 +358,8 @@ class XmlManager(private val context: Application) {
                 hasUnsavedChanges.set(false)
             }
         } catch (e: Exception) {
-            Timber.tag(TAG)
+            Timber
+                .tag(TAG)
                 .e(e, "从备份文件恢复失败: ${e.message}。正在初始化空缓存。")
             // 备份文件也损坏，初始化为空缓存
             pluginCache.clear()
@@ -377,7 +419,8 @@ class XmlManager(private val context: Application) {
                 serializer.endDocument()
                 serializer.flush()
             }
-            Timber.tag(TAG)
+            Timber
+                .tag(TAG)
                 .d("数据已成功写入临时文件: ${tempConfigFile.absolutePath}")
 
             // 2. 如果主文件存在，先将其移动到备份文件
@@ -393,11 +436,13 @@ class XmlManager(private val context: Application) {
 
             // 3. 将临时文件重命名（移动）为正式文件
             if (tempConfigFile.renameTo(pluginsConfigFile)) {
-                Timber.tag(TAG)
+                Timber
+                    .tag(TAG)
                     .d("临时文件已成功重命名为主文件: ${pluginsConfigFile.absolutePath}")
                 hasUnsavedChanges.set(false)
             } else {
-                val errorMessage = "将临时文件重命名为主文件失败。源文件: ${tempConfigFile.absolutePath}, 目标文件: ${pluginsConfigFile.absolutePath}"
+                val errorMessage =
+                    "将临时文件重命名为主文件失败。源文件: ${tempConfigFile.absolutePath}, 目标文件: ${pluginsConfigFile.absolutePath}"
                 Timber.tag(TAG).e(errorMessage)
                 throw IOException(errorMessage) // 无法重命名，视为写入失败
             }
@@ -447,28 +492,26 @@ class XmlManager(private val context: Application) {
      * 获取所有插件信息
      * @return 插件信息列表的副本
      */
-    fun getAllPlugins(): List<PluginInfo> {
-        return read {
-            if (!cacheInitialized) {
+    fun getAllPlugins(): List<PluginInfo> =
+        read {
+            if (! cacheInitialized) {
                 initializeCache() // 仍然保留这个检查以防万一初始化失败或跳过
             }
             pluginCache.values.toList()
         }
-    }
 
     /**
      * 根据插件ID获取插件信息
      * @param pluginId 插件ID
      * @return 插件信息，如果不存在则返回null
      */
-    fun getPluginById(pluginId: String): PluginInfo? {
-        return read {
-            if (!cacheInitialized) {
+    fun getPluginById(pluginId: String): PluginInfo? =
+        read {
+            if (! cacheInitialized) {
                 initializeCache()
             }
             pluginCache[pluginId]
         }
-    }
 
     /**
      * 添加新插件
@@ -477,7 +520,7 @@ class XmlManager(private val context: Application) {
      */
     fun addPlugin(plugin: PluginInfo) {
         write {
-            if (!cacheInitialized) {
+            if (! cacheInitialized) {
                 initializeCache()
             }
 
@@ -498,11 +541,11 @@ class XmlManager(private val context: Application) {
      */
     fun updatePlugin(plugin: PluginInfo) {
         write {
-            if (!cacheInitialized) {
+            if (! cacheInitialized) {
                 initializeCache()
             }
 
-            if (!pluginCache.containsKey(plugin.pluginId)) {
+            if (! pluginCache.containsKey(plugin.pluginId)) {
                 throw NoSuchElementException("Plugin with ID ${plugin.pluginId} not found for update.")
             }
 
@@ -517,9 +560,9 @@ class XmlManager(private val context: Application) {
      * @param pluginId 要删除的插件ID
      * @return 是否成功删除
      */
-    fun removePlugin(pluginId: String): Boolean {
-        return write {
-            if (!cacheInitialized) {
+    fun removePlugin(pluginId: String): Boolean =
+        write {
+            if (! cacheInitialized) {
                 initializeCache()
             }
 
@@ -532,5 +575,4 @@ class XmlManager(private val context: Application) {
             }
             removed
         }
-    }
 }

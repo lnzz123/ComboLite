@@ -13,9 +13,9 @@ val boundsTransform = { _: Rect, _: Rect -> tween<Rect>(550) }
 
 // 动画持续时间常量
 object AnimationDuration {
-  const val SHORT = 300 // 短动画持续时间
-  const val MEDIUM = 500 // 中等动画持续时间
-  const val LONG = 800 // 长动画持续时间
+    const val SHORT = 300 // 短动画持续时间
+    const val MEDIUM = 500 // 中等动画持续时间
+    const val LONG = 800 // 长动画持续时间
 }
 
 /**
@@ -24,92 +24,92 @@ object AnimationDuration {
  */
 object NavigationAnimations {
 
-  /**
-   * 右滑入动画（从右侧滑入）
-   * @param duration 动画持续时间
-   */
-  fun slideInFromRight(duration: Int = AnimationDuration.MEDIUM) = slideInHorizontally(
-    animationSpec = tween(duration),
-    initialOffsetX = { fullWidth -> fullWidth },
-  )
+    /**
+     * 右滑入动画（从右侧滑入）
+     * @param duration 动画持续时间
+     */
+    fun slideInFromRight(duration: Int = AnimationDuration.MEDIUM) = slideInHorizontally(
+        animationSpec = tween(duration),
+        initialOffsetX = { fullWidth -> fullWidth },
+    )
 
-  /**
-   * 左滑出动画（向左侧滑出）
-   * @param duration 动画持续时间
-   */
-  fun slideOutToLeft(duration: Int = AnimationDuration.MEDIUM) = slideOutHorizontally(
-    animationSpec = tween(duration),
-    targetOffsetX = { fullWidth -> -fullWidth },
-  )
+    /**
+     * 左滑出动画（向左侧滑出）
+     * @param duration 动画持续时间
+     */
+    fun slideOutToLeft(duration: Int = AnimationDuration.MEDIUM) = slideOutHorizontally(
+        animationSpec = tween(duration),
+        targetOffsetX = { fullWidth -> - fullWidth },
+    )
 
-  /**
-   * 左滑入动画（从左侧滑入）
-   * @param duration 动画持续时间
-   */
-  fun slideInFromLeft(duration: Int = AnimationDuration.MEDIUM) = slideInHorizontally(
-    animationSpec = tween(duration),
-    initialOffsetX = { fullWidth -> -fullWidth },
-  )
+    /**
+     * 左滑入动画（从左侧滑入）
+     * @param duration 动画持续时间
+     */
+    fun slideInFromLeft(duration: Int = AnimationDuration.MEDIUM) = slideInHorizontally(
+        animationSpec = tween(duration),
+        initialOffsetX = { fullWidth -> - fullWidth },
+    )
 
-  /**
-   * 右滑出动画（向右侧滑出）
-   * @param duration 动画持续时间
-   */
-  fun slideOutToRight(duration: Int = AnimationDuration.MEDIUM) = slideOutHorizontally(
-    animationSpec = tween(duration),
-    targetOffsetX = { fullWidth -> fullWidth },
-  )
+    /**
+     * 右滑出动画（向右侧滑出）
+     * @param duration 动画持续时间
+     */
+    fun slideOutToRight(duration: Int = AnimationDuration.MEDIUM) = slideOutHorizontally(
+        animationSpec = tween(duration),
+        targetOffsetX = { fullWidth -> fullWidth },
+    )
 
-  /**
-   * 下滑入动画（从下方滑入）
-   * @param duration 动画持续时间
-   */
-  fun slideInFromBottom(duration: Int = AnimationDuration.MEDIUM) = slideInVertically(
-    animationSpec = tween(duration),
-    initialOffsetY = { fullHeight -> fullHeight },
-  )
+    /**
+     * 下滑入动画（从下方滑入）
+     * @param duration 动画持续时间
+     */
+    fun slideInFromBottom(duration: Int = AnimationDuration.MEDIUM) = slideInVertically(
+        animationSpec = tween(duration),
+        initialOffsetY = { fullHeight -> fullHeight },
+    )
 
-  /**
-   * 上滑出动画（向上方滑出）
-   * @param duration 动画持续时间
-   */
-  fun slideOutToTop(duration: Int = AnimationDuration.MEDIUM) = slideOutVertically(
-    animationSpec = tween(duration),
-    targetOffsetY = { fullHeight -> -fullHeight },
-  )
+    /**
+     * 上滑出动画（向上方滑出）
+     * @param duration 动画持续时间
+     */
+    fun slideOutToTop(duration: Int = AnimationDuration.MEDIUM) = slideOutVertically(
+        animationSpec = tween(duration),
+        targetOffsetY = { fullHeight -> - fullHeight },
+    )
 
-  /**
-   * 淡入动画
-   * @param duration 动画持续时间
-   */
-  fun fadeIn(duration: Int = AnimationDuration.MEDIUM) = androidx.compose.animation.fadeIn(
-    animationSpec = tween(duration),
-  )
+    /**
+     * 淡入动画
+     * @param duration 动画持续时间
+     */
+    fun fadeIn(duration: Int = AnimationDuration.MEDIUM) = androidx.compose.animation.fadeIn(
+        animationSpec = tween(duration),
+    )
 
-  /**
-   * 淡出动画
-   * @param duration 动画持续时间
-   */
-  fun fadeOut(duration: Int = AnimationDuration.MEDIUM) = androidx.compose.animation.fadeOut(
-    animationSpec = tween(duration),
-  )
+    /**
+     * 淡出动画
+     * @param duration 动画持续时间
+     */
+    fun fadeOut(duration: Int = AnimationDuration.MEDIUM) = androidx.compose.animation.fadeOut(
+        animationSpec = tween(duration),
+    )
 
-  /**
-   * 根据导航过渡类型获取动画方案
-   * @param transition 导航过渡类型
-   * @return 对应的导航动画方案
-   */
-  fun getAnimationScheme(transition: NavigationTransition): NavigationAnimationScheme {
-    return when (transition) {
-      NavigationTransition.SLIDE_IN_FROM_RIGHT -> NavigationAnimationSchemes.slideHorizontal
-      NavigationTransition.SLIDE_IN_FROM_LEFT -> NavigationAnimationSchemes.slideFromLeft
-      NavigationTransition.SLIDE_IN_FROM_BOTTOM -> NavigationAnimationSchemes.slideVertical
-      NavigationTransition.SLIDE_IN_FROM_TOP -> NavigationAnimationSchemes.slideFromTop
-      NavigationTransition.FADE_IN -> NavigationAnimationSchemes.fade
-      NavigationTransition.SCALE_IN -> NavigationAnimationSchemes.fade // 简化为淡入淡出
-      NavigationTransition.NONE -> NavigationAnimationSchemes.none
+    /**
+     * 根据导航过渡类型获取动画方案
+     * @param transition 导航过渡类型
+     * @return 对应的导航动画方案
+     */
+    fun getAnimationScheme(transition: NavigationTransition): NavigationAnimationScheme {
+        return when (transition) {
+            NavigationTransition.SLIDE_IN_FROM_RIGHT -> NavigationAnimationSchemes.slideHorizontal
+            NavigationTransition.SLIDE_IN_FROM_LEFT -> NavigationAnimationSchemes.slideFromLeft
+            NavigationTransition.SLIDE_IN_FROM_BOTTOM -> NavigationAnimationSchemes.slideVertical
+            NavigationTransition.SLIDE_IN_FROM_TOP -> NavigationAnimationSchemes.slideFromTop
+            NavigationTransition.FADE_IN -> NavigationAnimationSchemes.fade
+            NavigationTransition.SCALE_IN -> NavigationAnimationSchemes.fade // 简化为淡入淡出
+            NavigationTransition.NONE -> NavigationAnimationSchemes.none
+        }
     }
-  }
 }
 
 /**
@@ -118,69 +118,69 @@ object NavigationAnimations {
  */
 object NavigationAnimationSchemes {
 
-  /**
-   * 标准的左右滑动动画方案
-   * 进入时从右滑入，退出时向左滑出
-   */
-  val slideHorizontal = object : NavigationAnimationScheme {
-    override val enterAnim = R.anim.slide_in_left
-    override val exitAnim = R.anim.slide_out_right
-    override val popEnterAnim = R.anim.slide_in_left
-    override val popExitAnim = R.anim.slide_out_right
-  }
+    /**
+     * 标准的左右滑动动画方案
+     * 进入时从右滑入，退出时向左滑出
+     */
+    val slideHorizontal = object : NavigationAnimationScheme {
+        override val enterAnim = R.anim.slide_in_left
+        override val exitAnim = R.anim.slide_out_right
+        override val popEnterAnim = R.anim.slide_in_left
+        override val popExitAnim = R.anim.slide_out_right
+    }
 
-  /**
-   * 从左侧滑入的动画方案
-   */
-  val slideFromLeft = object : NavigationAnimationScheme {
-    override val enterAnim = R.anim.slide_in_left
-    override val exitAnim = R.anim.slide_out_right
-    override val popEnterAnim = R.anim.slide_in_left
-    override val popExitAnim = R.anim.slide_out_right
-  }
+    /**
+     * 从左侧滑入的动画方案
+     */
+    val slideFromLeft = object : NavigationAnimationScheme {
+        override val enterAnim = R.anim.slide_in_left
+        override val exitAnim = R.anim.slide_out_right
+        override val popEnterAnim = R.anim.slide_in_left
+        override val popExitAnim = R.anim.slide_out_right
+    }
 
-  /**
-   * 标准的上下滑动动画方案
-   * 进入时从下滑入，退出时向上滑出
-   */
-  val slideVertical = object : NavigationAnimationScheme {
-    override val enterAnim = R.anim.slide_in_left
-    override val exitAnim = R.anim.slide_out_right
-    override val popEnterAnim = R.anim.slide_in_left
-    override val popExitAnim = R.anim.slide_out_right
-  }
+    /**
+     * 标准的上下滑动动画方案
+     * 进入时从下滑入，退出时向上滑出
+     */
+    val slideVertical = object : NavigationAnimationScheme {
+        override val enterAnim = R.anim.slide_in_left
+        override val exitAnim = R.anim.slide_out_right
+        override val popEnterAnim = R.anim.slide_in_left
+        override val popExitAnim = R.anim.slide_out_right
+    }
 
-  /**
-   * 从顶部滑入的动画方案
-   */
-  val slideFromTop = object : NavigationAnimationScheme {
-    override val enterAnim = R.anim.slide_in_left
-    override val exitAnim = R.anim.slide_out_right
-    override val popEnterAnim = R.anim.slide_in_left
-    override val popExitAnim = R.anim.slide_out_right
-  }
+    /**
+     * 从顶部滑入的动画方案
+     */
+    val slideFromTop = object : NavigationAnimationScheme {
+        override val enterAnim = R.anim.slide_in_left
+        override val exitAnim = R.anim.slide_out_right
+        override val popEnterAnim = R.anim.slide_in_left
+        override val popExitAnim = R.anim.slide_out_right
+    }
 
-  /**
-   * 淡入淡出动画方案
-   * 进入和退出均使用淡入淡出效果
-   */
-  val fade = object : NavigationAnimationScheme {
-    override val enterAnim = R.anim.fade_in
-    override val exitAnim = R.anim.fade_out
-    override val popEnterAnim = R.anim.fade_in
-    override val popExitAnim = R.anim.fade_out
-  }
+    /**
+     * 淡入淡出动画方案
+     * 进入和退出均使用淡入淡出效果
+     */
+    val fade = object : NavigationAnimationScheme {
+        override val enterAnim = R.anim.fade_in
+        override val exitAnim = R.anim.fade_out
+        override val popEnterAnim = R.anim.fade_in
+        override val popExitAnim = R.anim.fade_out
+    }
 
-  /**
-   * 无动画方案
-   * 不应用任何动画效果
-   */
-  val none = object : NavigationAnimationScheme {
-    override val enterAnim = 0
-    override val exitAnim = 0
-    override val popEnterAnim = 0
-    override val popExitAnim = 0
-  }
+    /**
+     * 无动画方案
+     * 不应用任何动画效果
+     */
+    val none = object : NavigationAnimationScheme {
+        override val enterAnim = 0
+        override val exitAnim = 0
+        override val popEnterAnim = 0
+        override val popExitAnim = 0
+    }
 }
 
 /**
@@ -188,8 +188,8 @@ object NavigationAnimationSchemes {
  * 定义导航动画方案的核心组件
  */
 interface NavigationAnimationScheme {
-  val enterAnim: Int
-  val exitAnim: Int
-  val popEnterAnim: Int
-  val popExitAnim: Int
+    val enterAnim: Int
+    val exitAnim: Int
+    val popEnterAnim: Int
+    val popExitAnim: Int
 }

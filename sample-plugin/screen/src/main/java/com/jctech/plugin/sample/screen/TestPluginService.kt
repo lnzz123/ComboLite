@@ -4,7 +4,7 @@ import android.widget.Toast
 import com.jctech.plugin.core.base.BasePluginService
 import timber.log.Timber
 
-class TestPluginService: BasePluginService() {
+class TestPluginService : BasePluginService() {
     override fun onCreate() {
         super.onCreate()
         Timber.d("TestPluginService onCreate")

@@ -24,7 +24,11 @@ interface IPluginService {
      * 对于启动状态的Service（startService），此方法被调用。
      * @return 返回值决定了Service在被系统杀死后的行为，同原生Service。
      */
-    fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
+    fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int
 
     /**
      * 对于绑定状态的Service（bindService），此方法被调用。

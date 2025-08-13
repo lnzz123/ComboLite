@@ -5,7 +5,7 @@ package com.jctech.plugin.sample.common.viewmodel
  * 采用不可变设计，确保状态更新的安全性
  */
 interface BaseUiState {
-  val isLoading: Boolean
-  val isError: Boolean
-  val errorMessage: String?
+    val isLoading: Boolean
+    val isError: Boolean
+    val errorMessage: String?
 }

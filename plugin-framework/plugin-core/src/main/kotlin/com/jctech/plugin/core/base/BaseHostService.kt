@@ -18,7 +18,6 @@ import timber.log.Timber
  * 它负责加载插件Service并代理其所有生命周期方法。
  */
 open class BaseHostService : Service() {
-
     /**
      * 插件Service的实例。
      * 这个字段存储了当前代理的插件Service的实例。
@@ -37,19 +36,22 @@ open class BaseHostService : Service() {
     /**
      * 重写getResources方法，返回插件资源
      */
-    override fun getResources(): Resources {
-        return if (PluginManager.isInitialized)
+    override fun getResources(): Resources =
+        if (PluginManager.isInitialized) {
             PluginManager.resourcesManager.getResources()
-        else super.getResources()
-    }
+        } else {
+            super.getResources()
+        }
+
     /**
      * 重写getAssets方法，返回插件资源
      */
-    override fun getAssets(): AssetManager {
-        return if (PluginManager.isInitialized)
+    override fun getAssets(): AssetManager =
+        if (PluginManager.isInitialized) {
             PluginManager.resourcesManager.getResources().assets
-        else super.getAssets()
-    }
+        } else {
+            super.getAssets()
+        }
 
     /**
      * 在Service创建时，初始化插件Service。
@@ -64,10 +66,10 @@ open class BaseHostService : Service() {
                             throw IllegalStateException("创建插件服务实例失败: $pluginClassName")
                         }
                         this.pluginService = instance
-                        this.pluginClassName = intent.getStringExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME)
-                        pluginService!!.onAttach(this@BaseHostService)
-                        pluginService!!.onCreate()
-
+                        this.pluginClassName =
+                            intent.getStringExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME)
+                        pluginService !!.onAttach(this@BaseHostService)
+                        pluginService !!.onCreate()
                     } catch (e: Exception) {
                         Timber.e(e, "初始化插件 [${this.pluginClassName}] 失败。")
                         pluginService = null
@@ -80,7 +82,11 @@ open class BaseHostService : Service() {
 
     // --- 生命周期代理 ---
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
         initPluginService(intent)
         return pluginService?.onStartCommand(intent, flags, startId)
             ?: super.onStartCommand(intent, flags, startId)
@@ -91,9 +97,8 @@ open class BaseHostService : Service() {
         return pluginService?.onBind(intent)
     }
 
-    override fun onUnbind(intent: Intent?): Boolean {
-        return pluginService?.onUnbind(intent) ?: super.onUnbind(intent)
-    }
+    override fun onUnbind(intent: Intent?): Boolean =
+        pluginService?.onUnbind(intent) ?: super.onUnbind(intent)
 
     override fun onRebind(intent: Intent?) {
         pluginService?.onRebind(intent)

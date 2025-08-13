@@ -31,8 +31,9 @@ import java.io.File
  * 用于检测插件APK文件的签名是否与宿主应用使用相同的JKS签名
  * 确保插件的安全性和完整性
  */
-class SignatureValidator(context: Context) {
-
+class SignatureValidator(
+    context: Context,
+) {
     var hostSignatures: MutableSet<Signature>?
 
     init {
@@ -47,8 +48,11 @@ class SignatureValidator(context: Context) {
      * @param pluginApkFile 插件APK文件
      * @return true 如果签名一致，否则false
      */
-    fun validate(context: Context, pluginApkFile: File): Boolean {
-        if (!pluginApkFile.exists()) {
+    fun validate(
+        context: Context,
+        pluginApkFile: File,
+    ): Boolean {
+        if (! pluginApkFile.exists()) {
             Timber.w("Plugin file does not exist: %s", pluginApkFile.absolutePath)
             return false
         }
@@ -61,15 +65,23 @@ class SignatureValidator(context: Context) {
         }
 
         // 2. 获取插件的签名
-        val pluginSigns = getSigningSignatures(context, pluginApkFile.absolutePath, isApkFile = true)
+        val pluginSigns =
+            getSigningSignatures(context, pluginApkFile.absolutePath, isApkFile = true)
         if (pluginSigns.isNullOrEmpty()) {
-            Timber.e("Could not get plugin signatures from %s. Validation failed.", pluginApkFile.name)
+            Timber.e(
+                "Could not get plugin signatures from %s. Validation failed.",
+                pluginApkFile.name
+            )
             return false
         }
 
         // 3. 比对签名集合
         val isValid = hostSigns.containsAll(pluginSigns)
-        Timber.i("Validation result for '%s': %s", pluginApkFile.name, if (isValid) "SUCCESS" else "FAILED")
+        Timber.i(
+            "Validation result for '%s': %s",
+            pluginApkFile.name,
+            if (isValid) "SUCCESS" else "FAILED"
+        )
 
         return isValid
     }
@@ -83,22 +95,33 @@ class SignatureValidator(context: Context) {
      * @return 签名集合，获取失败则返回null
      */
     @Suppress("DEPRECATION")
-    private fun getSigningSignatures(context: Context, source: String, isApkFile: Boolean = false): MutableSet<Signature>? {
+    private fun getSigningSignatures(
+        context: Context,
+        source: String,
+        isApkFile: Boolean = false,
+    ): MutableSet<Signature>? {
         val packageManager = context.packageManager
         return try {
-            val packageInfo: PackageInfo? = if (isApkFile) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    packageManager.getPackageArchiveInfo(source, PackageManager.GET_SIGNING_CERTIFICATES)
+            val packageInfo: PackageInfo? =
+                if (isApkFile) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        packageManager.getPackageArchiveInfo(
+                            source,
+                            PackageManager.GET_SIGNING_CERTIFICATES
+                        )
+                    } else {
+                        packageManager.getPackageArchiveInfo(source, PackageManager.GET_SIGNATURES)
+                    }
                 } else {
-                    packageManager.getPackageArchiveInfo(source, PackageManager.GET_SIGNATURES)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        packageManager.getPackageInfo(
+                            source,
+                            PackageManager.GET_SIGNING_CERTIFICATES
+                        )
+                    } else {
+                        packageManager.getPackageInfo(source, PackageManager.GET_SIGNATURES)
+                    }
                 }
-            } else {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    packageManager.getPackageInfo(source, PackageManager.GET_SIGNING_CERTIFICATES)
-                } else {
-                    packageManager.getPackageInfo(source, PackageManager.GET_SIGNATURES)
-                }
-            }
 
             if (packageInfo == null) return null
 

@@ -34,26 +34,28 @@ import com.jctech.plugin.core.manager.PluginManager
  * 它负责加载插件Activity并代理其所有生命周期方法。
  */
 open class BaseHostActivity : ComponentActivity() {
-
     protected var pluginActivity: IPluginActivity? = null
         private set
 
     /**
      * 重写getResources方法，返回插件资源
      */
-    override fun getResources(): Resources {
-        return if (PluginManager.isInitialized)
+    override fun getResources(): Resources =
+        if (PluginManager.isInitialized) {
             PluginManager.resourcesManager.getResources()
-        else super.getResources()
-    }
+        } else {
+            super.getResources()
+        }
+
     /**
      * 重写getAssets方法，返回插件资源
      */
-    override fun getAssets(): AssetManager {
-        return if (PluginManager.isInitialized)
+    override fun getAssets(): AssetManager =
+        if (PluginManager.isInitialized) {
             PluginManager.resourcesManager.getResources().assets
-        else super.getAssets()
-    }
+        } else {
+            super.getAssets()
+        }
 
     /**
      * 提供一个给子类调用的、受保护的插件初始化方法。
@@ -83,22 +85,27 @@ open class BaseHostActivity : ComponentActivity() {
         super.onStart()
         pluginActivity?.onStart()
     }
+
     override fun onResume() {
         super.onResume()
         pluginActivity?.onResume()
     }
+
     override fun onPause() {
         super.onPause()
         pluginActivity?.onPause()
     }
+
     override fun onStop() {
         super.onStop()
         pluginActivity?.onStop()
     }
+
     override fun onDestroy() {
         super.onDestroy()
         pluginActivity?.onDestroy()
     }
+
     override fun onRestart() {
         super.onRestart()
         pluginActivity?.onRestart()
@@ -108,13 +115,16 @@ open class BaseHostActivity : ComponentActivity() {
         requestCode: Int,
         permissions: Array<out String?>,
         grantResults: IntArray,
-        deviceId: Int
+        deviceId: Int,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
         pluginActivity?.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
     }
 
-    override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
+    override fun onSaveInstanceState(
+        outState: Bundle,
+        outPersistentState: PersistableBundle,
+    ) {
         super.onSaveInstanceState(outState, outPersistentState)
         pluginActivity?.onSaveInstanceState(outState)
     }
@@ -134,13 +144,16 @@ open class BaseHostActivity : ComponentActivity() {
         pluginActivity?.onWindowFocusChanged(hasFocus)
     }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        return pluginActivity?.onKeyDown(keyCode, event) ?: super.onKeyDown(keyCode, event)
-    }
-    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        return pluginActivity?.onKeyUp(keyCode, event) ?: super.onKeyUp(keyCode, event)
-    }
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        return pluginActivity?.onTouchEvent(event) ?: super.onTouchEvent(event)
-    }
+    override fun onKeyDown(
+        keyCode: Int,
+        event: KeyEvent?,
+    ): Boolean = pluginActivity?.onKeyDown(keyCode, event) ?: super.onKeyDown(keyCode, event)
+
+    override fun onKeyUp(
+        keyCode: Int,
+        event: KeyEvent?,
+    ): Boolean = pluginActivity?.onKeyUp(keyCode, event) ?: super.onKeyUp(keyCode, event)
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean =
+        pluginActivity?.onTouchEvent(event) ?: super.onTouchEvent(event)
 }

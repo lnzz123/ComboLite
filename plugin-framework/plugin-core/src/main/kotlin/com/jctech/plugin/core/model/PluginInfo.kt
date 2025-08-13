@@ -28,7 +28,7 @@ data class PluginInfo(
     var description: String,
     val status: PluginState,
     val installTime: Long,
-    val staticReceivers: List<StaticReceiverInfo> = emptyList()
+    val staticReceivers: List<StaticReceiverInfo> = emptyList(),
 )
 
 /**
@@ -39,11 +39,11 @@ data class PluginInfo(
 @Serializable
 data class StaticReceiverInfo(
     val className: String,
-    val actions: List<String>
+    val actions: List<String>,
 )
 
 @Serializable
 enum class PluginState {
     Enabled,
-    Disabled
+    Disabled,
 }

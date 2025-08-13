@@ -1,6 +1,5 @@
 package com.jctech.plugin.core.interfaces
 
-import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.KeyEvent
@@ -21,19 +20,30 @@ interface IPluginActivity {
 
     // 标准生命周期
     fun onCreate(savedInstanceState: Bundle?)
+
     fun onResume()
+
     fun onPause()
+
     fun onStart()
+
     fun onStop()
+
     fun onDestroy()
+
     fun onRestart()
-    
+
     // 交互与结果处理
 
     /**
      * 当通过 requestPermissions 请求权限后，系统返回结果时调用。
      */
-    fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String?>, grantResults: IntArray, deviceId: Int)
+    fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String?>,
+        grantResults: IntArray,
+        deviceId: Int,
+    )
 
     // 状态保存与恢复
 
@@ -48,7 +58,7 @@ interface IPluginActivity {
      * 你也可以选择在 onCreate 中恢复数据，两者效果类似。
      */
     fun onRestoreInstanceState(savedInstanceState: Bundle)
-    
+
     // 系统与窗口事件
 
     /**
@@ -60,24 +70,28 @@ interface IPluginActivity {
      * 当Activity的窗口焦点发生变化时调用（例如，弹出对话框或下拉通知栏）。
      */
     fun onWindowFocusChanged(hasFocus: Boolean)
-    
+
     // 底层输入事件
 
     /**
      * 处理物理按键按下事件。仅在需要全局拦截或处理特殊按键时使用。
      * @return true 表示消费事件，false 表示不消费。
      */
-    fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean?
+    fun onKeyDown(
+        keyCode: Int,
+        event: KeyEvent?,
+    ): Boolean?
 
     /**
      * 处理物理按键抬起事件。
      */
-    fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean?
+    fun onKeyUp(
+        keyCode: Int,
+        event: KeyEvent?,
+    ): Boolean?
 
     /**
      * 处理触摸事件。通常由Compose手势修饰符处理，仅在需要进行全局触摸拦截时使用。
      */
     fun onTouchEvent(event: MotionEvent?): Boolean?
 }
-
-

@@ -18,17 +18,17 @@ import com.jctech.plugin.sample.screen.ScreenTwo
  */
 @OptIn(ExperimentalSharedTransitionApi::class)
 fun NavGraphBuilder.appNavigation(sharedTransitionScope: SharedTransitionScope) {
-  with(sharedTransitionScope) {
-    composable<AppScreen.Home> {
-        HomeScreen()
-    }
+    with(sharedTransitionScope) {
+        composable<AppScreen.Home> {
+            HomeScreen()
+        }
 
-    composable<AppScreen.ScreenOne> {
-      ScreenOne()
-    }
+        composable<AppScreen.ScreenOne> {
+            ScreenOne()
+        }
 
-    composable<AppScreen.ScreenTwo> {
-      ScreenTwo()
+        composable<AppScreen.ScreenTwo> {
+            ScreenTwo()
+        }
     }
-  }
 }

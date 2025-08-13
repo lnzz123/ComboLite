@@ -7,7 +7,6 @@ import android.content.Intent
  * 插件广播接收器接口。
  */
 interface IPluginReceiver {
-
     /**
      * 当广播到达时，由宿主代理调用此方法。
      *
@@ -15,5 +14,8 @@ interface IPluginReceiver {
      * 例如启动服务、发送通知等。
      * @param intent  包含广播动作和数据的原始 Intent 对象。
      */
-    fun onReceive(context: Context, intent: Intent)
+    fun onReceive(
+        context: Context,
+        intent: Intent,
+    )
 }

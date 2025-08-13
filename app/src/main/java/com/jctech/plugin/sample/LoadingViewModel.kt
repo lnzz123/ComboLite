@@ -32,7 +32,7 @@ class LoadingViewModel(
         init()
     }
 
-    fun init(){
+    fun init() {
         viewModelScope.launch {
             setLoading(true)
             _pluginCount.value = PluginManager.getPluginInstances().size

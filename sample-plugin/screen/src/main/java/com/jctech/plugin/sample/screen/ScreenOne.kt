@@ -1,6 +1,5 @@
 package com.jctech.plugin.sample.screen
 
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -33,7 +32,7 @@ import com.jctech.plugin.sample.common.navigation.currentComposeNavigator
 
 /**
  * Screen One 页面
- * 
+ *
  * 这是一个测试页面，展示基本的UI组件和导航功能
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,28 +61,28 @@ fun ScreenOne() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Spacer(modifier = Modifier.height(32.dp))
-            
+
             Text(
                 text = "欢迎来到 Screen One",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
-            
+
             Text(
                 text = "这是第一个测试屏幕",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
+
             Button(
                 onClick = { navigator.navigate(AppScreen.ScreenTwo) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("前往 Screen Two")
             }
-            
+
             OutlinedButton(
                 onClick = {
                     context.startPluginActivity(TestPluginActivity::class.java)
@@ -113,7 +112,7 @@ fun ScreenOne() {
 
 
             Spacer(modifier = Modifier.weight(1f))
-            
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(

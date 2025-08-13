@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 
-class HomeViewModel () : BaseViewModel<HomeState>(
+class HomeViewModel() : BaseViewModel<HomeState>(
     initialState = HomeState()
 ) {
     init {
@@ -39,20 +39,20 @@ class HomeViewModel () : BaseViewModel<HomeState>(
 
     /**
      * 获取指定插件的状态
-     * 
+     *
      * @param pluginId 插件ID
      * @return 插件状态枚举
      */
     fun getPluginStatus(pluginId: String): PluginStatus {
         // 检查插件是否已安装
         val isInstalled = uiState.value.installedPlugins.any { it.pluginId == pluginId }
-        
-        if (!isInstalled) {
+
+        if (! isInstalled) {
             return PluginStatus.NOT_INSTALLED
         }
 
         val entryClass = PluginManager.getPluginInstance(pluginId)
-        
+
         return if (entryClass != null) {
             PluginStatus.INSTALLED_AND_STARTED
         } else {

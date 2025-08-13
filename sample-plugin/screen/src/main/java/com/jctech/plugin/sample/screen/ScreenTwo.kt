@@ -36,7 +36,7 @@ import com.jctech.plugin.sample.common.navigation.currentComposeNavigator
 
 /**
  * Screen Two 页面
- * 
+ *
  * 这是第二个测试页面，展示列表和交互功能
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,17 +44,17 @@ import com.jctech.plugin.sample.common.navigation.currentComposeNavigator
 fun ScreenTwo() {
     val navigator = currentComposeNavigator
     var counter by remember { mutableIntStateOf(0) }
-    
+
     val testItems = remember {
         listOf(
             "测试项目 1",
-            "测试项目 2", 
+            "测试项目 2",
             "测试项目 3",
             "测试项目 4",
             "测试项目 5"
         )
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -68,7 +68,7 @@ fun ScreenTwo() {
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { counter++ }
+                onClick = { counter ++ }
             ) {
                 Text("+")
             }
@@ -86,14 +86,14 @@ fun ScreenTwo() {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            
+
             Text(
                 text = "这是第二个测试屏幕",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -106,7 +106,7 @@ fun ScreenTwo() {
                 ) {
                     Text("前往 Screen One")
                 }
-                
+
                 OutlinedButton(
                     onClick = { navigator.navigate(AppScreen.Home) },
                     modifier = Modifier.weight(1f)
@@ -114,7 +114,7 @@ fun ScreenTwo() {
                     Text("返回主页")
                 }
             }
-            
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -143,7 +143,7 @@ fun ScreenTwo() {
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Button(
-                            onClick = { counter++ },
+                            onClick = { counter ++ },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("+1")
@@ -157,14 +157,14 @@ fun ScreenTwo() {
                     }
                 }
             }
-            
+
             Text(
                 text = "测试列表",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            
+
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {

@@ -13,11 +13,11 @@ import com.jctech.plugin.sample.common.navigation.AppScreen
  */
 @Composable
 fun AppMain(composeNavigator: AppComposeNavigator<AppScreen>) {
-  val navHostController = rememberNavController()
+    val navHostController = rememberNavController()
 
-  LaunchedEffect(Unit) {
-    composeNavigator.handleNavigationCommands(navHostController)
-  }
+    LaunchedEffect(Unit) {
+        composeNavigator.handleNavigationCommands(navHostController)
+    }
 
-  AppNavHost(navHostController = navHostController)
+    AppNavHost(navHostController = navHostController)
 }
