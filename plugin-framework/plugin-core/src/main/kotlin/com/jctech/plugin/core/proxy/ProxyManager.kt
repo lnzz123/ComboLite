@@ -1,11 +1,15 @@
 package com.jctech.plugin.core.proxy
 
+import android.app.Application
+import android.content.Intent
 import com.jctech.plugin.core.base.BaseHostActivity
 import com.jctech.plugin.core.base.BaseHostService
+import com.jctech.plugin.core.model.ProviderInfo
 import com.jctech.plugin.core.model.StaticReceiverInfo
 import timber.log.Timber
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * 插件四大组件代理管理器
@@ -19,7 +23,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * 该类的设计目标是提供一种灵活、可扩展的组件代理机制，
  * 以支持插件化架构中的组件通信和生命周期管理。
  */
-class ProxyManager {
+class ProxyManager(private val context: Application) {
     /**
      * 存储已注册的、用于代理所有插件 Activity 的单一宿主 Activity 类。
      */
@@ -38,44 +42,23 @@ class ProxyManager {
     private val activeServiceProxies = ConcurrentHashMap<String, Class<out BaseHostService>>()
 
     /**
-     * 用于分发静态广播的注册表
-     * Key: 广播 Action
-     * Value: 一个列表，包含所有监听此 Action 的接收器信息
+     * 用于分发静态广播的注册表。
+     * 直接存储完整的 StaticReceiverInfo，以便进行精确的 Intent 匹配。
+     * 使用 CopyOnWriteArrayList 保证遍历时的线程安全。
      */
-    private val staticReceiverRegistry = ConcurrentHashMap<String, MutableList<ReceiverInfo>>()
-
+    private val staticReceiverRegistry = CopyOnWriteArrayList<Pair<String, StaticReceiverInfo>>()
 
     /**
      * 用于存储 ContentProvider 的注册表。
-     * Key: 插件 Provider 的完整类名 (方便通过类名快速查找)。
-     * Value: Provider 的详细注册信息。
+     * Key: 插件 Provider 的完整类名。
+     * Value: 一个配对，包含 PluginId 和完整的 ProviderInfo 对象。
      */
-    private val providerRegistry = ConcurrentHashMap<String, ProviderInfo>()
+    private val providerRegistry = ConcurrentHashMap<String, Pair<String, ProviderInfo>>()
 
     /**
      * 用于从 Authority 快速映射到 Provider 的类名。
-     * 在需要根据 URI 的 Authority 查找目标时非常有用。
-     * Key: 插件 Provider 的 Authority。
-     * Value: 插件 Provider 的完整类名。
      */
     private val authorityToProviderMap = ConcurrentHashMap<String, String>()
-
-    /**
-     * 一个内部数据类，用于在注册表中存储接收器的关键信息
-     */
-    data class ReceiverInfo(
-        val pluginId: String,
-        val className: String,
-    )
-
-    /**
-     * Provider 注册信息的数据类
-     */
-    data class ProviderInfo(
-        val pluginId: String,
-        val className: String,
-        val authorities: List<String>,
-    )
 
     /**
      * 设置 Activity 组件的代理宿主。
@@ -171,23 +154,15 @@ class ProxyManager {
      * @param pluginId 插件的ID
      * @param receivers 该插件包含的静态广播列表
      */
-    fun registerStaticReceivers(
-        pluginId: String,
-        receivers: List<StaticReceiverInfo>,
-    ) {
+    fun registerStaticReceivers(pluginId: String, receivers: List<StaticReceiverInfo>) {
         if (receivers.isEmpty()) return
 
         receivers.forEach { receiverInfo ->
-            receiverInfo.actions.forEach { action ->
-                val receiverList = staticReceiverRegistry.getOrPut(action) { mutableListOf() }
-                synchronized(receiverList) {
-                    val exists =
-                        receiverList.any { it.pluginId == pluginId && it.className == receiverInfo.className }
-                    if (! exists) {
-                        receiverList.add(ReceiverInfo(pluginId, receiverInfo.className))
-                    }
-                }
-                Timber.d("注册静态广播 Action: [$action] -> ${receiverInfo.className}")
+            if (receiverInfo.enabled) {
+                staticReceiverRegistry.add(Pair(pluginId, receiverInfo))
+                Timber.d("注册静态广播: ${receiverInfo.className} (来自插件 $pluginId)")
+            } else {
+                Timber.d("跳过注册被禁用的静态广播: ${receiverInfo.className}")
             }
         }
     }
@@ -197,79 +172,102 @@ class ProxyManager {
      * @param pluginId 要卸载的插件ID
      */
     fun unregisterStaticReceivers(pluginId: String) {
-        staticReceiverRegistry.forEach { (_, receiverList) ->
-            synchronized(receiverList) {
-                val removed = receiverList.removeAll { it.pluginId == pluginId }
-                if (removed) {
-                    Timber.d("从 Action 中注销了插件 [$pluginId] 的广播。")
-                }
-            }
+        val beforeCount = staticReceiverRegistry.size
+        staticReceiverRegistry.removeAll { (pId, _) -> pId == pluginId }
+        val afterCount = staticReceiverRegistry.size
+        if (beforeCount > afterCount) {
+            Timber.i("已注销插件 [$pluginId] 的 ${beforeCount - afterCount} 个静态广播。")
         }
-        Timber.i("已完成插件 [$pluginId] 的所有静态广播的注销。")
     }
 
     /**
-     * 为给定的 Action 查找所有匹配的插件接收器
-     * @param action 广播的动作
+     * 根据完整的 Intent 查找所有匹配的插件接收器。
+     * 这是广播分发的核心匹配逻辑。
+     * @param intent 接收到的广播 Intent
      * @return 匹配的接收器信息列表
      */
-    fun findReceiversForAction(action: String): List<ReceiverInfo> =
-        staticReceiverRegistry[action]?.toList() ?: emptyList()
+    fun findReceiversForIntent(intent: Intent): List<Pair<String, StaticReceiverInfo>> {
+        val matchedReceivers = mutableListOf<Pair<String, StaticReceiverInfo>>()
+        val action = intent.action ?: return emptyList()
+
+        // 如果 intent 的 package 与宿主包名相同，我们视其为内部广播。
+        val isInternalBroadcast = (context.packageName == intent.getPackage())
+
+        for (pair in staticReceiverRegistry) {
+            val receiverInfo = pair.second
+
+            if (!receiverInfo.exported && !isInternalBroadcast) {
+                continue
+            }
+
+            // 遍历该 Receiver 的所有 IntentFilter
+            for (filter in receiverInfo.intentFilters) {
+                val actionMatch = filter.actions.contains(action)
+                if (!actionMatch) continue
+
+                val categories = intent.categories
+                val categoryMatch = categories == null || filter.categories.containsAll(categories)
+                if (!categoryMatch) continue
+
+                val scheme = intent.data?.scheme
+                val schemeMatch = scheme == null || filter.schemes.isEmpty() || filter.schemes.contains(scheme)
+                if (!schemeMatch) continue
+
+                // 如果所有条件都满足，则认为匹配成功
+                matchedReceivers.add(pair)
+                Timber.d("Intent action [$action] 匹配成功 -> ${receiverInfo.className} (exported=${receiverInfo.exported}, isInternal=$isInternalBroadcast)")
+                break
+            }
+        }
+        return matchedReceivers
+    }
 
     /**
      * 注册一个插件的所有 ContentProvider。
-     * 在插件安装或启用时调用。
-     *
      * @param pluginId 插件的 ID。
-     * @param providers 插件中包含的 ProviderInfo 列表。
+     * @param providers 插件中包含的、完整的 ProviderInfo 列表。
      */
     fun registerProviders(pluginId: String, providers: List<ProviderInfo>) {
         if (providers.isEmpty()) return
 
         providers.forEach { provider ->
-            val info = ProviderInfo(
-                pluginId = pluginId,
-                className = provider.className,
-                authorities = provider.authorities
-            )
-            // 注册到两个表中，方便不同方式的查询
-            providerRegistry[provider.className] = info
-            provider.authorities.forEach { authority ->
-                authorityToProviderMap[authority] = provider.className
-                Timber.d("注册 Provider Authority: [$authority] -> ${provider.className}")
+            if (provider.enabled) {
+                // 存储一个包含 pluginId 和 ProviderInfo 的配对
+                providerRegistry[provider.className] = Pair(pluginId, provider)
+                provider.authorities.forEach { authority ->
+                    authorityToProviderMap[authority] = provider.className
+                    Timber.d("注册 Provider Authority: [$authority] -> ${provider.className}")
+                }
+            } else {
+                Timber.d("跳过注册被禁用的 Provider: ${provider.className}")
             }
         }
     }
 
     /**
      * 注销一个插件的所有 ContentProvider。
-     * 在插件卸载或禁用时调用。
-     *
-     * @param pluginId 要注销的插件 ID。
      */
     fun unregisterProviders(pluginId: String) {
-        // 从主注册表中移除
-        val providersToRemove = providerRegistry.filter { it.value.pluginId == pluginId }
-        providersToRemove.forEach { (className, info) ->
+        val providersToRemove = providerRegistry.filter { it.value.first == pluginId }
+
+        if (providersToRemove.isEmpty()) return
+
+        providersToRemove.forEach { (className, pair) ->
+            val info = pair.second
             providerRegistry.remove(className)
-            // 从 authority 映射中移除
             info.authorities.forEach { authority ->
                 authorityToProviderMap.remove(authority)
                 Timber.d("注销 Provider Authority: [$authority]")
             }
         }
-        if (providersToRemove.isNotEmpty()) {
-            Timber.i("已完成插件 [$pluginId] 的所有 Provider 的注销。")
-        }
+        Timber.i("已完成插件 [$pluginId] 的所有 Provider 的注销。")
     }
 
     /**
      * 根据插件 Provider 的类名查找其注册信息。
-     * 主要由 BaseHostProvider 内部使用。
-     *
-     * @param className 插件 Provider 的完整类名。
-     * @return 匹配的 ProviderInfo，如果未注册则返回 null。
+     * @return 返回纯粹的 ProviderInfo 对象，对调用者隐藏内部的 Pair 结构。
      */
-    fun findProviderInfoByClassName(className: String): ProviderInfo? =
-        providerRegistry[className]
+    fun findProviderInfoByClassName(className: String): ProviderInfo? {
+        return providerRegistry[className]?.second
+    }
 }

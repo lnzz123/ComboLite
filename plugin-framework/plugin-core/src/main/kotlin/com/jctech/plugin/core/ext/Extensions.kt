@@ -109,3 +109,17 @@ fun Context.stopPluginService(cls: Class<out IPluginService>): Boolean {
     intent.putExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME, cls.name)
     return stopService(intent)
 }
+
+/**
+ * 发送一个应用内广播 (Internal Broadcast)。
+ *
+ * 这个扩展函数会自动为 Intent 添加宿主的包名，确保它是一个显式的内部广播。
+ * 框架内的所有广播发送都应使用此方法，以配合 ProxyManager 的 exported 安全检查。
+ *
+ * @param intent 要发送的广播 Intent.
+ */
+fun Context.sendInternalBroadcast(intent: Intent) {
+    intent.setPackage(this.packageName)
+    sendBroadcast(intent)
+    Timber.d("已发送内部广播: ${intent.action}")
+}

@@ -47,9 +47,12 @@ dependencyResolutionManagement {
 
 rootProject.name = "ArcLite"
 include(":app")
+include(":dependencies")
 // 插件框架模块
 include(":plugin-framework:plugin-core")
 include(":sample-plugin:common")
 include(":sample-plugin:home")
-include(":sample-plugin:screen")
-include(":dependencies")
+include(":sample-plugin:guide")
+include(":sample-plugin:sample")
+include(":sample-plugin:setting")
+include(":sample-plugin:example")

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jctech.plugin.core.interfaces.IPluginEntryClass
 import com.jctech.plugin.core.manager.PluginManager
+import com.jctech.plugin.core.manager.PluginManager.isPluginLoaded
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,11 +23,14 @@ class LoadingViewModel(
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
-    private val _pluginCount = MutableStateFlow(0)
-    val pluginCount: StateFlow<Int> = _pluginCount.asStateFlow()
-
     private val _entryClass = MutableStateFlow<IPluginEntryClass?>(null)
     val entryClass: StateFlow<IPluginEntryClass?> = _entryClass.asStateFlow()
+
+    companion object {
+        const val BASE_PATH = "plugins/base"
+        const val PLUGIN_COMMON = "common"
+        const val PLUGIN_HOME = "home"
+    }
 
     init {
         init()
@@ -35,9 +39,9 @@ class LoadingViewModel(
     fun init() {
         viewModelScope.launch {
             setLoading(true)
-            _pluginCount.value = PluginManager.getPluginInstances().size
-            if (pluginCount.value > 0) {
-                _entryClass.value = PluginManager.getPluginInstance("example_home")
+            _entryClass.value = PluginManager.getPluginInstance(PLUGIN_HOME)
+            if (entryClass.value == null || !isPluginLoaded(PLUGIN_COMMON)) {
+                installPlugin(BASE_PATH)
             }
             setLoading(false)
         }
@@ -47,10 +51,9 @@ class LoadingViewModel(
         _loading.value = isLoading
     }
 
-    fun installPlugin(assetPath: String) {
+    fun installPlugin(assetPath: String, forceOverwrite: Boolean = false) {
         viewModelScope.launch {
             setLoading(true)
-            // 从assets安装指定路径下所有插件
             val pluginFiles = context.assets.list(assetPath)
             pluginFiles?.forEach { fileName ->
                 val pluginFile = File(context.filesDir, fileName)
@@ -59,14 +62,10 @@ class LoadingViewModel(
                         inputStream.copyTo(outputStream)
                     }
                 }
-                // 安装插件
-                PluginManager.installerManager.installPlugin(pluginFile)
+                PluginManager.installerManager.installPlugin(pluginFile, forceOverwrite)
             }
             PluginManager.loadEnabledPlugins()
-            _pluginCount.value = PluginManager.getPluginInstances().size
-            if (pluginCount.value > 0) {
-                _entryClass.value = PluginManager.getPluginInstance("example_home")
-            }
+            _entryClass.value = PluginManager.getPluginInstance(PLUGIN_HOME)
             setLoading(false)
         }
     }

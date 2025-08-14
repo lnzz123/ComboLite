@@ -30,7 +30,6 @@ fun LoadingScreen(
     viewModel: LoadingViewModel = koinViewModel()
 ) {
     val loading by viewModel.loading.collectAsState()
-    val pluginCount by viewModel.pluginCount.collectAsState()
     val entryClass by viewModel.entryClass.collectAsState()
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -58,9 +57,9 @@ fun LoadingScreen(
                         modifier = Modifier.padding(horizontal = 32.dp)
                     )
                 }
-            } else if (pluginCount == 0) {
+            } else if (entryClass == null) {
                 Text(
-                    text = "未安装任何插件",
+                    text = "自动加载插件失败，请手动安装插件",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
@@ -68,10 +67,11 @@ fun LoadingScreen(
                 )
                 Button(
                     onClick = {
-                        viewModel.installPlugin("plugins")
+                        // 强制安装
+                        viewModel.installPlugin(LoadingViewModel.BASE_PATH, true)
                     }
                 ) {
-                    Text(text = "安装初始插件")
+                    Text(text = "重新安装")
                 }
             } else {
                 entryClass?.Content()

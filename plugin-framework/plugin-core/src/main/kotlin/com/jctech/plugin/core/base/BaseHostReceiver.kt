@@ -41,21 +41,20 @@ open class BaseHostReceiver : BroadcastReceiver() {
                     return@launch
                 }
 
-                val targetReceivers = PluginManager.proxyManager.findReceiversForAction(action)
+                val targetReceivers = PluginManager.proxyManager.findReceiversForIntent(intent)
 
                 if (targetReceivers.isEmpty()) {
-                    Timber.d("没有找到处理 [$action] 的插件接收器。")
+                    Timber.d("没有找到处理此 Intent 的插件接收器。Action: [$action]")
                     return@launch
                 }
 
-                targetReceivers.forEach { receiverInfo ->
-                    Timber.d("准备分发广播 [$action] 到插件 [${receiverInfo.pluginId}] 的 [${receiverInfo.className}]")
+                targetReceivers.forEach { (pluginId, receiverInfo) ->
+                    Timber.d("准备分发广播 [$action] 到插件 [$pluginId] 的 [${receiverInfo.className}]")
                     try {
                         val pluginReceiver = PluginManager.getInterface(
                             IPluginReceiver::class.java,
                             receiverInfo.className
                         )
-
                         pluginReceiver?.onReceive(context, intent)
                     } catch (e: Exception) {
                         Timber.e(e, "分发广播到 [${receiverInfo.className}] 时发生错误。")

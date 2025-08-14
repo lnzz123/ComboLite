@@ -5,7 +5,7 @@
         <!-- 插件配置元数据 -->
         <meta-data
             android:name="plugin.id"
-            android:value="example_common" />
+            android:value="common" />
         <meta-data
             android:name="plugin.version"
             android:value="1.0.1" />

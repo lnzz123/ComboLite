@@ -35,7 +35,6 @@ import java.io.File
  * @param pluginFinder 插件查找器，用于在其他插件中查找类
  */
 open class PluginClassLoader(
-    private val pluginId: String,
     dexPath: String,
     optimizedDirectory: String?,
     librarySearchPath: String?,
@@ -43,12 +42,10 @@ open class PluginClassLoader(
     private val pluginFinder: IPluginFinder?,
 ) : DexClassLoader(dexPath, optimizedDirectory, librarySearchPath, parent) {
     constructor(
-        pluginId: String,
         pluginFile: File,
         parent: ClassLoader,
         pluginFinder: IPluginFinder?,
     ) : this(
-        pluginId = pluginId,
         dexPath = pluginFile.absolutePath,
         optimizedDirectory =
             File(pluginFile.parent, "dex_opt").absolutePath.also {

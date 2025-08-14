@@ -20,7 +20,9 @@ val pluginModules =
     listOf(
         ":sample-plugin:common",
         ":sample-plugin:home",
-        ":sample-plugin:screen",
+        ":sample-plugin:guide",
+        ":sample-plugin:example",
+        ":sample-plugin:setting",
     )
 
 // 2. Package ID配置 - 为每个插件分配独立的package ID避免资源冲突

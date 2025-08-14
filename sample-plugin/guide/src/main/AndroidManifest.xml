@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application>
+        <provider
+            android:name=".MyContentProvider"
+            android:authorities="com.aa.provider;com.bb.provider"
+            android:enabled="true"
+            android:exported="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_AUTHORITIES"
+                android:value="asas" />
+        </provider>
+
+
+        <receiver
+            android:name=".TestReceiver"
+            android:enabled="true"
+            android:exported="true"
+            tools:ignore="Instantiatable">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
+
+        <!-- 插件配置元数据 -->
+        <meta-data
+            android:name="plugin.id"
+            android:value="guide" />
+        <meta-data
+            android:name="plugin.version"
+            android:value="1.0.1" />
+        <meta-data
+            android:name="plugin.description"
+            android:value="这是一个示例插件，支持中文。" />
+        <meta-data
+            android:name="plugin.entryClass"
+            android:value="com.jctech.plugin.sample.guide.PluginEntryClass" />
+    </application>
+
+</manifest>

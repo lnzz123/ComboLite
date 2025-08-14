@@ -12,6 +12,12 @@ import kotlinx.coroutines.launch
 class HomeViewModel() : BaseViewModel<HomeState>(
     initialState = HomeState()
 ) {
+    companion object {
+        const val PLUGIN_GUIDE = "guide"
+        const val PLUGIN_EXAMPLE = "example"
+        const val PLUGIN_SETTING = "setting"
+    }
+
     init {
         viewModelScope.launch {
             combine(

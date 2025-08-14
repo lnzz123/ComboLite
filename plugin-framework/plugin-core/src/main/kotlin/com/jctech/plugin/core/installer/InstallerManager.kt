@@ -21,6 +21,8 @@ import android.app.Application
 import android.content.pm.PackageManager
 import android.content.res.AssetManager
 import android.content.res.XmlResourceParser
+import com.jctech.plugin.core.model.IntentFilterInfo
+import com.jctech.plugin.core.model.MetaDataInfo
 import com.jctech.plugin.core.model.PluginInfo
 import com.jctech.plugin.core.model.ProviderInfo
 import com.jctech.plugin.core.model.StaticReceiverInfo
@@ -57,6 +59,7 @@ class InstallerManager(
         private const val META_PLUGIN_VERSION = "plugin.version"
         private const val META_PLUGIN_DESCRIPTION = "plugin.description"
         private const val META_PLUGIN_ENTRY_CLASS = "plugin.entryClass"
+        private const val ANDROID_NAMESPACE = "http://schemas.android.com/apk/res/android"
     }
 
     private val signatureValidator = SignatureValidator(context)
@@ -399,27 +402,29 @@ class InstallerManager(
      * @return 解析出的静态广播信息列表。
      */
     private fun parseStaticReceivers(apkPath: String): List<StaticReceiverInfo> {
-        Timber.tag(TAG).d("开始解析 StaticReceivers: $apkPath")
+        Timber.tag(TAG).d("开始解析 StaticReceivers : $apkPath")
         var parser: XmlResourceParser? = null
         try {
             val assetManager = AssetManager::class.java.newInstance()
             val addAssetPathMethod = AssetManager::class.java.getMethod("addAssetPath", String::class.java)
             val cookie = addAssetPathMethod.invoke(assetManager, apkPath) as Int
-            if (cookie == 0) {
-                Timber.tag(TAG).e("无法为 APK 添加资源路径: $apkPath")
-                return emptyList()
-            }
+            if (cookie == 0) return emptyList()
 
             parser = assetManager.openXmlResourceParser(cookie, "AndroidManifest.xml")
 
             val receivers = mutableListOf<StaticReceiverInfo>()
-            val androidNamespace = "http://schemas.android.com/apk/res/android"
-
             var eventType = parser.eventType
+
             var currentReceiverName: String? = null
             var currentReceiverEnabled = true
-            var currentActions: MutableList<String>? = null
+            var currentReceiverExported = false
+            var currentFilters: MutableList<IntentFilterInfo>? = null
+
             var inReceiverTag = false
+            var inFilterTag = false
+            var currentActions: MutableList<String>? = null
+            var currentCategories: MutableList<String>? = null
+            var currentSchemes: MutableList<String>? = null
 
             while (eventType != XmlPullParser.END_DOCUMENT) {
                 when (eventType) {
@@ -427,38 +432,52 @@ class InstallerManager(
                         when (parser.name) {
                             "receiver" -> {
                                 inReceiverTag = true
-                                currentActions = mutableListOf()
-                                currentReceiverName = parser.getAttributeValue(androidNamespace, "name")
-                                currentReceiverEnabled = parser.getAttributeBooleanValue(androidNamespace, "enabled", true)
+                                currentFilters = mutableListOf()
+                                currentReceiverName = parser.getAttributeValue(ANDROID_NAMESPACE, "name")
+                                currentReceiverEnabled = parser.getAttributeBooleanValue(ANDROID_NAMESPACE, "enabled", true)
+                                currentReceiverExported = parser.getAttributeBooleanValue(ANDROID_NAMESPACE, "exported", false) // 注意：默认值根据是否有filter会变，但为了安全我们默认false
                             }
-                            "action" -> {
-                                if (inReceiverTag && currentActions != null) {
-                                    val actionName = parser.getAttributeValue(androidNamespace, "name")
-                                    if (!actionName.isNullOrBlank()) {
-                                        currentActions.add(actionName)
-                                    }
-                                }
+                            "intent-filter" -> if (inReceiverTag) {
+                                inFilterTag = true
+                                currentActions = mutableListOf()
+                                currentCategories = mutableListOf()
+                                currentSchemes = mutableListOf()
+                            }
+                            "action" -> if (inFilterTag) {
+                                parser.getAttributeValue(ANDROID_NAMESPACE, "name")?.let { currentActions?.add(it) }
+                            }
+                            "category" -> if (inFilterTag) {
+                                parser.getAttributeValue(ANDROID_NAMESPACE, "name")?.let { currentCategories?.add(it) }
+                            }
+                            "data" -> if (inFilterTag) {
+                                parser.getAttributeValue(ANDROID_NAMESPACE, "scheme")?.let { currentSchemes?.add(it) }
                             }
                         }
                     }
                     XmlPullParser.END_TAG -> {
-                        if (parser.name == "receiver") {
-                            if (!currentReceiverName.isNullOrBlank() && !currentActions.isNullOrEmpty()) {
-                                val finalClassName = currentReceiverName
-                                val finalActions = currentActions
-
-                                val receiverInfo = StaticReceiverInfo(
-                                    className = finalClassName,
-                                    actions = finalActions,
-                                    enabled = currentReceiverEnabled
+                        when (parser.name) {
+                            "intent-filter" -> if (inFilterTag) {
+                                inFilterTag = false
+                                currentFilters?.add(
+                                    IntentFilterInfo(
+                                        actions = currentActions ?: emptyList(),
+                                        categories = currentCategories ?: emptyList(),
+                                        schemes = currentSchemes ?: emptyList()
+                                    )
                                 )
-                                receivers.add(receiverInfo)
-                                Timber.tag(TAG).d("解析到静态广播: ${receiverInfo.className}, actions: ${receiverInfo.actions}")
                             }
-                            inReceiverTag = false
-                            currentReceiverName = null
-                            currentActions = null
-                            currentReceiverEnabled = true
+                            "receiver" -> if (inReceiverTag) {
+                                inReceiverTag = false
+                                if (!currentReceiverName.isNullOrBlank() && !currentFilters.isNullOrEmpty()) {
+                                    receivers.add(StaticReceiverInfo(
+                                        className = currentReceiverName,
+                                        enabled = currentReceiverEnabled,
+                                        exported = currentReceiverExported,
+                                        intentFilters = currentFilters
+                                    ))
+                                    Timber.tag(TAG).d("解析到静态广播: $currentReceiverName, filters: ${currentFilters.size}")
+                                }
+                            }
                         }
                     }
                 }
@@ -469,7 +488,6 @@ class InstallerManager(
             Timber.tag(TAG).e(e, "使用 AXmlResourceParser 解析静态广播失败: $apkPath")
             return emptyList()
         } finally {
-            // 确保解析器被关闭
             parser?.close()
         }
     }
@@ -480,20 +498,36 @@ class InstallerManager(
      * @return 解析出的 Provider 信息列表。
      */
     private fun parseProviders(apkPath: String): List<ProviderInfo> {
-        Timber.tag(TAG).d("开始解析 ContentProvider: $apkPath")
+        Timber.tag(TAG).d("开始解析 ContentProvider : $apkPath")
         val pm = context.packageManager
         try {
-            val packageInfo = pm.getPackageArchiveInfo(apkPath, PackageManager.GET_PROVIDERS)
+            val packageInfo = pm.getPackageArchiveInfo(apkPath, PackageManager.GET_PROVIDERS or PackageManager.GET_META_DATA)
 
             val providerList = mutableListOf<ProviderInfo>()
-            packageInfo?.providers?.forEach { providerInfo ->
-                val className = providerInfo.name
-                val authorities = providerInfo.authority?.split(";")?.filter { it.isNotBlank() }
-                val enabled = providerInfo.enabled
-
+            packageInfo?.providers?.forEach { provider ->
+                val authorities = provider.authority?.split(";")?.filter { it.isNotBlank() }
                 if (!authorities.isNullOrEmpty()) {
-                    providerList.add(ProviderInfo(className, authorities, enabled))
-                    Timber.tag(TAG).d("解析到 ContentProvider: $className, authorities: $authorities")
+                    val metaDataList = mutableListOf<MetaDataInfo>()
+                    provider.metaData?.keySet()?.forEach { key ->
+                        val rawValue = provider.metaData.get(key)
+                        when (rawValue) {
+                            is Int -> {
+                                metaDataList.add(MetaDataInfo(name = key, value = null, resource = rawValue))
+                            }
+                            else -> {
+                                metaDataList.add(MetaDataInfo(name = key, value = rawValue?.toString(), resource = null))
+                            }
+                        }
+                    }
+
+                    providerList.add(ProviderInfo(
+                        className = provider.name,
+                        authorities = authorities,
+                        enabled = provider.enabled,
+                        exported = provider.exported,
+                        metaData = metaDataList
+                    ))
+                    Timber.tag(TAG).d("解析到 ContentProvider: ${provider.name}, authorities: $authorities, exported: ${provider.exported}")
                 }
             }
             return providerList

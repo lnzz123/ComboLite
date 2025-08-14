@@ -132,7 +132,7 @@ object PluginManager : IPluginFinder {
                 this.xmlManager = XmlManager(this.context)
                 this.installerManager = InstallerManager(this.context, xmlManager)
                 this.resourcesManager = PluginResourcesManager(this.context)
-                this.proxyManager = ProxyManager()
+                this.proxyManager = ProxyManager(this.context)
 
                 clearRuntimeCache()
 
@@ -412,12 +412,11 @@ object PluginManager : IPluginFinder {
 
                 // 过滤后的列表注册到 ProxyManager
                 proxyManager.registerStaticReceivers(plugin.pluginId, enabledReceivers)
-                // proxyManager.registerProviders(plugin.pluginId, enabledProviders)
+                proxyManager.registerProviders(plugin.pluginId, enabledProviders)
 
                 // 使用缓存文件创建类加载器
                 val classLoader =
                     PluginClassLoader(
-                        pluginId = plugin.pluginId,
                         pluginFile = runtimeCacheFile,
                         parent = context.classLoader,
                         pluginFinder = this@PluginManager,

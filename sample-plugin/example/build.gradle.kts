@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.jctech.plugin.sample.home"
+    namespace = "com.jctech.plugin.sampl.example"
     compileSdk = 36
 
     defaultConfig {
@@ -18,8 +18,6 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            // 为未使用的资源生成R类
-            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -38,5 +36,4 @@ android {
 dependencies {
     compileOnly(projects.pluginFramework.pluginCore)
     compileOnly(projects.samplePlugin.common)
-    compileOnly(projects.samplePlugin.guide)
 }

@@ -5,6 +5,8 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
+import android.os.Binder
+import android.os.Process
 import com.jctech.plugin.core.manager.PluginManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -121,35 +123,69 @@ open class BaseHostProvider : ContentProvider() {
         return builder.build()
     }
 
+    /**
+     * 高阶函数，封装请求转发的重复逻辑，并增加安全检查。
+     */
+    private inline fun <T> withForwardedRequest(uri: Uri, block: (provider: ContentProvider, rewrittenUri: Uri) -> T?): T? {
+
+        // 1. 解析出目标 Provider 的类名
+        val className = uri.pathSegments.getOrNull(0)?.let { URLDecoder.decode(it, "UTF-8") }
+        if (className == null) {
+            Timber.e("无法从URI中解析出插件Provider类名: $uri")
+            return null
+        }
+
+        // 2. 从ProxyManager获取其完整的注册信息
+        val providerInfo = PluginManager.proxyManager.findProviderInfoByClassName(className)
+        if (providerInfo == null) {
+            throw SecurityException("拦截：目标 Provider [$className] 未注册。")
+        }
+
+        // 3. 核心安全检查：检查 exported 属性
+        if (!providerInfo.exported) {
+            val callingUid = Binder.getCallingUid()
+            val myUid = Process.myUid()
+            if (callingUid != myUid) {
+                throw SecurityException("权限拒绝：Provider ${providerInfo.className} 未导出，无法被外部应用访问。")
+            }
+        }
+
+        // --- 安全检查结束，后续流程不变 ---
+
+        val targetProvider = getTargetProvider(uri) ?: return null
+        val rewrittenUri = rewriteUri(uri) ?: return null
+        return block(targetProvider, rewrittenUri)
+    }
+
     // --- 将所有 ContentProvider 的方法转发给目标 Provider ---
 
     override fun query(uri: Uri, projection: Array<String>?, selection: String?, selectionArgs: Array<String>?, sortOrder: String?): Cursor? {
-        val targetProvider = getTargetProvider(uri) ?: return null
-        val rewrittenUri = rewriteUri(uri) ?: return null
-        return targetProvider.query(rewrittenUri, projection, selection, selectionArgs, sortOrder)
+        return withForwardedRequest(uri) { provider, rewritten ->
+            provider.query(rewritten, projection, selection, selectionArgs, sortOrder)
+        }
     }
 
     override fun getType(uri: Uri): String? {
-        val targetProvider = getTargetProvider(uri) ?: return null
-        val rewrittenUri = rewriteUri(uri) ?: return null
-        return targetProvider.getType(rewrittenUri)
+        return withForwardedRequest(uri) { provider, rewritten ->
+            provider.getType(rewritten)
+        }
     }
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? {
-        val targetProvider = getTargetProvider(uri) ?: return null
-        val rewrittenUri = rewriteUri(uri) ?: return null
-        return targetProvider.insert(rewrittenUri, values)
+        return withForwardedRequest(uri) { provider, rewritten ->
+            provider.insert(rewritten, values)
+        }
     }
 
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<String>?): Int {
-        val targetProvider = getTargetProvider(uri) ?: return 0
-        val rewrittenUri = rewriteUri(uri) ?: return 0
-        return targetProvider.delete(rewrittenUri, selection, selectionArgs)
+        return withForwardedRequest(uri) { provider, rewritten ->
+            provider.delete(rewritten, selection, selectionArgs)
+        } ?: 0
     }
 
     override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<String>?): Int {
-        val targetProvider = getTargetProvider(uri) ?: return 0
-        val rewrittenUri = rewriteUri(uri) ?: return 0
-        return targetProvider.update(rewrittenUri, values, selection, selectionArgs)
+        return withForwardedRequest(uri) { provider, rewritten ->
+            provider.update(rewritten, values, selection, selectionArgs)
+        } ?: 0
     }
 }

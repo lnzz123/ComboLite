@@ -17,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jctech.plugin.core.interfaces.IPluginEntryClass
@@ -38,7 +37,6 @@ fun EmptyPage(
     onButtonClick: () -> Unit,
 ) {
     var loading by remember { mutableStateOf(false) }
-    val context = LocalContext.current
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -66,22 +64,22 @@ fun EmptyPage(
                             color = MaterialTheme.colorScheme.onBackground,
                             textAlign = TextAlign.Center,
                         )
-                    }
+                    } else {
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                        )
 
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center,
-                    )
-
-                    Button(
-                        onClick = {
-                            loading = true
-                            onButtonClick()
+                        Button(
+                            onClick = {
+                                loading = true
+                                onButtonClick()
+                            }
+                        ) {
+                            Text(text = buttonText)
                         }
-                    ) {
-                        Text(text = buttonText)
                     }
                 }
             }

@@ -22,6 +22,8 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import android.util.Xml
+import com.jctech.plugin.core.model.IntentFilterInfo
+import com.jctech.plugin.core.model.MetaDataInfo
 import com.jctech.plugin.core.model.PluginInfo
 import com.jctech.plugin.core.model.ProviderInfo
 import com.jctech.plugin.core.model.StaticReceiverInfo
@@ -57,31 +59,37 @@ class XmlManager(
         private const val TAG = "InstallerXmlManager"
         private const val FILENAME = "plugins.xml"
         private const val BACKUP_FILENAME = "plugins.xml.bak"
-        private const val TEMP_FILENAME = "plugins.xml.tmp" // 用于原子写入的临时文件
+        private const val TEMP_FILENAME = "plugins.xml.tmp"
 
-        // XML标签常量
         private const val TAG_PLUGINS = "plugins"
         private const val TAG_PLUGIN = "plugin"
         private const val TAG_DESCRIPTION = "description"
-
-        // XML属性常量
         private const val ATTR_ID = "id"
         private const val ATTR_VERSION = "version"
         private const val ATTR_ENTRY_CLASS = "entryClass"
         private const val ATTR_PATH = "path"
         private const val ATTR_ENABLED = "enabled"
+        private const val ATTR_EXPORTED = "exported" // [新增]
         private const val ATTR_INSTALL_TIME = "installTime"
-
-        // 插件静态广播接收器的标签和属性
-        private const val TAG_RECEIVERS = "receivers"
-        private const val TAG_RECEIVER = "receiver"
-        private const val TAG_ACTION = "action"
         private const val ATTR_NAME = "name"
 
-        // Provider 相关标签
+        // Receiver
+        private const val TAG_RECEIVERS = "receivers"
+        private const val TAG_RECEIVER = "receiver"
+        private const val TAG_INTENT_FILTER = "intent-filter"
+        private const val TAG_ACTION = "action"
+        private const val TAG_CATEGORY = "category"
+        private const val TAG_SCHEME = "scheme"
+
+        // Provider
         private const val TAG_PROVIDERS = "providers"
         private const val TAG_PROVIDER = "provider"
+        private const val TAG_METADATA = "meta-data"
         private const val ATTR_AUTHORITIES = "authorities"
+        private const val ATTR_VALUE = "value"
+        private const val ATTR_RESOURCE = "resource"
+
+        private const val INDENT_OUTPUT = "http://xmlpull.org/v1/doc/features.html#indent-output"
 
         // 延迟写入时间（毫秒）
         private const val WRITE_DELAY_MS = 500L
@@ -125,7 +133,7 @@ class XmlManager(
         Runnable {
             writeLock.withLock {
                 // 直接尝试获取写锁，确保独占访问
-                if (hasUnsavedChanges.get()) { // 在获取写锁后再次检查
+                if (hasUnsavedChanges.get()) {
                     try {
                         Timber.tag(TAG).d("正在执行延迟写入到磁盘...")
                         writePluginsToDisk()
@@ -211,135 +219,199 @@ class XmlManager(
      */
     private fun loadPluginsFromDisk(useBackup: Boolean = false): List<PluginInfo> {
         val targetFile = if (useBackup) backupConfigFile else pluginsConfigFile
-        Timber.tag(TAG).d("正在尝试从以下位置加载插件: ${targetFile.absolutePath}")
+        if (! targetFile.exists()) return emptyList()
 
-        if (!targetFile.exists()) {
-            Timber.tag(TAG).d("${targetFile.name} 不存在。返回空列表。")
-            return emptyList()
-        }
+        // 【修改】为了打印日志，我们先将文件完整读入一个字符串
+        val xmlContent = targetFile.readText(StandardCharsets.UTF_8)
+
+        // 【新增】打印完整的 XML 文本内容
+        // 使用一个清晰的边界，方便在 Logcat 中查看
+        Log.d(TAG,"--- 开始加载 ${targetFile.name} 内容 ---\n$xmlContent\n--- ${targetFile.name} 内容结束 ---")
 
         val pluginList = mutableListOf<PluginInfo>()
         try {
-            // 【修改】为了打印日志，我们先将文件完整读入一个字符串
-            val xmlContent = targetFile.readText(StandardCharsets.UTF_8)
-
-            // 【新增】打印完整的 XML 文本内容
-            // 使用一个清晰的边界，方便在 Logcat 中查看
-            Log.d(TAG,"--- 开始加载 ${targetFile.name} 内容 ---\n$xmlContent\n--- ${targetFile.name} 内容结束 ---")
-
             FileInputStream(targetFile).use { fis ->
-                val parser =
-                    XmlPullParserFactory
-                        .newInstance()
-                        .apply {
-                            isNamespaceAware = true
-                        }.newPullParser()
+                val parser = XmlPullParserFactory.newInstance().apply { isNamespaceAware = true }
+                    .newPullParser()
                 parser.setInput(fis, StandardCharsets.UTF_8.name())
 
                 var eventType = parser.eventType
                 var currentPlugin: PluginInfo? = null
-                var lastStartTag: String? = null
 
-                // --- 用于解析嵌套结构的临时状态变量 ---
                 var currentReceivers: MutableList<StaticReceiverInfo>? = null
                 var currentProviders: MutableList<ProviderInfo>? = null
 
+                // 临时状态变量
+                var inProviderTag = false
                 var currentReceiverName: String? = null
-                var currentReceiverEnabled: Boolean = true
+                var currentReceiverEnabled = true
+                var currentReceiverExported = false
+                var currentFilters: MutableList<IntentFilterInfo>? = null
                 var currentActions: MutableList<String>? = null
+                var currentCategories: MutableList<String>? = null
+                var currentSchemes: MutableList<String>? = null
 
                 var currentProviderName: String? = null
-                var currentProviderEnabled: Boolean = true
+                var currentProviderEnabled = true
+                var currentProviderExported = false
                 var currentAuthorities: List<String>? = null
+                var currentMetaData: MutableList<MetaDataInfo>? = null
 
                 while (eventType != XmlPullParser.END_DOCUMENT) {
                     when (eventType) {
                         XmlPullParser.START_TAG -> {
-                            lastStartTag = parser.name
-                            when (lastStartTag) {
-                                TAG_PLUGIN -> {
-                                    currentPlugin =
-                                        PluginInfo(
-                                            pluginId = parser.getAttributeValue(null, ATTR_ID)?: "",
-                                            version = parser.getAttributeValue(null, ATTR_VERSION)?: "",
-                                            entryClass = parser.getAttributeValue(null, ATTR_ENTRY_CLASS)?: "",
-                                            path = parser.getAttributeValue(null, ATTR_PATH)?: "",
-                                            enabled = parser.getAttributeValue(null, ATTR_ENABLED)?.toBoolean() ?: true,
-                                            installTime = parser.getAttributeValue(null, ATTR_INSTALL_TIME).toLongOrNull()?: 0L,
-                                            description = ""
-                                        )
-                                }
+                            when (parser.name) {
+                                TAG_PLUGIN -> currentPlugin = PluginInfo(
+                                    pluginId = parser.getAttributeValue(null, ATTR_ID) ?: "",
+                                    version = parser.getAttributeValue(null, ATTR_VERSION) ?: "",
+                                    entryClass = parser.getAttributeValue(null, ATTR_ENTRY_CLASS)
+                                        ?: "",
+                                    path = parser.getAttributeValue(null, ATTR_PATH) ?: "",
+                                    enabled = parser.getAttributeValue(null, ATTR_ENABLED)
+                                        ?.toBoolean() ?: true,
+                                    installTime = parser.getAttributeValue(null, ATTR_INSTALL_TIME)
+                                        .toLongOrNull() ?: 0L,
+                                    description = ""
+                                )
+
                                 TAG_RECEIVERS -> currentReceivers = mutableListOf()
                                 TAG_RECEIVER -> {
-                                    currentActions = mutableListOf()
+                                    currentFilters = mutableListOf()
                                     currentReceiverName = parser.getAttributeValue(null, ATTR_NAME)
-                                    currentReceiverEnabled = parser.getAttributeValue(null, ATTR_ENABLED)?.toBoolean() ?: true
+                                    currentReceiverEnabled =
+                                        parser.getAttributeValue(null, ATTR_ENABLED)?.toBoolean()
+                                            ?: true
+                                    currentReceiverExported =
+                                        parser.getAttributeValue(null, ATTR_EXPORTED)?.toBoolean()
+                                            ?: false
                                 }
-                                TAG_ACTION -> currentActions?.add(parser.getAttributeValue(null, ATTR_NAME) ?: "")
+
+                                TAG_INTENT_FILTER -> {
+                                    currentActions = mutableListOf()
+                                    currentCategories = mutableListOf()
+                                    currentSchemes = mutableListOf()
+                                }
+
+                                TAG_ACTION -> currentActions?.add(
+                                    parser.getAttributeValue(
+                                        null,
+                                        ATTR_NAME
+                                    ) ?: ""
+                                )
+
+                                TAG_CATEGORY -> currentCategories?.add(
+                                    parser.getAttributeValue(
+                                        null,
+                                        ATTR_NAME
+                                    ) ?: ""
+                                )
+
+                                TAG_SCHEME -> currentSchemes?.add(
+                                    parser.getAttributeValue(
+                                        null,
+                                        ATTR_NAME
+                                    ) ?: ""
+                                )
+
                                 TAG_PROVIDERS -> currentProviders = mutableListOf()
                                 TAG_PROVIDER -> {
+                                    inProviderTag = true
+                                    currentMetaData = mutableListOf()
                                     currentProviderName = parser.getAttributeValue(null, ATTR_NAME)
-                                    val authoritiesStr = parser.getAttributeValue(null, ATTR_AUTHORITIES) ?: ""
-                                    currentAuthorities = authoritiesStr.split(";").filter { it.isNotBlank() }
-                                    currentProviderEnabled = parser.getAttributeValue(null, ATTR_ENABLED)?.toBoolean() ?: true
+                                    currentAuthorities =
+                                        (parser.getAttributeValue(null, ATTR_AUTHORITIES)
+                                            ?: "").split(";").filter { it.isNotBlank() }
+                                    currentProviderEnabled =
+                                        parser.getAttributeValue(null, ATTR_ENABLED)?.toBoolean()
+                                            ?: true
+                                    currentProviderExported =
+                                        parser.getAttributeValue(null, ATTR_EXPORTED)?.toBoolean()
+                                            ?: false
+                                }
+
+                                TAG_METADATA -> {
+                                    if (inProviderTag) {
+                                        currentMetaData?.add(
+                                            MetaDataInfo(
+                                                name = parser.getAttributeValue(null, ATTR_NAME)
+                                                    ?: "",
+                                                value = parser.getAttributeValue(null, ATTR_VALUE),
+                                                resource = parser.getAttributeValue(null, ATTR_RESOURCE).toIntOrNull()
+                                            )
+                                        )
+                                    }
                                 }
                             }
                         }
 
                         XmlPullParser.TEXT -> {
-                            val text = parser.text?.trim()
-                            if (currentPlugin != null && !text.isNullOrEmpty()) {
-                                if (lastStartTag == TAG_DESCRIPTION) {
-                                    currentPlugin.description = text
-                                }
+                            currentPlugin?.let {
+                                if (parser.text?.isNotBlank() == true) it.description =
+                                    parser.text.trim()
                             }
                         }
 
                         XmlPullParser.END_TAG -> {
                             when (parser.name) {
                                 TAG_PLUGIN -> {
-                                    if (currentPlugin != null) {
-                                        val finalPlugin = currentPlugin.copy(
-                                            staticReceivers = currentReceivers ?: emptyList(),
-                                            providers = currentProviders ?: emptyList()
+                                    currentPlugin?.let { plugin ->
+                                        pluginList.add(
+                                            plugin.copy(
+                                                staticReceivers = currentReceivers ?: emptyList(),
+                                                providers = currentProviders ?: emptyList()
+                                            )
                                         )
-                                        pluginList.add(finalPlugin)
-                                        currentPlugin = null
-                                        currentReceivers = null
-                                        currentProviders = null
                                     }
+                                    currentPlugin = null
+                                    currentReceivers = null
+                                    currentProviders = null
                                 }
+
                                 TAG_RECEIVER -> {
-                                    if (currentReceiverName != null && currentActions != null) {
-                                        currentReceivers?.add(StaticReceiverInfo(currentReceiverName,
-                                            currentActions,
-                                            currentReceiverEnabled
-                                        ))
+                                    if (currentReceiverName != null && currentFilters != null) {
+                                        currentReceivers?.add(
+                                            StaticReceiverInfo(
+                                                currentReceiverName,
+                                                currentReceiverEnabled,
+                                                currentReceiverExported,
+                                                currentFilters
+                                            )
+                                        )
                                     }
-                                    currentReceiverName = null
-                                    currentActions = null
                                 }
+
+                                TAG_INTENT_FILTER -> {
+                                    currentFilters?.add(
+                                        IntentFilterInfo(
+                                            actions = currentActions ?: emptyList(),
+                                            categories = currentCategories ?: emptyList(),
+                                            schemes = currentSchemes ?: emptyList()
+                                        )
+                                    )
+                                }
+
                                 TAG_PROVIDER -> {
                                     if (currentProviderName != null && currentAuthorities != null) {
-                                        currentProviders?.add(ProviderInfo(currentProviderName,
-                                            currentAuthorities,
-                                            currentProviderEnabled
-                                        ))
+                                        currentProviders?.add(
+                                            ProviderInfo(
+                                                currentProviderName,
+                                                currentAuthorities,
+                                                currentProviderEnabled,
+                                                currentProviderExported,
+                                                currentMetaData ?: emptyList()
+                                            )
+                                        )
                                     }
-                                    currentProviderName = null
-                                    currentAuthorities = null
+                                    inProviderTag = false
                                 }
                             }
-                            lastStartTag = null
                         }
                     }
                     eventType = parser.next()
                 }
             }
         } catch (e: Exception) {
-            val errorMessage = "读取或解析 ${targetFile.name} 时发生错误: ${e.message}"
-            Timber.tag(TAG).e(e, errorMessage)
-            throw IOException(errorMessage, e)
+            throw IOException("读取或解析 ${targetFile.name} 时发生错误", e)
         }
         return pluginList
     }
@@ -397,7 +469,7 @@ class XmlManager(
                 val serializer = Xml.newSerializer()
                 serializer.setOutput(writer)
                 serializer.startDocument(StandardCharsets.UTF_8.name(), true)
-                serializer.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true) // 美化输出，方便调试
+                serializer.setFeature(INDENT_OUTPUT, true)
                 serializer.startTag(null, TAG_PLUGINS)
 
                 plugins.forEach { plugin ->
@@ -413,35 +485,64 @@ class XmlManager(
                         serializer.text(plugin.description)
                         serializer.endTag(null, TAG_DESCRIPTION)
                     }
+                    // 写入 Receivers
                     if (plugin.staticReceivers.isNotEmpty()) {
                         serializer.startTag(null, TAG_RECEIVERS)
-                        plugin.staticReceivers.forEach { receiverInfo ->
+                        plugin.staticReceivers.forEach { receiver ->
                             serializer.startTag(null, TAG_RECEIVER)
-                            serializer.attribute(null, ATTR_NAME, receiverInfo.className)
-                            serializer.attribute(null, ATTR_ENABLED, receiverInfo.enabled.toString())
-                            receiverInfo.actions.forEach { action ->
-                                serializer.startTag(null, TAG_ACTION)
-                                serializer.attribute(null, ATTR_NAME, action)
-                                serializer.endTag(null, TAG_ACTION)
+                            serializer.attribute(null, ATTR_NAME, receiver.className)
+                            serializer.attribute(null, ATTR_ENABLED, receiver.enabled.toString())
+                            serializer.attribute(null, ATTR_EXPORTED, receiver.exported.toString())
+                            receiver.intentFilters.forEach { filter ->
+                                serializer.startTag(null, TAG_INTENT_FILTER)
+                                filter.actions.forEach {
+                                    serializer.startTag(null, TAG_ACTION)
+                                        .attribute(null, ATTR_NAME, it).endTag(null, TAG_ACTION)
+                                }
+                                filter.categories.forEach {
+                                    serializer.startTag(null, TAG_CATEGORY)
+                                        .attribute(null, ATTR_NAME, it).endTag(null, TAG_CATEGORY)
+                                }
+                                filter.schemes.forEach {
+                                    serializer.startTag(null, TAG_SCHEME)
+                                        .attribute(null, ATTR_NAME, it).endTag(null, TAG_SCHEME)
+                                }
+                                serializer.endTag(null, TAG_INTENT_FILTER)
                             }
                             serializer.endTag(null, TAG_RECEIVER)
                         }
                         serializer.endTag(null, TAG_RECEIVERS)
                     }
-
-                    // 完整写入 Providers 信息
+                    // 写入 Providers
                     if (plugin.providers.isNotEmpty()) {
                         serializer.startTag(null, TAG_PROVIDERS)
-                        plugin.providers.forEach { providerInfo ->
+                        plugin.providers.forEach { provider ->
                             serializer.startTag(null, TAG_PROVIDER)
-                            serializer.attribute(null, ATTR_NAME, providerInfo.className)
-                            serializer.attribute(null, ATTR_AUTHORITIES, providerInfo.authorities.joinToString(";"))
-                            serializer.attribute(null, ATTR_ENABLED, providerInfo.enabled.toString())
+                            serializer.attribute(null, ATTR_NAME, provider.className)
+                            serializer.attribute(
+                                null,
+                                ATTR_AUTHORITIES,
+                                provider.authorities.joinToString(";")
+                            )
+                            serializer.attribute(null, ATTR_ENABLED, provider.enabled.toString())
+                            serializer.attribute(null, ATTR_EXPORTED, provider.exported.toString())
+
+                            provider.metaData.forEach { meta ->
+                                serializer.startTag(null, TAG_METADATA)
+                                serializer.attribute(null, ATTR_NAME, meta.name)
+                                if (meta.value != null) {
+                                    serializer.attribute(null, ATTR_VALUE, meta.value)
+                                }
+                                if (meta.resource != null) {
+                                    serializer.attribute(null, ATTR_RESOURCE, meta.resource.toString())
+                                }
+                                serializer.endTag(null, TAG_METADATA)
+                            }
+
                             serializer.endTag(null, TAG_PROVIDER)
                         }
                         serializer.endTag(null, TAG_PROVIDERS)
                     }
-
                     serializer.endTag(null, TAG_PLUGIN)
                 }
 
