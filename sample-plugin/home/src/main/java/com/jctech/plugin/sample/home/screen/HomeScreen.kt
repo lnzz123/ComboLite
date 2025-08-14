@@ -63,7 +63,7 @@ fun HomeScreen(
             AppDestinations.HOME -> {
                 val pluginStatus = viewModel.getPluginStatus(HomeViewModel.PLUGIN_GUIDE)
                 EmptyPage(
-                    entryClass = state.explainEntryClass,
+                    entryClass = state.guideEntryClass,
                     message = when (pluginStatus) {
                         PluginStatus.NOT_INSTALLED -> "插件[${HomeViewModel.PLUGIN_GUIDE}]未安装"
                         PluginStatus.INSTALLED_NOT_STARTED -> "插件[${HomeViewModel.PLUGIN_GUIDE}]未启动"
@@ -91,7 +91,7 @@ fun HomeScreen(
             AppDestinations.SAMPLE -> {
                 val pluginStatus = viewModel.getPluginStatus(HomeViewModel.PLUGIN_EXAMPLE)
                 EmptyPage(
-                    entryClass = state.sampleEntryClass,
+                    entryClass = state.exampleEntryClass,
                     message = when (pluginStatus) {
                         PluginStatus.NOT_INSTALLED -> "插件[${HomeViewModel.PLUGIN_EXAMPLE}]未安装"
                         PluginStatus.INSTALLED_NOT_STARTED -> "插件[${HomeViewModel.PLUGIN_EXAMPLE}]未启动"

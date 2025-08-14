@@ -15,7 +15,7 @@ class PluginEntryClass() : IPluginEntryClass {
 
     @Composable
     override fun Content() {
-        ScreenOne()
+        GuideMainScreen()
     }
 }
 

@@ -50,6 +50,8 @@ appcompatVersion = "1.7.1"
 materialVersion = "1.12.0"
 material3AdaptiveNavigationSuite = "1.3.2"
 dexlib2 = "2.5.2"
+paletteKtx = "1.0.0"
+coil = "3.2.0"
 
 [libraries]
 # Dexlib2 库
@@ -61,7 +63,12 @@ timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "tim
 accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
 shimmer = { group = "com.valentinilk.shimmer", name = "compose-shimmer", version.ref = "shimmer" }
 lottie = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottie" }
-
+# 提供图片加载库Coil的核心功能
+coil-kt = { group = "io.coil-kt.coil3", name = "coil", version.ref = "coil" }
+coil-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
+coil-kt-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-kt-svg = { group = "io.coil-kt.coil3", name = "coil-svg", version.ref = "coil" }
+coil-kt-gif = { group = "io.coil-kt.coil3", name = "coil-gif", version.ref = "coil" }
 
 # AndroidX Room 数据库相关库
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "androidxRoom" }
@@ -145,6 +152,7 @@ androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-p
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompatVersion" }
 material = { group = "com.google.android.material", name = "material", version.ref = "materialVersion" }
 androidx-material3-adaptive-navigation-suite = { group = "androidx.compose.material3", name = "material3-adaptive-navigation-suite", version.ref = "material3AdaptiveNavigationSuite" }
+androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
 
 #
 [plugins]

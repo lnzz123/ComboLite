@@ -14,8 +14,10 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
+
+    api(libs.androidx.appcompat)
+    api(libs.material)
+    api(libs.androidx.palette.ktx)
     // ========== 基础Compose依赖（通过api暴露） ==========
     api(libs.androidx.compose.runtime)
     api(libs.androidx.compose.ui)
@@ -45,6 +47,11 @@ dependencies {
     api(libs.landscapist.palette)
     api(libs.shimmer)
     api(libs.lottie)
+    api(libs.coil.kt)
+    api(libs.coil.okhttp)
+    api(libs.coil.kt.compose)
+    api(libs.coil.kt.svg)
+    api(libs.coil.kt.gif)
 
     // ========== 网络和序列化 ==========
     api(platform(libs.retrofit.bom))

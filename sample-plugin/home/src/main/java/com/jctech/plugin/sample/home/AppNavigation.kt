@@ -6,8 +6,6 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.jctech.plugin.sample.common.navigation.AppScreen
 import com.jctech.plugin.sample.home.screen.HomeScreen
-import com.jctech.plugin.sample.guide.ScreenOne
-import com.jctech.plugin.sample.guide.ScreenTwo
 
 /**
  * 在给定的 [NavGraphBuilder] 中定义应用的导航图。
@@ -24,11 +22,11 @@ fun NavGraphBuilder.appNavigation(sharedTransitionScope: SharedTransitionScope) 
         }
 
         composable<AppScreen.ScreenOne> {
-            ScreenOne()
+
         }
 
         composable<AppScreen.ScreenTwo> {
-            ScreenTwo()
+
         }
     }
 }

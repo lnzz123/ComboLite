@@ -3,28 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application>
-        <provider
-            android:name=".MyContentProvider"
-            android:authorities="com.aa.provider;com.bb.provider"
-            android:enabled="true"
-            android:exported="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_AUTHORITIES"
-                android:value="asas" />
-        </provider>
-
-
-        <receiver
-            android:name=".TestReceiver"
-            android:enabled="true"
-            android:exported="true"
-            tools:ignore="Instantiatable">
-            <intent-filter>
-                <action android:name="android.intent.action.PACKAGE_REPLACED" />
-                <data android:scheme="package" />
-            </intent-filter>
-        </receiver>
-
         <!-- 插件配置元数据 -->
         <meta-data
             android:name="plugin.id"

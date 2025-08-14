@@ -34,9 +34,9 @@ class HomeViewModel() : BaseViewModel<HomeState>(
                 updateState {
                     copy(
                         installedPlugins = PluginManager.getAllInstallPlugins(),
-                        explainEntryClass = PluginManager.getPluginInstance("example_screen"),
-                        sampleEntryClass = PluginManager.getPluginInstance("sample"),
-                        settingEntryClass = PluginManager.getPluginInstance("setting"),
+                        guideEntryClass = PluginManager.getPluginInstance(PLUGIN_GUIDE),
+                        exampleEntryClass = PluginManager.getPluginInstance(PLUGIN_EXAMPLE),
+                        settingEntryClass = PluginManager.getPluginInstance(PLUGIN_SETTING),
                     )
                 }
             }
