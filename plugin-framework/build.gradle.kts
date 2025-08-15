@@ -97,7 +97,7 @@ abstract class ConvertAarToApkTask : DefaultTask() {
     fun execute() {
         executeAarBuild()
         val aarFile = project.file(aarFilePath.get())
-        if (! aarFile.exists()) {
+        if (!aarFile.exists()) {
             throw GradleException("找不到文件: ${aarFile.absolutePath}")
         }
 
@@ -121,7 +121,7 @@ abstract class ConvertAarToApkTask : DefaultTask() {
             extractAarContents(aarFile, extractDir)
 
             val manifestFile = File(extractDir, "AndroidManifest.xml")
-            if (! manifestFile.exists()) {
+            if (!manifestFile.exists()) {
                 logMessage("⚠️ 未找到AndroidManifest.xml，跳过构建（纯代码库）")
                 return
             }
@@ -211,7 +211,7 @@ abstract class ConvertAarToApkTask : DefaultTask() {
         val rootDir = project.rootProject.projectDir
         val gradlewFile = if (isWindows) File(rootDir, "gradlew.bat") else File(rootDir, "gradlew")
 
-        if (! gradlewFile.exists()) {
+        if (!gradlewFile.exists()) {
             throw RuntimeException("Gradle Wrapper 文件不存在: ${gradlewFile.absolutePath}")
         }
 
@@ -304,7 +304,7 @@ abstract class ConvertAarToApkTask : DefaultTask() {
         manifestFile: File,
     ) {
         val resDir = File(extractDir, "res")
-        if (! resDir.exists() || ! resDir.isDirectory) {
+        if (!resDir.exists() || !resDir.isDirectory) {
             logMessage("步骤2: 跳过资源编译（未找到res目录）")
             return
         }
@@ -317,7 +317,7 @@ abstract class ConvertAarToApkTask : DefaultTask() {
 
         try {
             val resourceFiles =
-                resDir.walkTopDown().filter { it.isFile && ! it.name.startsWith(".") }.toList()
+                resDir.walkTopDown().filter { it.isFile && !it.name.startsWith(".") }.toList()
             if (resourceFiles.isEmpty()) {
                 logMessage("res目录中无资源文件，跳过编译")
                 return
@@ -344,7 +344,7 @@ abstract class ConvertAarToApkTask : DefaultTask() {
 
             val androidJar =
                 File(androidSdkPath.get(), "platforms/${androidPlatform.get()}/android.jar")
-            if (! androidJar.exists()) {
+            if (!androidJar.exists()) {
                 throw RuntimeException("Android Platform JAR不存在: ${androidJar.absolutePath}")
             }
 
@@ -368,7 +368,9 @@ abstract class ConvertAarToApkTask : DefaultTask() {
                 )
 
             val flatFiles =
-                compiledResDir.walkTopDown().filter { it.isFile && it.name.endsWith(".flat") }
+                compiledResDir
+                    .walkTopDown()
+                    .filter { it.isFile && it.name.endsWith(".flat") }
                     .toList()
             if (flatFiles.isNotEmpty()) {
                 logMessage("添加${flatFiles.size}个编译后的资源")
@@ -410,24 +412,27 @@ abstract class ConvertAarToApkTask : DefaultTask() {
 
         val libsDir = File(extractDir, "libs")
         if (libsDir.exists() && libsDir.isDirectory) {
-            libsDir.listFiles { file ->
-                file.isFile && file.extension.equals(
-                    "jar",
-                    ignoreCase = true
-                )
-            }?.forEach { jarFiles.add(it) }
+            libsDir
+                .listFiles { file ->
+                    file.isFile &&
+                        file.extension.equals(
+                            "jar",
+                            ignoreCase = true,
+                        )
+                }?.forEach { jarFiles.add(it) }
         }
 
-        extractDir.listFiles { file -> file.isFile && file.name.matches(Regex("classes\\d*\\.jar")) }
+        extractDir
+            .listFiles { file -> file.isFile && file.name.matches(Regex("classes\\d*\\.jar")) }
             ?.forEach {
-                if (! jarFiles.contains(it)) jarFiles.add(it)
+                if (!jarFiles.contains(it)) jarFiles.add(it)
             }
 
         val rJavaFiles =
             sourceDir.walkTopDown().filter { it.isFile && it.name == "R.java" }.toList()
         val needCompileRJava = rJavaFiles.isNotEmpty()
 
-        if (jarFiles.isEmpty() && ! needCompileRJava) {
+        if (jarFiles.isEmpty() && !needCompileRJava) {
             logMessage("⚠️ 未找到JAR文件或R.java文件，跳过DEX转换")
             return
         }
@@ -441,7 +446,7 @@ abstract class ConvertAarToApkTask : DefaultTask() {
         convertJavaContentsToDex(jarFiles, buildDir, needCompileRJava)
 
         val classesDex = File(buildDir, "classes.dex")
-        if (! classesDex.exists()) throw RuntimeException("DEX转换失败：未生成classes.dex文件")
+        if (!classesDex.exists()) throw RuntimeException("DEX转换失败：未生成classes.dex文件")
         logMessage("✅ DEX转换完成 (${classesDex.length() / 1024} KB)")
     }
 
@@ -469,7 +474,7 @@ abstract class ConvertAarToApkTask : DefaultTask() {
                     androidJar.absolutePath,
                     "-d",
                     classesDir.absolutePath,
-                    "@${javaFilesList.absolutePath}"
+                    "@${javaFilesList.absolutePath}",
                 ),
                 buildDir,
             )
@@ -481,8 +486,9 @@ abstract class ConvertAarToApkTask : DefaultTask() {
                     rClassesJar.absolutePath,
                     "-C",
                     classesDir.absolutePath,
-                    "."
-                ), buildDir
+                    ".",
+                ),
+                buildDir,
             )
             logMessage("✅ R.java编译完成: ${rClassesJar.name} (${rClassesJar.length() / 1024} KB)")
         } finally {
@@ -523,7 +529,7 @@ abstract class ConvertAarToApkTask : DefaultTask() {
         buildDir: File,
     ) {
         val jniDir = File(extractDir, "jni")
-        if (! jniDir.exists() || ! jniDir.isDirectory) {
+        if (!jniDir.exists() || !jniDir.isDirectory) {
             logMessage("步骤5: 跳过native库（未找到jni目录）")
             return
         }
@@ -546,7 +552,7 @@ abstract class ConvertAarToApkTask : DefaultTask() {
                 apkFile.absolutePath,
                 "-C",
                 File(buildDir, "temp_lib").absolutePath,
-                "lib"
+                "lib",
             ),
             workDir = buildDir,
         )
@@ -559,7 +565,7 @@ abstract class ConvertAarToApkTask : DefaultTask() {
         buildDir: File,
     ) {
         val assetsDir = File(extractDir, "assets")
-        if (! assetsDir.exists() || ! assetsDir.isDirectory ||
+        if (!assetsDir.exists() || !assetsDir.isDirectory ||
             assetsDir
                 .walkTopDown()
                 .filter { it.isFile }
@@ -577,8 +583,9 @@ abstract class ConvertAarToApkTask : DefaultTask() {
                 apkFile.absolutePath,
                 "-C",
                 extractDir.absolutePath,
-                "assets"
-            ), workDir = buildDir
+                "assets",
+            ),
+            workDir = buildDir,
         )
         logMessage("✅ assets添加完成")
     }
@@ -592,7 +599,7 @@ abstract class ConvertAarToApkTask : DefaultTask() {
         val unsignedApk = File(buildDir, "unsigned.apk")
         val androidJar =
             File(androidSdkPath.get(), "platforms/${androidPlatform.get()}/android.jar")
-        if (! androidJar.exists()) throw RuntimeException("Android Platform JAR不存在: ${androidJar.absolutePath}")
+        if (!androidJar.exists()) throw RuntimeException("Android Platform JAR不存在: ${androidJar.absolutePath}")
 
         val rTxtFile = File(buildDir, "R.txt")
         val command =
@@ -617,7 +624,9 @@ abstract class ConvertAarToApkTask : DefaultTask() {
         val compiledResDir = File(buildDir, "compiled_res")
         if (compiledResDir.exists() && compiledResDir.list()?.isNotEmpty() == true) {
             val flatFiles =
-                compiledResDir.walkTopDown().filter { it.isFile && it.name.endsWith(".flat") }
+                compiledResDir
+                    .walkTopDown()
+                    .filter { it.isFile && it.name.endsWith(".flat") }
                     .toList()
             if (flatFiles.isNotEmpty()) {
                 logMessage("添加${flatFiles.size}个编译后的资源")
@@ -662,10 +671,10 @@ abstract class ConvertAarToApkTask : DefaultTask() {
     ) {
         logMessage("步骤7: 添加DEX文件到APK")
         val classesDex = File(buildDir, "classes.dex")
-        if (! classesDex.exists()) return // 如果没有DEX文件，则静默跳过
+        if (!classesDex.exists()) return // 如果没有DEX文件，则静默跳过
         executeShellCommand(
             listOf("jar", "uf", apkFile.absolutePath, "classes.dex"),
-            workDir = buildDir
+            workDir = buildDir,
         )
         logMessage("✅ DEX文件添加完成")
     }
@@ -739,7 +748,7 @@ pluginModules.forEach { modulePath ->
             this.buildTimestamp.set(System.currentTimeMillis().toString())
             this.packageId.set(
                 pluginPackageIds[modulePath]
-                    ?: throw RuntimeException("未找到模块 $modulePath 的 Package ID")
+                    ?: throw RuntimeException("未找到模块 $modulePath 的 Package ID"),
             )
         }.also { debugTasks.add(it) }
 
@@ -767,7 +776,7 @@ pluginModules.forEach { modulePath ->
             this.buildTimestamp.set(System.currentTimeMillis().toString())
             this.packageId.set(
                 pluginPackageIds[modulePath]
-                    ?: throw RuntimeException("未找到模块 $modulePath 的 Package ID")
+                    ?: throw RuntimeException("未找到模块 $modulePath 的 Package ID"),
             )
         }.also { releaseTasks.add(it) }
 }
@@ -838,7 +847,7 @@ fun getAndroidSdkPath(project: Project): String {
 }
 
 fun findLatestBuildTools(buildToolsDir: File): String {
-    if (! buildToolsDir.exists()) throw RuntimeException("Android Build-Tools 目录不存在: ${buildToolsDir.absolutePath}")
+    if (!buildToolsDir.exists()) throw RuntimeException("Android Build-Tools 目录不存在: ${buildToolsDir.absolutePath}")
     return buildToolsDir
         .listFiles { file -> file.isDirectory }
         ?.mapNotNull { it.name }
@@ -847,7 +856,7 @@ fun findLatestBuildTools(buildToolsDir: File): String {
 }
 
 fun findLatestPlatform(platformsDir: File): String {
-    if (! platformsDir.exists()) throw RuntimeException("Android Platforms 目录不存在: ${platformsDir.absolutePath}")
+    if (!platformsDir.exists()) throw RuntimeException("Android Platforms 目录不存在: ${platformsDir.absolutePath}")
     return platformsDir
         .listFiles { file -> file.isDirectory && file.name.startsWith("android-") }
         ?.map { it.name }

@@ -45,7 +45,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ArcLite"
+rootProject.name = "ComboLite"
 include(":app")
 include(":dependencies")
 // 插件框架模块

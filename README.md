@@ -15,43 +15,51 @@
 ## 🚀 核心特性
 
 ### 🎯 基于 Compose 的现代化设计
+
 - **原生 Compose 支持**：完美集成 Android Jetpack Compose，支持现代化 UI 开发
 - **声明式 UI**：插件可以直接使用 Compose 构建界面，无需传统 View 系统
 - **响应式状态管理**：支持 StateFlow、LiveData 等现代状态管理方案
 
 ### 🔧 完整的四大组件插件化
+
 - **Activity 插件化**：采用单一宿主模式，通过代理 Activity 实现插件 Activity 的完整生命周期
 - **Service 插件化**：采用代理池模式，支持多个插件 Service 并发运行
 - **BroadcastReceiver 插件化**：支持静态和动态广播接收器的插件化
 - **ContentProvider 插件化**：统一代理机制，支持插件间数据共享
 
 ### 💉 强大的依赖注入支持
+
 - **Koin 集成**：完美支持 Koin 依赖注入框架
 - **模块化管理**：每个插件可以定义自己的依赖注入模块
 - **跨插件依赖**：支持插件间的依赖注入和服务共享
 
 ### 🌐 去中心化架构设计
+
 - **插件自治**：插件本身可以管理其他插件的安装、卸载、更新
 - **空壳宿主**：支持宿主 App 为纯粹的空壳，所有业务逻辑由插件提供
 - **插件间通信**：完善的插件间通信机制，支持复杂的业务场景
 
 ### 📦 灵活的插件形态
+
 - **AAR 转 APK**：支持将 Android Library (AAR) 转换为插件 APK
 - **一个应用一个插件**：每个 Application 或 Library 都可以作为独立插件
 - **插件间依赖**：支持插件之间的相互依赖关系
 
 ### 🛡️ 零侵入性设计
+
 - **0 Hook 0 反射**：完全基于 Android 官方 API，无需 Hook 或反射
 - **官方 ClassLoader**：使用 Android 官方推荐的 DexClassLoader
 - **官方 ResourceLoader**：基于 Android 11+ ResourcesLoader API 和兼容性方案
 - **最小侵入**：集成框架只需极少的代码修改
 
 ### 🔄 广泛的兼容性
+
 - **Android 7-16**：理论支持 Android 7.0 到 Android 16 的所有版本
 - **现代工具链**：基于最新版 Android Studio、Gradle、AGP 开发
 - **主流技术栈**：完美支持 Kotlin、Coroutines、Compose 等现代技术
 
 ### 🪶 轻量级架构
+
 - **最小依赖**：除必要的 Koin 和 dexlib2 外，几乎无第三方库依赖
 - **核心精简**：插件核心模块仅十几个核心类
 - **高性能**：O(1) 时间复杂度的类查找机制
@@ -103,10 +111,10 @@ dependencies {
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        
+
         // 初始化插件管理器
         PluginManager.init(this)
-        
+
         // 启动已安装的插件
         lifecycleScope.launch {
             PluginManager.launchAllPlugins()
@@ -141,18 +149,12 @@ class PluginEntryClass : IPluginEntryClass {
 在插件的 `AndroidManifest.xml` 中添加元数据：
 
 ```xml
+
 <application>
-    <meta-data
-        android:name="plugin.id"
-        android:value="my_plugin" />
-    <meta-data
-        android:name="plugin.version"
-        android:value="1.0.0" />
-    <meta-data
-        android:name="plugin.description"
-        android:value="我的示例插件" />
-    <meta-data
-        android:name="plugin.entryClass"
+    <meta-data android:name="plugin.id" android:value="my_plugin" />
+    <meta-data android:name="plugin.version" android:value="1.0.0" />
+    <meta-data android:name="plugin.description" android:value="我的示例插件" />
+    <meta-data android:name="plugin.entryClass"
         android:value="com.example.plugin.PluginEntryClass" />
 </application>
 ```
@@ -206,7 +208,7 @@ class MyPluginService : BasePluginService() {
         super.onCreate()
         // 初始化逻辑
     }
-    
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // 处理启动命令
         return START_STICKY
@@ -235,14 +237,14 @@ val drawable = pluginResources?.getDrawable(R.drawable.my_icon)
 
 ## 📊 性能优势
 
-| 特性 | 传统插件框架 | ComposePluginFramework |
-|------|-------------|------------------------|
-| 类查找复杂度 | O(n) | O(1) |
-| Hook/反射 | 大量使用 | 完全不使用 |
-| 资源加载 | 复杂兼容 | 官方API + 兼容方案 |
-| UI框架 | View系统 | 现代Compose |
-| 依赖注入 | 自实现/无 | 成熟Koin框架 |
-| 插件通信 | 复杂实现 | 简洁接口 |
+| 特性      | 传统插件框架 | ComposePluginFramework |
+|---------|--------|------------------------|
+| 类查找复杂度  | O(n)   | O(1)                   |
+| Hook/反射 | 大量使用   | 完全不使用                  |
+| 资源加载    | 复杂兼容   | 官方API + 兼容方案           |
+| UI框架    | View系统 | 现代Compose              |
+| 依赖注入    | 自实现/无  | 成熟Koin框架               |
+| 插件通信    | 复杂实现   | 简洁接口                   |
 
 ## 🆚 与其他框架对比
 
@@ -275,7 +277,7 @@ class PluginClassLoader(
     parent: ClassLoader,
     private val pluginFinder: IPluginFinder
 ) : DexClassLoader(/* ... */) {
-    
+
     override fun findClass(name: String): Class<*> {
         return try {
             super.findClass(name)
@@ -314,12 +316,12 @@ class PluginManagerService {
         val pluginFile = downloadPlugin(pluginUrl)
         return PluginManager.installPlugin(pluginFile)
     }
-    
+
     suspend fun updatePlugin(pluginId: String): Boolean {
         val latestVersion = checkLatestVersion(pluginId)
         if (latestVersion > getCurrentVersion(pluginId)) {
             return installOtherPlugin(getDownloadUrl(pluginId, latestVersion))
-                is InstallResult.Success
+            is InstallResult.Success
         }
         return false
     }
@@ -332,10 +334,10 @@ class PluginManagerService {
 
 - **宿主应用**：`app` 模块，展示如何集成和使用插件框架
 - **示例插件**：`sample-plugin` 模块，包含多个示例插件
-  - `home`：主页插件，展示插件管理功能
-  - `guide`：引导插件，展示基础功能
-  - `example`：示例插件，展示复杂业务逻辑
-  - `setting`：设置插件，展示系统配置
+    - `home`：主页插件，展示插件管理功能
+    - `guide`：引导插件，展示基础功能
+    - `example`：示例插件，展示复杂业务逻辑
+    - `setting`：设置插件，展示系统配置
 
 ### 运行示例
 
@@ -383,6 +385,7 @@ git clone https://github.com/your-repo/ComposePluginFramework.git
 Copyright © 2025. 贵州君城网络科技有限公司 版权所有
 
 本项目采用商业许可证，详情请联系：
+
 - 邮箱：1755858138@qq.com
 - 电话：+86-175-85074415
 

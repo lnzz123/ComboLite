@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -8,11 +9,11 @@ plugins {
 }
 
 android {
-    namespace = "com.jctech.plugin.sample"
+    namespace = "com.combo.plugin.sample"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.jctech.plugin.sample"
+        applicationId = "com.combo.plugin.sample"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -50,16 +51,6 @@ android {
             proguardFiles("proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
 
-            //noinspection WrongGradleMethod
-            kotlinOptions {
-                freeCompilerArgs +=
-                    listOf(
-                        "-Xno-param-assertions",
-                        "-Xno-call-assertions",
-                        "-Xno-receiver-assertions",
-                    )
-            }
-
             packaging {
                 resources {
                     excludes +=
@@ -77,8 +68,16 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+            freeCompilerArgs =
+                listOf(
+                    "-Xno-param-assertions",
+                    "-Xno-call-assertions",
+                    "-Xno-receiver-assertions",
+                )
+        }
     }
     buildFeatures {
         compose = true

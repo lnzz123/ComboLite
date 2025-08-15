@@ -7,9 +7,8 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
 }
 
-
 android {
-    namespace = "com.example.dependencies"
+    namespace = "com.combo.dependencies"
     compileSdk = 36
 }
 
@@ -17,7 +16,6 @@ dependencies {
 
     api(libs.androidx.appcompat)
     api(libs.material)
-    api(libs.androidx.palette.ktx)
     // ========== 基础Compose依赖（通过api暴露） ==========
     api(libs.androidx.compose.runtime)
     api(libs.androidx.compose.ui)

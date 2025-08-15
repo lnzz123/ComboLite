@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 /*
  * Copyright © 2025. 贵州君城网络科技有限公司 版权所有
  * 保留所有权利。
@@ -25,7 +27,7 @@ plugins {
 }
 
 android {
-    namespace = "com.jctech.plugin.core"
+    namespace = "com.combo.core"
     compileSdk = 36
 
     defaultConfig {
@@ -51,8 +53,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
     }
 
     buildFeatures {

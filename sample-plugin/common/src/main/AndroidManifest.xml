@@ -14,6 +14,6 @@
             android:value="这是一个示例插件，支持中文。" />
         <meta-data
             android:name="plugin.entryClass"
-            android:value="com.jctech.plugin.sample.common.PluginEntryClass" />
+            android:value="com.combo.plugin.sample.common.PluginEntryClass" />
     </application>
 </manifest>
