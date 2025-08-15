@@ -27,7 +27,6 @@ import java.io.File
  * 该类加载器用于加载插件中的类。它继承自 DexClassLoader，
  * 并在 findClass 方法中添加了插件查找的逻辑。
  *
- * @param pluginId 插件ID，用于标识插件
  * @param dexPath 插件的 dex 文件路径
  * @param optimizedDirectory 优化后的 dex 文件存储目录
  * @param librarySearchPath 库文件搜索路径

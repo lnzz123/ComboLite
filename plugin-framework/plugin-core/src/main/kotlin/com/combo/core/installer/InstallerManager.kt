@@ -411,7 +411,7 @@ class InstallerManager(
         Timber.tag(TAG).d("开始解析 StaticReceivers : $apkPath")
         var parser: XmlResourceParser? = null
         try {
-            val assetManager = AssetManager::class.java.newInstance()
+            val assetManager = AssetManager::class.java.getDeclaredConstructor().newInstance()
             val addAssetPathMethod =
                 AssetManager::class.java.getMethod("addAssetPath", String::class.java)
             val cookie = addAssetPathMethod.invoke(assetManager, apkPath) as Int
