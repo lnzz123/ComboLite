@@ -89,8 +89,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     // Compose核心（用于@Composable注解）
+    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.material3)
 
     // 序列化支持
     implementation(libs.kotlinx.serialization.json)

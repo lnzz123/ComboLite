@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.Composable
 
 /**
  * 插件Activity接口

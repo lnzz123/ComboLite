@@ -8,10 +8,10 @@
             android:value="guide" />
         <meta-data
             android:name="plugin.version"
-            android:value="1.0.1" />
+            android:value="1.0.0" />
         <meta-data
             android:name="plugin.description"
-            android:value="这是一个示例插件，支持中文。" />
+            android:value="ComboLite插件使用向导" />
         <meta-data
             android:name="plugin.entryClass"
             android:value="com.combo.plugin.sample.guide.PluginEntryClass" />

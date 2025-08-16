@@ -19,6 +19,7 @@ package com.combo.core.base
 
 import android.app.Application
 import com.combo.core.manager.PluginManager
+import com.combo.core.security.PluginCrashHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,6 +31,7 @@ import kotlinx.coroutines.launch
 open class BaseHostApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        PluginCrashHandler.initialize(this)
         PluginManager.initialize(this) {
             CoroutineScope(Dispatchers.Default).launch {
                 PluginManager.loadEnabledPlugins()

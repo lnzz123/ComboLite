@@ -17,6 +17,9 @@
 
 package com.combo.core.loader
 
+import android.content.ContentValues.TAG
+import com.combo.core.manager.PluginManager
+import com.combo.core.security.PluginDependencyException
 import dalvik.system.DexClassLoader
 import timber.log.Timber
 import java.io.File
@@ -34,6 +37,7 @@ import java.io.File
  * @param pluginFinder 插件查找器，用于在其他插件中查找类
  */
 open class PluginClassLoader(
+    internal val pluginId: String,
     dexPath: String,
     optimizedDirectory: String?,
     librarySearchPath: String?,
@@ -41,10 +45,12 @@ open class PluginClassLoader(
     private val pluginFinder: IPluginFinder?,
 ) : DexClassLoader(dexPath, optimizedDirectory, librarySearchPath, parent) {
     constructor(
+        pluginId: String,
         pluginFile: File,
         parent: ClassLoader,
         pluginFinder: IPluginFinder?,
     ) : this(
+        pluginId = pluginId,
         dexPath = pluginFile.absolutePath,
         optimizedDirectory =
             File(pluginFile.parent, "dex_opt").absolutePath.also {
@@ -64,11 +70,15 @@ open class PluginClassLoader(
         try {
             return super.findClass(name)
         } catch (e: ClassNotFoundException) {
-            val otherPluginClass = pluginFinder?.findClass(name)
-            if (otherPluginClass != null) {
-                return otherPluginClass
+            val result = pluginFinder?.findClass(name, this)
+            if (result != null) {
+                return result
             }
-            throw e
+            throw PluginDependencyException(
+                culpritPluginId = this.pluginId,
+                missingClassName = name,
+                cause = e
+            )
         }
     }
 
@@ -85,33 +95,20 @@ open class PluginClassLoader(
      *
      * 该方法提供类型安全的方式来获取插件中接口的具体实现。会自动处理类加载、
      * 实例化和类型转换过程，并在出现异常时记录详细日志并返回null。
-     *
-     * 支持的异常处理：
-     * - ClassNotFoundException: 类未找到
-     * - InstantiationException: 实例化失败
-     * - IllegalAccessException: 访问权限不足
-     * - ClassCastException: 类型转换失败
-     * - NoSuchMethodException: 构造函数未找到
-     *
      * @param T 接口类型泛型
      * @param interfaceClass 接口的Class对象
      * @param className 实现类的完整类名
      * @return 接口实现的实例，失败时返回null
-     *
-     * @throws SecurityException 当访问被安全管理器拒绝时
      */
     fun <T> getInterface(
         interfaceClass: Class<T>,
         className: String,
     ): T? =
         try {
-            // 加载指定的实现类
             val clazz = loadClass(className)
 
-            // 使用默认构造函数创建实例
             val instance = clazz.getDeclaredConstructor().newInstance()
 
-            // 验证实例是否实现了指定接口
             if (interfaceClass.isInstance(instance)) {
                 @Suppress("UNCHECKED_CAST")
                 instance as T

@@ -2,6 +2,7 @@ package com.combo.plugin.sample
 
 import android.annotation.SuppressLint
 import android.content.Context
+import androidx.compose.ui.Modifier.Companion.any
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.combo.core.interfaces.IPluginEntryClass
@@ -13,6 +14,21 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
+
+/**
+ * 插件状态枚举
+ */
+enum class PluginStatus {
+    /** 插件未安装 */
+    NOT_INSTALLED,
+
+    /** 插件已安装但未启动 */
+    INSTALLED_NOT_STARTED,
+
+    /** 插件已安装且已启动 */
+    INSTALLED_AND_STARTED,
+}
+
 
 class LoadingViewModel(
     context: Context,
@@ -39,10 +55,12 @@ class LoadingViewModel(
     fun init() {
         viewModelScope.launch {
             setLoading(true)
-            _entryClass.value = PluginManager.getPluginInstance(PLUGIN_HOME)
-            if (entryClass.value == null || !isPluginLoaded(PLUGIN_COMMON)) {
+            if (getPluginStatus(PLUGIN_HOME) == PluginStatus.NOT_INSTALLED || getPluginStatus(PLUGIN_COMMON) == PluginStatus.NOT_INSTALLED) {
                 installPlugin(BASE_PATH)
+            } else {
+                PluginManager.loadEnabledPlugins()
             }
+            _entryClass.value = PluginManager.getPluginInstance(PLUGIN_HOME)
             setLoading(false)
         }
     }
@@ -70,6 +88,45 @@ class LoadingViewModel(
             PluginManager.loadEnabledPlugins()
             _entryClass.value = PluginManager.getPluginInstance(PLUGIN_HOME)
             setLoading(false)
+        }
+    }
+
+    fun launchBasePlugin() {
+        viewModelScope.launch {
+            PluginManager.launchPlugin(PLUGIN_COMMON).let {
+                if (it) {
+                    PluginManager.getPluginInstance(PLUGIN_COMMON)
+                }
+            }
+            PluginManager.launchPlugin(PLUGIN_HOME).let {
+                if (it) {
+                    _entryClass.value = PluginManager.getPluginInstance(PLUGIN_HOME)
+                }
+            }
+        }
+
+    }
+
+    /**
+     * 获取指定插件的状态
+     *
+     * @param pluginId 插件ID
+     * @return 插件状态枚举
+     */
+    fun getPluginStatus(pluginId: String): PluginStatus {
+        // 检查插件是否已安装
+        val isInstalled = PluginManager.getAllInstallPlugins().any { it.pluginId == pluginId }
+
+        if (!isInstalled) {
+            return PluginStatus.NOT_INSTALLED
+        }
+
+        val entryClass = PluginManager.getPluginInstance(pluginId)
+
+        return if (entryClass != null) {
+            PluginStatus.INSTALLED_AND_STARTED
+        } else {
+            PluginStatus.INSTALLED_NOT_STARTED
         }
     }
 }

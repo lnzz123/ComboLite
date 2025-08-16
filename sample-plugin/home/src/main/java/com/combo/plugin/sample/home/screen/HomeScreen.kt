@@ -75,17 +75,26 @@ fun HomeScreen(viewModel: HomeViewModel = koinViewModel()) {
                             PluginStatus.INSTALLED_AND_STARTED -> "进入插件"
                         },
                     onButtonClick = {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            val result =
-                                InstallUtils.installPluginFromAssets(
-                                    context,
-                                    "plugins/other/guide-release.apk",
-                                )
-                            if (result is InstallerManager.InstallResult.Success) {
-                                PluginManager.launchPlugin(result.pluginInfo.pluginId)
-                            } else {
-                                // 安装失败
-                                Toast.makeText(context, "安装失败", Toast.LENGTH_SHORT).show()
+                        when (pluginStatus) {
+                            PluginStatus.NOT_INSTALLED -> {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    val result =
+                                        InstallUtils.installPluginFromAssets(
+                                            context,
+                                            "plugins/other/guide-release.apk",
+                                        )
+                                    if (result is InstallerManager.InstallResult.Success) {
+                                        PluginManager.launchPlugin(HomeViewModel.Companion.PLUGIN_GUIDE)
+                                    } else {
+                                        // 安装失败
+                                        Toast.makeText(context, "安装失败", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                            else -> {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    PluginManager.launchPlugin(HomeViewModel.Companion.PLUGIN_GUIDE)
+                                }
                             }
                         }
                     },
@@ -109,17 +118,26 @@ fun HomeScreen(viewModel: HomeViewModel = koinViewModel()) {
                             PluginStatus.INSTALLED_AND_STARTED -> "进入插件"
                         },
                     onButtonClick = {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            val result =
-                                InstallUtils.installPluginFromAssets(
-                                    context,
-                                    "plugins/other/example-release.apk",
-                                )
-                            if (result is InstallerManager.InstallResult.Success) {
-                                PluginManager.launchPlugin(result.pluginInfo.pluginId)
-                            } else {
-                                // 安装失败
-                                Toast.makeText(context, "安装失败", Toast.LENGTH_SHORT).show()
+                        when (pluginStatus) {
+                            PluginStatus.NOT_INSTALLED -> {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    val result =
+                                        InstallUtils.installPluginFromAssets(
+                                            context,
+                                            "plugins/other/example-release.apk",
+                                        )
+                                    if (result is InstallerManager.InstallResult.Success) {
+                                        PluginManager.launchPlugin(HomeViewModel.Companion.PLUGIN_EXAMPLE)
+                                    } else {
+                                        // 安装失败
+                                        Toast.makeText(context, "安装失败", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                            else -> {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    PluginManager.launchPlugin(HomeViewModel.Companion.PLUGIN_EXAMPLE)
+                                }
                             }
                         }
                     },
@@ -143,17 +161,26 @@ fun HomeScreen(viewModel: HomeViewModel = koinViewModel()) {
                             PluginStatus.INSTALLED_AND_STARTED -> "进入插件"
                         },
                     onButtonClick = {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            val result =
-                                InstallUtils.installPluginFromAssets(
-                                    context,
-                                    "plugins/other/setting-release.apk",
-                                )
-                            if (result is InstallerManager.InstallResult.Success) {
-                                PluginManager.launchPlugin(result.pluginInfo.pluginId)
-                            } else {
-                                // 安装失败
-                                Toast.makeText(context, "安装失败", Toast.LENGTH_SHORT).show()
+                        when (pluginStatus) {
+                            PluginStatus.NOT_INSTALLED -> {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    val result =
+                                        InstallUtils.installPluginFromAssets(
+                                            context,
+                                            "plugins/other/setting-release.apk",
+                                        )
+                                    if (result is InstallerManager.InstallResult.Success) {
+                                        PluginManager.launchPlugin(HomeViewModel.Companion.PLUGIN_SETTING)
+                                    } else {
+                                        // 安装失败
+                                        Toast.makeText(context, "安装失败", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                            else -> {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    PluginManager.launchPlugin(HomeViewModel.Companion.PLUGIN_SETTING)
+                                }
                             }
                         }
                     },

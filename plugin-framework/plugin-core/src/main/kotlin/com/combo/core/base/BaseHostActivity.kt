@@ -28,6 +28,7 @@ import androidx.activity.ComponentActivity
 import com.combo.core.ext.getPluginActivity
 import com.combo.core.interfaces.IPluginActivity
 import com.combo.core.manager.PluginManager
+import timber.log.Timber
 
 /**
  * 宿主端的代理Activity基类
@@ -65,6 +66,7 @@ open class BaseHostActivity : ComponentActivity() {
         try {
             intent ?: return
             pluginActivity = intent.getPluginActivity()
+            Timber.d("加载插件Activity [${pluginActivity?.javaClass?.name}]")
             pluginActivity?.onAttach(this@BaseHostActivity)
         } catch (e: Exception) {
             e.printStackTrace()

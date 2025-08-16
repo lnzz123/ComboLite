@@ -18,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.combo.plugin.sample.LoadingViewModel.Companion.PLUGIN_COMMON
+import com.combo.plugin.sample.LoadingViewModel.Companion.PLUGIN_HOME
 import org.koin.androidx.compose.koinViewModel
 
 /**
@@ -56,12 +58,18 @@ fun LoadingScreen(viewModel: LoadingViewModel = koinViewModel()) {
                     )
                 }
             } else if (entryClass == null) {
+                val homeState = viewModel.getPluginStatus(PLUGIN_HOME)
+                val commonState = viewModel.getPluginStatus(PLUGIN_COMMON)
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(
-                        text = "自动加载插件失败，请手动安装插件",
+                        text = "基础插件${when {
+                            homeState == PluginStatus.NOT_INSTALLED || commonState == PluginStatus.NOT_INSTALLED -> "未安装"
+                            homeState == PluginStatus.INSTALLED_NOT_STARTED || commonState == PluginStatus.INSTALLED_NOT_STARTED -> "已安装但未启动"
+                            else -> "已安装且已启动"
+                        }}",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
@@ -69,11 +77,24 @@ fun LoadingScreen(viewModel: LoadingViewModel = koinViewModel()) {
                     )
                     Button(
                         onClick = {
-                            // 强制安装
-                            viewModel.installPlugin(LoadingViewModel.BASE_PATH, true)
+                            when {
+                                homeState == PluginStatus.NOT_INSTALLED || commonState == PluginStatus.NOT_INSTALLED -> {
+                                    viewModel.installPlugin(LoadingViewModel.BASE_PATH, true)
+                                }
+                                homeState == PluginStatus.INSTALLED_NOT_STARTED || commonState == PluginStatus.INSTALLED_NOT_STARTED -> {
+                                    viewModel.launchBasePlugin()
+                                }
+                                else -> {
+                                    viewModel.launchBasePlugin()
+                                }
+                            }
                         },
                     ) {
-                        Text(text = "重新安装")
+                        Text(text = when {
+                            homeState == PluginStatus.NOT_INSTALLED || commonState == PluginStatus.NOT_INSTALLED -> "安装插件"
+                            homeState == PluginStatus.INSTALLED_NOT_STARTED || commonState == PluginStatus.INSTALLED_NOT_STARTED -> "启动插件"
+                            else -> "打开应用"
+                        })
                     }
                 }
             } else {

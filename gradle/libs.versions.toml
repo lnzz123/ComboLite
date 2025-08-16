@@ -1,5 +1,5 @@
 [versions]
-agp = "8.12.0"
+agp = "8.12.0-alpha02"
 kotlin = "2.2.0"
 ksp = "2.2.0-2.0.2"
 kotlinxImmutable = "0.4.0"
@@ -83,6 +83,7 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 # AndroidX Compose 相关库
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "androidxCompose" }
 androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "androidxCompose" }
+androidx-compose-material = { group = "androidx.compose.material", name = "material", version.ref = "androidxCompose" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "androidxComposeMaterial3" }
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "androidxCompose" }
 androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "androidxCompose" }

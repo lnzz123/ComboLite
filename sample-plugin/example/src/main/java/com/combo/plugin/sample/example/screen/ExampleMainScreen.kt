@@ -1,0 +1,91 @@
+package com.combo.plugin.sample.example.screen
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.combo.plugin.sample.example.component.ExampleItemGridCard
+
+
+/**
+ * 示例数据类，表示一个示例项目
+ * @param title 示例标题
+ * @param description 示例说明
+ */
+data class ExampleItem(
+    val title: String,
+    val description: String,
+)
+/**
+ * 示例插件主界面 (纯文字网格布局版)
+ * 展示各种 Android 组件和功能的示例列表
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+fun ExampleMainScreen() {
+    // 更新数据列表，移除图标
+    val exampleItems = listOf(
+        ExampleItem("Activity 示例", "生命周期、启动模式、Intent 传递等"),
+        ExampleItem("Service 示例", "前后台服务、绑定服务等不同类型"),
+        ExampleItem("广播接收器", "系统广播、自定义广播的发送与接收"),
+        ExampleItem("内容提供者", "数据共享、权限控制、CRUD 操作"),
+        ExampleItem("SO 库加载", "JNI 调用、动态库加载、native 方法"),
+        ExampleItem("皮肤资源替换", "动态换肤、资源替换、主题切换"),
+        ExampleItem("权限申请", "运行时权限申请、权限检查、权限说明"),
+        ExampleItem("悬浮窗示例", "展示如何在插件中创建和管理悬浮窗")
+    )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "插件示例集合",
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
+            )
+        },
+    ) { paddingValues ->
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 160.dp),
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            contentPadding = PaddingValues(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 顶部说明卡片
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Text(
+                        text = "探索 Android 开发的各个方面，从基础组件到高级功能，每个示例都包含详细的代码演示和说明。",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
+            // 示例卡片网格
+            items(exampleItems) { item ->
+                ExampleItemGridCard(item = item, onClick = { })
+            }
+        }
+    }
+}
+

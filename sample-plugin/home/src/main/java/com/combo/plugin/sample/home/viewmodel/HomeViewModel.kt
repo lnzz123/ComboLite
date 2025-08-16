@@ -8,10 +8,9 @@ import com.combo.plugin.sample.home.state.PluginStatus
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
-class HomeViewModel :
-    BaseViewModel<HomeState>(
-        initialState = HomeState(),
-    ) {
+class HomeViewModel : BaseViewModel<HomeState>(
+    initialState = HomeState()
+) {
     companion object {
         const val PLUGIN_GUIDE = "guide"
         const val PLUGIN_EXAMPLE = "example"

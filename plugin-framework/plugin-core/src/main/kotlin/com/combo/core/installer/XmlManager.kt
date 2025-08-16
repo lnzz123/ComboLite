@@ -20,7 +20,6 @@ package com.combo.core.installer
 import android.app.Application
 import android.os.Handler
 import android.os.HandlerThread
-import android.util.Log
 import android.util.Xml
 import com.combo.core.model.IntentFilterInfo
 import com.combo.core.model.MetaDataInfo
@@ -220,16 +219,6 @@ class XmlManager(
     private fun loadPluginsFromDisk(useBackup: Boolean = false): List<PluginInfo> {
         val targetFile = if (useBackup) backupConfigFile else pluginsConfigFile
         if (!targetFile.exists()) return emptyList()
-
-        // 【修改】为了打印日志，我们先将文件完整读入一个字符串
-        val xmlContent = targetFile.readText(StandardCharsets.UTF_8)
-
-        // 【新增】打印完整的 XML 文本内容
-        // 使用一个清晰的边界，方便在 Logcat 中查看
-        Log.d(
-            TAG,
-            "--- 开始加载 ${targetFile.name} 内容 ---\n$xmlContent\n--- ${targetFile.name} 内容结束 ---",
-        )
 
         val pluginList = mutableListOf<PluginInfo>()
         try {
@@ -662,7 +651,7 @@ class XmlManager(
     fun getAllPlugins(): List<PluginInfo> =
         read {
             if (!cacheInitialized) {
-                initializeCache() // 仍然保留这个检查以防万一初始化失败或跳过
+                initializeCache()
             }
             pluginCache.values.toList()
         }
