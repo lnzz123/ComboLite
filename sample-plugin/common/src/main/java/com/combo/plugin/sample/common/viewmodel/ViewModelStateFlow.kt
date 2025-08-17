@@ -1,3 +1,21 @@
+/*
+ *
+ *  * Copyright (c) 2025, 贵州君城网络科技有限公司
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
+ */
+
 package com.combo.plugin.sample.common.viewmodel
 
 import kotlinx.coroutines.flow.FlowCollector
@@ -56,7 +74,7 @@ class ViewModelStateFlow<T>(
     override suspend fun emit(value: T): Unit =
         throw IllegalAccessError(
             "不允许直接发出。请改用 'emitValue' 函数。" +
-                "这可确保在 ViewModel 中进行适当的状态管理。",
+                    "这可确保在 ViewModel 中进行适当的状态管理。",
         )
 
     /**
@@ -79,7 +97,7 @@ class ViewModelStateFlow<T>(
     override fun tryEmit(value: T): Boolean =
         throw IllegalAccessError(
             "不允许直接 tryEmit。请改用 'tryEmitValue' 函数。" +
-                "这可确保在 ViewModel 中进行适当的状态管理。",
+                    "这可确保在 ViewModel 中进行适当的状态管理。",
         )
 
     /**
@@ -110,5 +128,6 @@ class ViewModelStateFlow<T>(
     /**
      * 提供状态流的字符串表示，用于调试
      */
-    override fun toString(): String = "ViewModelStateFlow(key=$key, value=${mutableStateFlow.value})"
+    override fun toString(): String =
+        "ViewModelStateFlow(key=$key, value=${mutableStateFlow.value})"
 }

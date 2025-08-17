@@ -1,3 +1,21 @@
+/*
+ *
+ *  * Copyright (c) 2025, 贵州君城网络科技有限公司
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
+ */
+
 package com.combo.core.proxy
 
 import android.app.Application
@@ -148,7 +166,8 @@ class ProxyManager(
      * @param pluginServiceClassName 插件 Service 的完整类名。
      * @return 正在代理它的 HostService 的 Class 对象；如果该插件未运行，则返回 null。
      */
-    fun getServiceProxyFor(pluginServiceClassName: String): Class<out BaseHostService>? = activeServiceProxies[pluginServiceClassName]
+    fun getServiceProxyFor(pluginServiceClassName: String): Class<out BaseHostService>? =
+        activeServiceProxies[pluginServiceClassName]
 
     /**
      * 注册一个插件的所有静态广播
@@ -277,5 +296,6 @@ class ProxyManager(
      * 根据插件 Provider 的类名查找其注册信息。
      * @return 返回纯粹的 ProviderInfo 对象，对调用者隐藏内部的 Pair 结构。
      */
-    fun findProviderInfoByClassName(className: String): ProviderInfo? = providerRegistry[className]?.second
+    fun findProviderInfoByClassName(className: String): ProviderInfo? =
+        providerRegistry[className]?.second
 }

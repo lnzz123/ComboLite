@@ -1,27 +1,32 @@
+/*
+ *
+ *  * Copyright (c) 2025, 贵州君城网络科技有限公司
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
+ */
+
 package com.combo.plugin.sample.guide.component
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
@@ -29,49 +34,31 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 fun ArchitectureCard() {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Rounded.Settings,
-                    contentDescription = "技术架构",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp),
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    "技术架构",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            val archText =
-                buildAnnotatedString {
-                    val points =
-                        mapOf(
-                            "核心管理器 (PluginManager):" to " 统一调度与管理插件生命周期。\n",
-                            "类加载器 (PluginClassLoader):" to " 基于官方 API，安全隔离并加载插件代码。\n",
-                            "资源加载器 (PluginResourcesLoader):" to " 高效加载插件资源，支持动态切换。\n",
-                            "组件代理 (ComponentProxy):" to " 实现四大组件通信的透明代理层。\n",
-                            "安装管理器 (InstallerManager):" to " 负责插件的解析、安装与版本管理。",
-                        )
-                    points.forEach { (keyword, description) ->
-                        withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onSurface)) {
-                            append("• ")
-                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append(keyword)
-                            }
-                        }
-                        withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
-                            append(description)
-                        }
+    GuideSectionCard(
+        title = "架构概览",
+        icon = Icons.Rounded.Settings,
+        iconTint = MaterialTheme.colorScheme.primary,
+    ) {
+        val archText = buildAnnotatedString {
+            val points = mapOf(
+                "PluginManager:" to " 框架的中心协调器，负责插件的加载、卸载、重启和生命周期管理。\n",
+                "InstallerManager:" to " 负责插件的安装、更新和合法性校验。\n",
+                "ResourceManager:" to " 负责插件资源的加载与管理，兼容新旧 Android 版本。\n",
+                "ProxyManager:" to " 负责 Android 四大组件的代理和生命周期分发。\n",
+                "DependencyManager:" to " 负责维护插件间的动态依赖关系图和类索引。",
+            )
+            points.forEach { (keyword, description) ->
+                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onSurface)) {
+                    append("• ")
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append(keyword)
                     }
                 }
-            Text(archText, style = MaterialTheme.typography.bodyMedium, lineHeight = 22.sp)
+                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
+                    append(description)
+                }
+            }
         }
+        Text(archText, style = MaterialTheme.typography.bodyMedium, lineHeight = 22.sp)
     }
 }

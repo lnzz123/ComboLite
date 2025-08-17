@@ -1,24 +1,34 @@
+/*
+ *
+ *  * Copyright (c) 2025, 贵州君城网络科技有限公司
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
+ */
+
 package com.combo.plugin.sample.guide.component
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Done
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,119 +38,79 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 fun CoreFeaturesCard() {
-    val features =
-        listOf(
+    val pillars = mapOf(
+        "现代化的设计" to listOf(
             FeatureItem(
                 Icons.Rounded.Done,
-                "0 Hook & 0 反射",
-                "完全基于官方 API，确保了极致的稳定性与未来的系统兼容性。",
+                "原生为 Compose 而生",
+                "为新一代UI工具包设计，插件可无缝使用 @Composable 函数构建界面。"
             ),
             FeatureItem(
                 Icons.Rounded.Done,
-                "去中心化设计",
-                "插件亦是管理者，可主动管理自身或其他插件的下载、安装和更新。",
+                "拥抱主流技术栈",
+                "完美集成 Kotlin Coroutines、Koin 等，让你能使用最前沿的技术。"
+            ),
+        ),
+        "极致的稳定与兼容" to listOf(
+            FeatureItem(
+                Icons.Rounded.Done,
+                "0 Hook, 原则上 0 反射",
+                "完全基于官方API，仅在兼容旧版系统时采纳标准反射方案，确保极致稳定。"
             ),
             FeatureItem(
                 Icons.Rounded.Done,
-                "极简接入",
-                "只需继承框架预定义的基类，即可零成本完成初始化与集成。",
+                "崩溃熔断与自愈",
+                "内置崩溃处理器，能自动禁用问题插件并优雅降级，防止应用重复闪退。"
+            ),
+        ),
+        "终极的灵活与解耦" to listOf(
+            FeatureItem(
+                Icons.Rounded.Done,
+                "去中心化架构",
+                "打破传统宿主-插件模式，任何插件都可管理其他插件，架构更灵活。"
             ),
             FeatureItem(
                 Icons.Rounded.Done,
-                "全功能插件化",
-                "完美支持四大组件、依赖注入(Koin)，支持宿主零逻辑。",
+                "“空壳”宿主支持",
+                "宿主可无任何业务逻辑，所有功能、UI 均由插件动态提供。"
+            ),
+        ),
+        "卓越的开发者体验" to listOf(
+            FeatureItem(
+                Icons.Rounded.Done,
+                "微乎其微的侵入性",
+                "通过基类和数行配置即可完成集成，无需改动项目原有结构。"
             ),
             FeatureItem(
                 Icons.Rounded.Done,
-                "模块即插件",
-                "创新的设计理念，支持将标准 AAR 无缝转换为插件 APK。",
-            ),
-            FeatureItem(
-                Icons.Rounded.Done,
-                "灵活依赖",
-                "支持插件之间相互依赖，轻松构建复杂的“超级应用”架构。",
+                "闪电般的类查找",
+                "通过全局类索引机制，实现 O(1) 复杂度的跨插件类查找，性能卓越。"
             ),
         )
+    )
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
+    GuideSectionCard(
+        title = "核心理念与优势",
+        icon = Icons.Rounded.Build,
+        iconTint = MaterialTheme.colorScheme.secondary
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    Icons.Rounded.Build,
-                    contentDescription = "核心特性",
-                    tint = MaterialTheme.colorScheme.secondary, // 使用 secondary 增加色彩变化
-                    modifier = Modifier.size(24.dp),
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    "核心特性",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary, // 与图标颜色保持一致
-                )
+        pillars.entries.forEachIndexed { index, entry ->
+            if (index > 0) {
+                Spacer(modifier = Modifier.height(20.dp))
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            features.forEach { feature ->
+            Text(
+                text = entry.key,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            HorizontalDivider(modifier = Modifier.padding(top = 4.dp, bottom = 12.dp))
+            entry.value.forEach { feature ->
                 FeatureRow(feature)
-                if (feature != features.last()) {
+                if (feature != entry.value.last()) {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
     }
 }
-
-/**
- * 特性行组件
- */
-@Composable
-fun FeatureRow(feature: FeatureItem) {
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-        Icon(
-            feature.icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.secondary,
-            modifier =
-                Modifier
-                    .size(20.dp)
-                    .padding(top = 3.dp),
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column {
-            Text(
-                feature.title,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                feature.description,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 20.sp,
-            )
-        }
-    }
-}
-
-
-
-
-
-/**
- * 特性数据类 (保持不变)
- */
-data class FeatureItem(
-    val icon: ImageVector,
-    val title: String,
-    val description: String,
-)
-
-

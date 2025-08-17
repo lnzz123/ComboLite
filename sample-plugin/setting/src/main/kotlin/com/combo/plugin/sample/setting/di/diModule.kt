@@ -1,18 +1,19 @@
 /*
- * Copyright © 2025. 贵州君城网络科技有限公司 版权所有
- * 保留所有权利。
  *
- * 本软件（包括但不限于代码、文档、资源文件等）受《中华人民共和国著作权法》及相关法律法规保护。
- * 未经本公司书面授权，任何单位或个人不得：
- * 1. 以任何形式复制、传播、修改、分发本软件的全部或部分内容；
- * 2. 将本软件用于商业目的或未经授权的第三方项目；
- * 3. 删除或篡改本软件中的版权声明、商标标识及技术标识。
+ *  * Copyright (c) 2025, 贵州君城网络科技有限公司
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
  *
- * 违反上述条款者，本公司将依法追究其民事及刑事责任，并有权要求赔偿因此造成的全部经济损失。
- *
- * 授权许可请联系：贵州君城网络科技有限公司法律事务部
- * 邮箱：1755858138@qq.com
- * 电话：+86-175-85074415
  */
 
 package com.combo.plugin.sample.setting.di

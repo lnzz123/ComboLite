@@ -1,10 +1,19 @@
 /*
- * Copyright © 2025. 贵州君城网络科技有限公司 版权所有
  *
- * AAR到插件APK转换脚本 v3.2 - 修正检测逻辑版
- * - 遵循原始构建逻辑，恢复通过 executeAarBuild 方法生成AAR，以兼容AGP懒加载机制
- * - 修正了首次构建因 @InputFile 检查时机过早而失败的问题
- * - 将AAR文件输入从 @InputFile 修改为 @Input<String>，将存在性检查推迟到执行阶段
+ *  * Copyright (c) 2025, 贵州君城网络科技有限公司
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
  */
 
 import java.io.ByteArrayOutputStream
@@ -415,10 +424,10 @@ abstract class ConvertAarToApkTask : DefaultTask() {
             libsDir
                 .listFiles { file ->
                     file.isFile &&
-                        file.extension.equals(
-                            "jar",
-                            ignoreCase = true,
-                        )
+                            file.extension.equals(
+                                "jar",
+                                ignoreCase = true,
+                            )
                 }?.forEach { jarFiles.add(it) }
         }
 

@@ -1,10 +1,19 @@
 /*
- * Copyright (c) 2025. 深圳市德为信息技术有限公司, 深圳市诠云科技有限公司 保留所有权利。
  *
- * 根据《中华人民共和国著作权法》、《计算机软件保护条例》及相关法律法规，
- * 本软件著作权归属于深圳市德为信息技术有限公司与深圳市诠云科技有限公司共同所有，
- * 任何单位或个人未经书面授权不得复制、修改、分发或用于商业用途。
- * （本声明适用于本项目所有源代码、资源配置文件及文档资料）
+ *  * Copyright (c) 2025, 贵州君城网络科技有限公司
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
  */
 
 package com.combo.plugin.sample.common.component
@@ -17,18 +26,6 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 
-/**
- * 支持加载本地和网络资源的基础图片组件
- *
- * @param model 图片数据，可以是 R.drawable.xxx， 或者 网络url地址
- * @param modifier 修饰符
- * @param contentDescription 图片描述
- * @param contentScale 图片缩放模式
- * @param placeholder 加载时的占位图，例如：painterResource(id = R.drawable.loading)
- * @param error 加载失败时的占位图，例如：painterResource(id = R.drawable.error)
- * @param alpha 图片透明度
- * @param colorFilter 图片颜色过滤器
- */
 
 /**
  * 支持加载网络 SVG 和其他格式图片的基础组件 (优化版)

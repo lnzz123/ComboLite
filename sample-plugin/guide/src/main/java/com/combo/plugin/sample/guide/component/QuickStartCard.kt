@@ -1,64 +1,49 @@
+/*
+ *
+ *  * Copyright (c) 2025, 贵州君城网络科技有限公司
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
+ */
+
 package com.combo.plugin.sample.guide.component
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Send
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 
 /**
  * 快速开始卡片
  */
 @Composable
 fun QuickStartCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+    GuideSectionCard(
+        title = "快速开始",
+        icon = Icons.Rounded.Send,
+        iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+        cardColors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Rounded.Send,
-                    contentDescription = "快速开始",
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier.size(24.dp),
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    "快速开始",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            val steps =
-                listOf(
-                    "1. 添加框架依赖到 build.gradle.kts。",
-                    "2. Application 继承 `BaseHostApplication`。",
-                    "3. 宿主 Activity 继承 `BaseHostActivity`。",
-                    "4. 创建插件模块并配置 `AndroidManifest.xml` 元数据。",
-                    "5. 编译插件 APK 并通过管理器安装加载运行。",
-                )
-            steps.forEach { step ->
-                // 高亮代码片段
-                CodeSnippetText(text = step, color = MaterialTheme.colorScheme.onTertiaryContainer)
-            }
+        val steps = listOf(
+            "1. 添加框架依赖到宿主的 `build.gradle.kts`。",
+            "2. 在宿主中定义代理组件(`HostActivity` 等) 并在 `AndroidManifest.xml` 中注册。",
+            "3. 初始化框架并配置代理，推荐继承 `BaseHostApplication`。",
+            "4. 创建插件模块，实现 `IPluginEntryClass` 并配置元数据。",
+            "5. 管理与使用插件，通过 API 或扩展函数进行安装、启动和调用。"
+        )
+        steps.forEach { step ->
+            CodeSnippetText(text = step, color = MaterialTheme.colorScheme.onTertiaryContainer)
         }
     }
 }
