@@ -62,5 +62,5 @@ android {
 dependencies {
     api(projects.dependencies)
     // ========== 插件化框架接口 ==========
-    compileOnly(projects.pluginFramework.pluginCore)
+    compileOnly(projects.pluginFramework.comboLiteCore)
 }

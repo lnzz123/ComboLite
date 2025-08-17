@@ -104,7 +104,7 @@ android {
 
 dependencies {
 
-    implementation(projects.pluginFramework.pluginCore)
+    implementation(projects.pluginFramework.comboLiteCore)
     // common模块包含了所有依赖，构建fat-aar容易出现bug。
     implementation(projects.dependencies)
 }
