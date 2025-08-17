@@ -177,7 +177,7 @@ In your host (or shell) application's `build.gradle.kts`, add the core library d
 
 ```kotlin
 dependencies {
-    implementation(project(":combolite:core"))
+    implementation(projects.pluginFramework.comboLiteCore)
 }
 ```
 
@@ -209,9 +209,6 @@ class MainApplication : BaseHostApplication() {
 If your `Application` cannot inherit from `BaseHostApplication`, you can also initialize it
 manually. Please ensure all steps are configured correctly to avoid potential issues.
 
-\<details\>
-\<summary\>Click to expand manual initialization code\</summary\>
-
 ```kotlin
 class MainApplication : Application() {
     override fun onCreate() {
@@ -231,8 +228,6 @@ class MainApplication : Application() {
     }
 }
 ```
-
-\</details\>
 
 ### 3\. Create Your First Plugin
 
@@ -284,6 +279,170 @@ tags.
 
 You're done\! Now you just need to package the plugin into an APK, and you can install and launch it
 via the `PluginManager`.
+
+## 📦 Packaging Guide
+
+The `ComboLite` framework is designed with extreme flexibility, supporting two different types of Android modules to be packaged as independently installable and loadable plugins: **`Application` modules** and **`Library` modules**. These two modes each have their own technical principles and optimal use cases. Understanding their differences is crucial for building an efficient and maintainable plugin-based application.
+
+### 1\. Application Modules: Self-Contained Plugins
+
+Packaging a standard `com.android.application` module as a plugin is the most straightforward and simple method. This type of plugin is a fully-featured, self-contained micro-application with all its dependencies included.
+
+#### Packaging Principle
+
+The principle is identical to building a standard Android application. Gradle's `assemble` task bundles all the module's code, resources, and third-party dependencies (included via `implementation`) into the final APK file. After the plugin is loaded, its internal dependencies are isolated from the host and other plugins, loaded by its own `PluginClassLoader`.
+
+#### Configuration Steps
+
+**a. Add Core Dependency**
+In the plugin module's `build.gradle.kts`, declare the framework's core library as `compileOnly`. This means the framework code is only used at compile time and will be provided by the host app at runtime, thus avoiding duplicate libraries in the package.
+
+```kotlin
+// in your-plugin/build.gradle.kts
+dependencies {
+    // The core framework library is needed only at compile time and is provided by the host at runtime.
+    compileOnly(projects.pluginFramework.comboLiteCore)
+    
+    // Other internal dependencies of the plugin can be included using implementation as usual.
+    implementation("com.google.code.gson:gson:2.9.0")
+    // ...
+}
+```
+
+**b. (Important) Configure Package ID to Prevent Resource Conflicts**
+This is a **critical step** to ensure stable plugin operation. When multiple plugins are loaded into the same host, you **must** manually specify a unique `Package ID` for each `Application` plugin module to prevent resource ID conflicts (e.g., two plugins both having a resource named `R.string.app_name`).
+
+The `Package ID` acts as a namespace prefix for the resource IDs (`PP` in `0xPP...`), ensuring that each plugin's resource IDs are globally unique.
+
+```kotlin
+// in your-plugin/build.gradle.kts
+android {
+    // ...
+    // Provide additional parameters for the aapt2 tool
+    aaptOptions {
+        additionalParameters(
+            // Specify a unique Package ID, recommended range is 0x80 to 0xFF
+            "--package-id", "0x80", 
+            // Allow the use of reserved package IDs above 0x7f
+            "--allow-reserved-package-id" 
+        )
+    }
+}
+```
+
+> **Note**: The `Package ID` for each `Application` plugin must be unique. For example, Plugin A uses `0x80`, Plugin B uses `0x81`, and so on.
+
+**c. Execute Packaging**
+You can complete the packaging using the standard tasks provided by the Android Gradle Plugin (AGP).
+
+```bash
+# Build the Debug version of the plugin APK
+./gradlew :your-plugin-module:assembleDebug
+
+# Build the Release version of the plugin APK
+./gradlew :your-plugin-module:assembleRelease
+```
+
+#### Pros and Cons
+
+* ✅ **Pros**:
+  * **Highly Independent**: The plugin is self-contained with all its dependencies, making deployment simple as it doesn't rely on the host's environment.
+  * **No Compatibility Issues**: You don't need to worry about whether the host provides the specific libraries or versions required by the plugin.
+  * **Fully-Featured**: Can have complex dependencies and functionality, just like a complete application.
+* ⚠️ **Trade-offs**:
+  * **Larger Size**: The APK size is relatively large because it includes all dependencies.
+  * **Potential Dependency Redundancy**: If multiple plugins use the same library (e.g., `OkHttp`), that library will be bundled into each plugin, increasing the total application size.
+
+-----
+
+### 2\. Library Modules: Lightweight, Shared-Dependency Plugins
+
+Packaging a `com.android.library` module as a plugin is a more advanced and lightweight approach. This type of plugin does not contain any third-party dependencies itself; its operation relies on the shared dependency environment provided by the host app.
+
+#### Packaging Principle
+
+This process is driven by the custom Gradle task `ConvertAarToApkTask` defined in the project's root `build.gradle.kts`. Its core principle is as follows:
+
+1.  **Build AAR**: First, it calls the standard `:your-library-module:assemble` task to build a clean `AAR` file.
+2.  **Deconstruct AAR**: The task automatically unpacks this `AAR` file to get its contents, such as `classes.jar`, `res` resources, `AndroidManifest.xml`, etc.
+3.  **Compile Resources**: It uses `aapt2` from the Android build toolchain to compile the plugin's resources independently and **automatically assigns a unique `packageId`** based on the configuration (e.g., `0x80`, `0x81`, ...), resolving resource ID conflicts between plugins at the source.
+4.  **DEX Conversion**: It uses the `d8` compiler to convert the `classes.jar` from the AAR and the `R.java` files generated after resource compilation into `classes.dex` files, which are executable by the Android runtime.
+5.  **Reassemble into APK**: Finally, it repackages the processed `AndroidManifest.xml`, resources, `classes.dex`, and other assets (like `assets`, `jniLibs`), and signs the package with the configured signing key to generate a valid APK that can be loaded by the framework.
+
+#### Configuration Steps
+
+**a. Declare Dependency Scope**
+In the Library plugin module's `build.gradle.kts`, **all third-party library dependencies must use the `compileOnly` scope**. This ensures they are only used for compilation and are not packaged into the final artifact.
+
+```kotlin
+// in your-library-plugin/build.gradle.kts
+dependencies {
+    // Core framework library
+    compileOnly(projects.pluginFramework.comboLiteCore)
+    
+    // All third-party dependencies must be compileOnly
+    compileOnly("io.coil-kt:coil-compose:2.5.0")
+    compileOnly("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Only internal project module dependencies can use implementation
+    // implementation(project(":common-utils")) 
+}
+```
+
+> **Technical Note: Why is `compileOnly` required?**
+> This is not a limitation of the `ComboLite` framework but standard behavior of the Android Gradle Plugin. When building an AAR, AGP's `assemble` task **does not package transitive dependencies**. AARs are designed as development libraries, and their dependencies are intended to be resolved and included by the main application module during the final app build. Manually creating a "Fat AAR" that includes all dependencies is a complex and error-prone process.
+>
+> `ComboLite` embraces this official design and turns it into an advantage: **by enforcing `compileOnly`, we achieve a clean dependency management model where the host is responsible for providing and managing all common dependencies, while plugins remain extremely lightweight.**
+
+**b. Configure the Packaging Task**
+In the project's root `build.gradle.kts` file, add your library module's path to the `pluginModules` list.
+
+```kotlin
+// in /build.gradle.kts
+// 1. Configure all your plugin module paths here
+val pluginModules = listOf(
+    ":sample-plugin:common",
+    ":sample-plugin:home",
+    // ...
+    ":your-new-library-plugin" // <-- Add your module here
+)
+```
+
+**c. One-Click Packaging**
+Once configured, you can run the custom Gradle tasks provided by the framework.
+
+```bash
+# Package all configured Library plugins in one go (Release version)
+./gradlew convertAllToReleasePluginApks
+
+# Package a single plugin (e.g., home)
+./gradlew convert_sample-plugin_home_release
+```
+
+The packaged APK files will be located in the `build/output/plugin/` directory of the project root.
+
+#### Pros and Cons
+
+* ✅ **Pros**:
+  * **Extremely Lightweight**: APK sizes are typically only tens to hundreds of kilobytes, making updates and downloads very cheap.
+  * **Eliminates Dependency Conflicts**: All plugins share the same set of dependencies provided by the host, fundamentally avoiding version conflicts.
+  * **Unified Dependency Management**: Dependency versions are upgraded and managed centrally by the host, reducing maintenance costs.
+  * **Improved Build Speed**: Shared dependencies mean less repetitive compilation.
+* ⚠️ **Trade-offs**:
+  * **Dependent on Host Environment**: The plugin's operation is highly dependent on the host. If the host fails to provide a dependency required by the plugin at runtime, a `ClassNotFoundException` will occur, breaking the dependency chain. The framework will then automatically trigger its circuit breaker to disable the faulty plugin.
+  * **Restricted Dependency Versions**: Plugins must use the dependency versions provided by the host and cannot freely introduce specific versions of libraries internally.
+
+### 3\. How to Choose?
+
+| Scenario                                                             | Recommended Approach   | Reason                                                                                                                |
+|:---------------------------------------------------------------------|:-----------------------|:----------------------------------------------------------------------------------------------------------------------|
+| **Large, independent feature modules** (e.g., shopping, game center) | **Application Module** | Complex business logic with numerous dependencies requires high cohesion and independence.                            |
+| **Plugins for third-party integration**                              | **Application Module** | The host environment is uncontrollable, so dependencies must be self-contained to ensure stability.                   |
+| **UI component libraries, utility classes, common services**         | **Library Module**     | Single-purpose, small in size, and ideal for frequent updates and reuse as a shared resource.                         |
+| **"Super Apps" with a large number of plugins**                      | **Library Module**     | Maximizes the reuse of common dependencies, significantly reducing the overall application size and memory footprint. |
+| **Extreme requirements for plugin update speed and size**            | **Library Module**     | The tiny package size makes dynamic delivery and hot-updates a nearly seamless experience.                            |
+
+By choosing the right packaging strategy, you can fully leverage the advantages of the `ComboLite` framework to build a modern Android application that is both flexible and robust.
 
 ## 🔧 Core API Usage
 
