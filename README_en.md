@@ -586,8 +586,6 @@ project is helpful to you, your support would be a great motivation for my conti
       <td align="center"><img src="image/wechatpay.jpg" alt="WeChat Pay" width="200"></td>
     </tr>
   </table>
-
-  <p>同样欢迎通过 <a href="https://github.com/sponsors/lnzz123">GitHub Sponsors</a> 支持。</p>
 </details>
 
 ## License

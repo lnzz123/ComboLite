@@ -510,8 +510,6 @@ Request，还是帮助改进文档，都是对社区的巨大帮助。
       <td align="center"><img src="image/wechatpay.jpg" alt="WeChat Pay" width="200"></td>
     </tr>
   </table>
-
-  <p>同样欢迎通过 <a href="https://github.com/sponsors/lnzz123">GitHub Sponsors</a> 支持。</p>
 </details>
 
 ## 许可 (License)
