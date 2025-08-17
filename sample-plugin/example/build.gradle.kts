@@ -25,7 +25,7 @@ plugins {
 }
 
 android {
-    namespace = "com.combo.plugin.sampl.example"
+    namespace = "com.combo.plugin.sample.example"
     compileSdk = 36
 
     defaultConfig {
@@ -53,9 +53,12 @@ android {
             jvmTarget.set(JvmTarget.JVM_17)
         }
     }
+    buildFeatures {
+        compose = true
+    }
 }
 
 dependencies {
-    compileOnly(projects.pluginFramework.comboLiteCore)
-    compileOnly(projects.samplePlugin.common)
+    compileOnly(projects.comboLiteCore)
+    implementation(projects.samplePlugin.common)
 }

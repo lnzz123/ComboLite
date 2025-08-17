@@ -31,8 +31,8 @@ sealed interface AppScreen {
     data object Home : AppScreen
 
     @Serializable
-    data object ScreenTwo : AppScreen
+    data object Service : AppScreen
 
     @Serializable
-    data object ScreenOne : AppScreen
+    data object Activity : AppScreen
 }

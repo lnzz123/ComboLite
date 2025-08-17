@@ -57,10 +57,13 @@ android {
             jvmTarget.set(JvmTarget.JVM_17)
         }
     }
+    buildFeatures {
+        compose = true
+    }
 }
 
 dependencies {
     api(projects.dependencies)
     // ========== 插件化框架接口 ==========
-    compileOnly(projects.pluginFramework.comboLiteCore)
+    compileOnly(projects.comboLiteCore)
 }

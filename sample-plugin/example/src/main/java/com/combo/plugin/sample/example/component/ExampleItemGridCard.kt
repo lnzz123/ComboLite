@@ -18,6 +18,7 @@
 
 package com.combo.plugin.sample.example.component
 
+import android.R.attr.onClick
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -53,7 +54,6 @@ import com.combo.plugin.sample.example.screen.ExampleItem
 @Composable
 fun ExampleItemGridCard(
     item: ExampleItem,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -63,7 +63,7 @@ fun ExampleItemGridCard(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = onClick
+                onClick = item.onClick
             ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(

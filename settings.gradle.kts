@@ -67,7 +67,7 @@ rootProject.name = "ComboLite"
 include(":app")
 include(":dependencies")
 // 插件框架模块
-include(":plugin-framework:comboLite-core")
+include(":comboLite-core")
 include(":sample-plugin:common")
 include(":sample-plugin:home")
 include(":sample-plugin:guide")

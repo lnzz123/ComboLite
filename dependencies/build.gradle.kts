@@ -31,9 +31,11 @@ android {
 }
 
 dependencies {
-
-    api(libs.androidx.appcompat)
     api(libs.material)
+    api(libs.androidx.appcompat)
+    api(libs.androidx.constraintlayout)
+    api(libs.androidx.navigation.fragment.ktx)
+    api(libs.androidx.navigation.ui.ktx)
     // ========== 基础Compose依赖（通过api暴露） ==========
     api(libs.androidx.compose.runtime)
     api(libs.androidx.compose.ui)

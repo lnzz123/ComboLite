@@ -53,9 +53,12 @@ android {
             jvmTarget.set(JvmTarget.JVM_17)
         }
     }
+    buildFeatures {
+        compose = true
+    }
 }
 
 dependencies {
-    compileOnly(projects.pluginFramework.comboLiteCore)
+    compileOnly(projects.comboLiteCore)
     compileOnly(projects.samplePlugin.common)
 }

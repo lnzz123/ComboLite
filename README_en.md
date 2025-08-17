@@ -177,7 +177,7 @@ In your host (or shell) application's `build.gradle.kts`, add the core library d
 
 ```kotlin
 dependencies {
-    implementation(projects.pluginFramework.comboLiteCore)
+    implementation(projects.comboLiteCore)
 }
 ```
 
@@ -301,7 +301,7 @@ In the plugin module's `build.gradle.kts`, declare the framework's core library 
 // in your-plugin/build.gradle.kts
 dependencies {
     // The core framework library is needed only at compile time and is provided by the host at runtime.
-    compileOnly(projects.pluginFramework.comboLiteCore)
+    compileOnly(projects.comboLiteCore)
     
     // Other internal dependencies of the plugin can be included using implementation as usual.
     implementation("com.google.code.gson:gson:2.9.0")
@@ -378,7 +378,7 @@ In the Library plugin module's `build.gradle.kts`, **all third-party library dep
 // in your-library-plugin/build.gradle.kts
 dependencies {
     // Core framework library
-    compileOnly(projects.pluginFramework.comboLiteCore)
+    compileOnly(projects.comboLiteCore)
     
     // All third-party dependencies must be compileOnly
     compileOnly("io.coil-kt:coil-compose:2.5.0")

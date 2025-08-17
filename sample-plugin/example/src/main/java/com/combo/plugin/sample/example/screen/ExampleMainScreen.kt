@@ -40,6 +40,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.combo.plugin.sample.common.navigation.AppScreen
+import com.combo.plugin.sample.common.navigation.currentComposeNavigator
 import com.combo.plugin.sample.example.component.ExampleItemGridCard
 
 
@@ -51,6 +53,7 @@ import com.combo.plugin.sample.example.component.ExampleItemGridCard
 data class ExampleItem(
     val title: String,
     val description: String,
+    val onClick: () -> Unit = {},
 )
 
 /**
@@ -61,9 +64,12 @@ data class ExampleItem(
 @Preview
 @Composable
 fun ExampleMainScreen() {
+    val navigator = currentComposeNavigator
     // 更新数据列表，移除图标
     val exampleItems = listOf(
-        ExampleItem("Activity 示例", "生命周期、启动模式、Intent 传递等"),
+        ExampleItem("Activity 示例", "生命周期、启动模式、Intent 传递等"){
+            navigator.navigate(AppScreen.Activity)
+        },
         ExampleItem("Service 示例", "前后台服务、绑定服务等不同类型"),
         ExampleItem("广播接收器", "系统广播、自定义广播的发送与接收"),
         ExampleItem("内容提供者", "数据共享、权限控制、CRUD 操作"),
@@ -114,7 +120,7 @@ fun ExampleMainScreen() {
 
             // 示例卡片网格
             items(exampleItems) { item ->
-                ExampleItemGridCard(item = item, onClick = { })
+                ExampleItemGridCard(item = item)
             }
         }
     }

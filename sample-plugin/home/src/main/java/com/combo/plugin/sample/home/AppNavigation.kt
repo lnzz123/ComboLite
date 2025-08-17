@@ -23,6 +23,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.combo.plugin.sample.common.navigation.AppScreen
+import com.combo.plugin.sample.example.screen.ActivityScreen
 import com.combo.plugin.sample.home.screen.HomeScreen
 
 /**
@@ -39,10 +40,11 @@ fun NavGraphBuilder.appNavigation(sharedTransitionScope: SharedTransitionScope) 
             HomeScreen()
         }
 
-        composable<AppScreen.ScreenOne> {
+        composable<AppScreen.Activity> {
+            ActivityScreen()
         }
 
-        composable<AppScreen.ScreenTwo> {
+        composable<AppScreen.Service> {
         }
     }
 }

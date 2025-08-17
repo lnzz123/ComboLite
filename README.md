@@ -143,7 +143,7 @@ graph TD
 
 ```kotlin
 dependencies {
-    implementation(projects.pluginFramework.comboLiteCore)
+    implementation(projects.comboLiteCore)
 }
 ```
 
@@ -263,7 +263,7 @@ class HomePluginEntry : IPluginEntryClass {
 // in your-plugin/build.gradle.kts
 dependencies {
     // 框架核心库仅在编译时需要，运行时由宿主提供
-    compileOnly(projects.pluginFramework.comboLiteCore)
+    compileOnly(projects.comboLiteCore)
     
     // 插件内部的其他依赖可以正常使用 implementation
     implementation("com.google.code.gson:gson:2.9.0")
@@ -340,7 +340,7 @@ android {
 // in your-library-plugin/build.gradle.kts
 dependencies {
     // 框架核心库
-    compileOnly(projects.pluginFramework.comboLiteCore)
+    compileOnly(projects.comboLiteCore)
     
     // 所有第三方依赖都必须是 compileOnly
     compileOnly("io.coil-kt:coil-compose:2.5.0")
