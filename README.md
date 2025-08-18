@@ -241,100 +241,77 @@ class HomePluginEntry : IPluginEntryClass {
 
 你已经完成了！现在只需将插件打包成 APK，就可以通过 `PluginManager` 进行安装和启动了。
 
-
 ## 📦 插件打包指南 (Packaging Guide)
 
 `ComboLite` 框架在设计上提供了极高的灵活性，支持将两种不同类型的 Android 模块打包成可独立安装和加载的插件：**`Application` 模块**和 **`Library` 模块**。这两种模式各有其技术原理和最佳应用场景，理解它们的差异对于构建一个高效、可维护的插件化应用至关重要。
 
-### 1\. Application 模块：自包含的完整插件
-
-将标准的 `com.android.application` 模块打包为插件，是最直观、最简单的方式。这种插件是一个功能完备、依赖自包含的微型应用。
-
-#### 打包原理
-
-其原理与构建一个普通的 Android 应用完全相同。Gradle 的 `assemble` 任务会将模块的所有代码、资源以及通过 `implementation` 引入的第三方依赖库，全部打包进最终的 APK 文件中。插件加载后，其内部的依赖与宿主和其他插件的依赖是隔离的，由其自身的 `PluginClassLoader` 加载。
-
-#### 配置步骤
-
-**a. 添加核心依赖**
-在插件模块的 `build.gradle.kts` 中，将框架核心库声明为 `compileOnly`。这意味着框架代码仅用于编译期，运行时将由宿主 App 提供，从而避免打包重复的库。
-
-```kotlin
-// in your-plugin/build.gradle.kts
-dependencies {
-    // 框架核心库仅在编译时需要，运行时由宿主提供
-    compileOnly(projects.comboLiteCore)
-    
-    // 插件内部的其他依赖可以正常使用 implementation
-    implementation("com.google.code.gson:gson:2.9.0")
-    // ...
-}
-```
-
-**b. (重要) 配置 Package ID 以防止资源冲突**
-这是确保插件稳定运行的**关键步骤**。当多个插件被加载到同一个宿主时，为避免不同插件间的资源 ID 发生冲突（例如，两个插件都拥有一个 `R.string.app_name`），**必须**为每个 `Application` 插件模块手动指定一个唯一的 `Package ID`。
-
-`Package ID` 会作为资源 ID 的命名空间前缀（`0xPP...`中的`PP`部分），确保每个插件的资源 ID 在全局范围内都是唯一的。
-
-```kotlin
-// in your-plugin/build.gradle.kts
-android {
-    // ...
-    // 为 aapt2 工具额外指定参数
-    aaptOptions {
-        additionalParameters(
-            // 指定一个唯一的 Package ID，建议范围从 0x80 到 0xFF
-            "--package-id", "0x80", 
-            // 允许使用 0x7f 以上的保留 ID
-            "--allow-reserved-package-id" 
-        )
-    }
-}
-```
-
-> **注意**: 每个 `Application` 插件的 `Package ID` 都必须是唯一的。例如，插件 A 使用 `0x80`，插件 B 使用 `0x81`，以此类推。
-
-**c. 执行打包**
-使用 Android Gradle Plugin (AGP) 提供的标准任务即可完成打包。
-
-```bash
-# 构建 Debug 版本的插件 APK
-./gradlew :your-plugin-module:assembleDebug
-
-# 构建 Release 版本的插件 APK
-./gradlew :your-plugin-module:assembleRelease
-```
-
-#### 优劣势分析
-
-* ✅ **优点**:
-  * **高度独立**: 插件自包含所有依赖，不依赖宿主的外部环境，部署简单。
-  * **无兼容性烦恼**: 无需担心宿主是否提供了插件所需的依赖库或版本。
-  * **功能完整**: 可以像一个完整应用一样，拥有复杂的依赖和功能。
-* ⚠️ **权衡**:
-  * **体积较大**: 由于打包了所有依赖，插件 APK 的体积会相对较大。
-  * **潜在的依赖冗余**: 如果多个插件使用了相同的库（如 `OkHttp`），这些库会被重复打包到每个插件中，造成总体积增大。
+我们项目内置了一个 **`aar2apk` Gradle插件**，专门用于将 `Library` 模块**一键打包**成轻量级的插件APK，这是我们**首选并推荐**的方式。
 
 -----
 
-### 2\. Library 模块：轻量化的共享依赖插件
+### 1\. Library 模块：通过 `aar2apk` 插件一键打包 (推荐)
 
 将 `com.android.library` 模块打包成插件，是一种更高级、更轻量化的方式。这种插件本身不包含任何第三方依赖，其运行依赖于宿主 App 提供的公共依赖环境。
 
 #### 打包原理
 
-此过程由项目根目录 `build.gradle.kts` 中定义的自定义 Gradle 任务 `ConvertAarToApkTask` 驱动。其核心原理如下：
+此过程由项目内置的 `aar2apk` 插件 (`com.combo.aar2apk`) 全自动化驱动。其核心原理如下：
 
-1.  **构建 AAR**: 首先，调用标准的 `:your-library-module:assemble` 任务，构建出一个纯净的 `AAR` 文件。
+1.  **自动任务依赖**: 插件会自动关联 Gradle 的 `assemble` 任务。当你执行打包时，它会先确保模块的 `AAR` 文件被正确构建。
 2.  **解构 AAR**: 任务自动解压这个 `AAR` 文件，获得其中的 `classes.jar`、`res` 资源、`AndroidManifest.xml` 等内容。
-3.  **资源编译**: 使用 Android 构建工具链中的 `aapt2`，对插件资源进行独立编译，并根据配置**自动分配一个唯一的 `packageId`** (如 `0x80`, `0x81` ...)，从根源上解决了多插件间的资源 ID 冲突。
+3.  **资源编译与隔离**: 使用 Android 构建工具链中的 `aapt2`，对插件资源及其所有依赖库的资源进行独立编译。同时，插件会根据配置**自动为每个插件分配一个唯一的 `packageId`** (如 `0x80`, `0x81` ...)，从根源上解决了多插件间的资源 ID 冲突。
 4.  **代码 DEX 化**: 使用 `d8` 编译器，将 `AAR` 中的 `classes.jar` 和编译资源后生成的 `R.java` 文件转换为 Android 虚拟机可执行的 `classes.dex` 文件。
 5.  **重组为 APK**: 最后，将处理过的 `AndroidManifest.xml`、资源、`classes.dex` 以及其他资产（如 `assets`、`jniLibs`）重新打包，并使用配置好的签名文件进行签名，生成一个合法的、可被框架加载的 APK 文件。
 
 #### 配置步骤
 
-**a. 声明依赖作用域**
-在 Library 插件模块的 `build.gradle.kts` 中，**所有第三方依赖库都必须使用 `compileOnly` 作用域**。这确保了它们仅用于编译，不会被打包进最终产物。
+整个配置流程极其简单，只需在项目根目录进行几处修改。
+
+**a. (第一步) 引入并应用插件**
+首先，确保在项目根 `settings.gradle.kts` 中包含了我们的构建逻辑模块。
+
+```kotlin
+// in /settings.gradle.kts
+includeBuild("build-logic")
+```
+
+然后，在根 `build.gradle.kts` 中应用 `aar2apk` 插件。
+
+```kotlin
+// in /build.gradle.kts
+plugins {
+    // ... 其他插件
+    alias(libs.plugins.aar2apk)
+}
+```
+
+**b. (第二步) 配置打包任务**
+在根 `build.gradle.kts` 文件中，使用 `aar2apk` 配置块来指定需要打包的模块和签名信息。
+
+```kotlin
+// in /build.gradle.kts
+aar2apk {
+    // 1. 配置所有需要作为插件打包的 Library 模块路径
+    modules.set(listOf(
+        ":sample-plugin:common",
+        ":sample-plugin:home",
+        ":sample-plugin:guide",
+        ":sample-plugin:example",
+        ":sample-plugin:setting"
+    ))
+
+    // 2. 配置统一的签名信息
+    signing {
+        keystorePath.set(rootProject.file("jctech.jks").absolutePath)
+        keystorePassword.set("he1755858138")
+        keyAlias.set("jctech")
+        keyPassword.set("he1755858138")
+    }
+}
+```
+
+**c. (第三步) 在插件模块中声明依赖作用域**
+在 **所有** 作为插件的 Library 模块的 `build.gradle.kts` 中，**所有第三方依赖库都必须使用 `compileOnly` 作用域**。这确保了它们仅用于编译，不会被打包进最终产物，从而保持插件的轻量。
 
 ```kotlin
 // in your-library-plugin/build.gradle.kts
@@ -351,37 +328,24 @@ dependencies {
 }
 ```
 
-> **技术说明：为何必须使用 `compileOnly`？**
-> 这并非 `ComboLite` 框架的限制，而是 Android Gradle Plugin 的标准行为。AGP 的 `assemble` 任务在构建 AAR 时，**不会将传递性依赖（transitive dependencies）打包进去**。AAR 被设计为开发库，其依赖关系需要在最终打包 App 时由 App 的主模块来解析和包含。手动实现一个能打包所有依赖的 "Fat AAR" 过程非常复杂且易出错。
->
-> `ComboLite` 拥抱这一官方设定，并将其转化为一种优势：**通过强制 `compileOnly`，我们实现了一个清晰的依赖管理模型——宿主负责提供和管理所有公共依赖，插件则保持极致轻量。**
-
-**b. 配置打包任务**
-在项目根目录的 `build.gradle.kts` 文件中，将你的 Library 模块路径添加到 `pluginModules` 列表中。
-
-```kotlin
-// in /build.gradle.kts
-// 1. 在这里配置你的所有插件模块路径
-val pluginModules = listOf(
-    ":sample-plugin:common",
-    ":sample-plugin:home",
-    // ...
-    ":your-new-library-plugin" // <-- 添加你的模块
-)
-```
-
-**c. 一键执行打包**
-配置完成后，运行框架提供的自定义 Gradle 任务即可。
+**d. (第四步) 一键执行打包**
+配置完成后，运行 `aar2apk` 插件为你自动生成的 Gradle 任务即可。
 
 ```bash
 # 一键打包所有已配置的 Library 插件 (Release 版本)
-./gradlew convertAllToReleasePluginApks
+./gradlew buildAllReleasePluginApks
 
-# 单独打包某个插件 (例如 home)
-./gradlew convert_sample-plugin_home_release
+# 一键打包所有已配置的 Library 插件 (Debug 版本)
+./gradlew buildAllDebugPluginApks
+
+# 清理所有插件构建产物 (APKs, 日志, 临时文件)
+./gradlew cleanAllPluginApks
+
+# 你也可以在 IDE 的 Gradle 任务面板中找到并执行这些任务
+# 它们被清晰地组织在 "Plugin APKs" 分组下
 ```
 
-打包产物将位于项目根目录的 `build/output/plugin/` 文件夹下。
+打包产物将位于项目根目录的 `build/outputs/plugin-apks/` 文件夹下，并已按 `debug` 和 `release` 分类。
 
 #### 优劣势分析
 
@@ -394,15 +358,71 @@ val pluginModules = listOf(
   * **依赖宿主环境**: 插件的运行强依赖于宿主。如果宿主未能提供其运行时所需的依赖，插件将在运行时因 `ClassNotFoundException` 而造成依赖链断裂，插件框架将会自动熔断禁用该插件。
   * **依赖版本受限**: 插件必须使用宿主提供的依赖版本，无法在内部自由引入特定版本的库。
 
+-----
+
+### 2\. Application 模块：自包含的完整插件 (备选方案)
+
+将标准的 `com.android.application` 模块打包为插件，是一种传统的、在特定场景下仍然有用的方式。这种插件是一个功能完备、依赖自包含的微型应用。
+
+#### 打包原理
+
+其原理与构建一个普通的 Android 应用完全相同。Gradle 的 `assemble` 任务会将模块的所有代码、资源以及通过 `implementation` 引入的第三方依赖库，全部打包进最终的 APK 文件中。
+
+#### 配置步骤
+
+**a. 添加核心依赖**
+在插件模块的 `build.gradle.kts` 中，将框架核心库声明为 `compileOnly`。
+
+```kotlin
+// in your-plugin/build.gradle.kts
+dependencies {
+    compileOnly(projects.comboLiteCore)
+    implementation("com.google.code.gson:gson:2.9.0")
+}
+```
+
+**b. (重要) 配置 Package ID**
+为避免与宿主或其他插件的资源ID冲突，**必须**为每个 `Application` 插件模块手动指定一个唯一的 `Package ID`。
+
+```kotlin
+// in your-plugin/build.gradle.kts
+android {
+    // ...
+    aaptOptions {
+        additionalParameters("--package-id", "0x80")
+    }
+}
+```
+
+> **注意**: 每个 `Application` 插件的 `Package ID` 都必须是唯一的。例如，插件 A 使用 `0x80`，插件 B 使用 `0x81`，以此类推。
+
+**c. 执行打包**
+使用 AGP 提供的标准任务即可完成打包。
+
+```bash
+./gradlew :your-plugin-module:assembleRelease
+```
+
+#### 优劣势分析
+
+* ✅ **优点**:
+  * **高度独立**: 插件自包含所有依赖，不依赖宿主的外部环境，部署简单。
+  * **无兼容性烦恼**: 无需担心宿主是否提供了插件所需的依赖库或版本。
+* ⚠️ **权衡**:
+  * **体积较大**: 由于打包了所有依赖，插件 APK 的体积会相对较大。
+  * **潜在的依赖冗余**: 如果多个插件使用了相同的库，这些库会被重复打包，造成总体积增大。
+
+-----
+
 ### 3\. 如何选择？
 
-| 场景                        | 推荐方案               | 理由                          |
-|:--------------------------|:-------------------|:----------------------------|
-| **大型、独立的功能模块** (如购物、游戏中心) | **Application 模块** | 业务复杂，依赖众多，需要高度内聚和独立性。       |
-| **提供给第三方集成的插件**           | **Application 模块** | 无法控制宿主环境，必须自包含所有依赖以确保稳定运行。  |
-| **UI组件库、工具类、通用业务**        | **Library 模块**     | 功能单一，体积小，适合作为共享资源被频繁更新和复用。  |
-| **拥有大量插件的“超级App”**        | **Library 模块**     | 最大化地复用公共依赖，显著减少应用的总体积和内存占用。 |
-| **对插件更新速度和大小有极致要求**       | **Library 模块**     | 极小的包体积使得动态下发和热更新的体验近乎无感。    |
+| 场景                        | 推荐方案                       | 理由                                  |
+|:--------------------------|:---------------------------|:------------------------------------|
+| **UI组件库、工具类、通用业务**        | **Library 模块 (aar2apk插件)** | **首选方案**。功能单一，体积小，适合作为共享资源被频繁更新和复用。 |
+| **拥有大量插件的“超级App”**        | **Library 模块 (aar2apk插件)** | 最大化地复用公共依赖，显著减少应用的总体积和内存占用。         |
+| **对插件更新速度和大小有极致要求**       | **Library 模块 (aar2apk插件)** | 极小的包体积使得动态下发和热更新的体验近乎无感。            |
+| **大型、独立的功能模块** (如购物、游戏中心) | **Application 模块**         | 业务复杂，依赖众多，需要高度内聚和独立性。               |
+| **提供给第三方集成的插件**           | **Application 模块**         | 无法控制宿主环境，必须自包含所有依赖以确保稳定运行。          |
 
 通过合理选择打包策略，您可以充分利用 `ComboLite` 框架的优势，构建一个既灵活又健壮的现代化 Android 应用。
 

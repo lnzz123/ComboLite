@@ -57,7 +57,7 @@ internal class ResourceProcessor(
     }
 
     /**
-     * [新增] 遍历、解压并编译所有依赖AAR中的资源。
+     * 遍历、解压并编译所有依赖AAR中的资源。
      */
     private fun compileDependencyResources(dependencyAars: Set<File>, buildDir: File): List<File> {
         if (dependencyAars.isEmpty()) return emptyList()
@@ -89,7 +89,7 @@ internal class ResourceProcessor(
     }
 
     /**
-     * [新增] 将编译单个资源目录的逻辑提取为公共方法。
+     * 编译单个资源目录
      */
     private fun compileResourceDir(resDir: File, outputDir: File) {
         outputDir.deleteRecursively()
@@ -104,7 +104,7 @@ internal class ResourceProcessor(
     }
 
     /**
-     * [修改] `linkResources` 现在接收一个包含所有已编译资源目录的列表。
+     * 链接所有编译后的资源
      */
     private fun linkResources(
         compiledResourceDirs: List<File>,
@@ -115,6 +115,15 @@ internal class ResourceProcessor(
         logger.log("步骤3: 使用 aapt2 link 链接所有资源并生成R.java")
         val rJavaSourcesDir = File(buildDir, "gen_java")
         val unsignedApk = File(buildDir, "unsigned.apk")
+
+        val allFlatFiles = compiledResourceDirs.flatMap { dir ->
+            dir.walk().filter { file -> file.isFile && file.name.endsWith(".flat") }
+        }
+
+        val responseFile = File(buildDir, "aapt2-R-files")
+        responseFile.writeText(
+            allFlatFiles.joinToString(separator = System.lineSeparator()) { it.absolutePath }
+        )
 
         val command = mutableListOf(
             sdkInfo.getTool("aapt2"), "link",
@@ -128,14 +137,8 @@ internal class ResourceProcessor(
             "--no-static-lib-packages"
         )
 
-        // 添加所有编译后的资源作为输入
-        compiledResourceDirs.forEach { dir ->
-            dir.walk().filter { file -> file.isFile && file.name.endsWith(".flat") }
-                .forEach { flatFile ->
-                    command.add("-R")
-                    command.add(flatFile.absolutePath)
-                }
-        }
+        command.add("-R")
+        command.add("@${responseFile.absolutePath}")
 
         shellExecutor.execute(command)
         return LinkedResources(unsignedApk, rJavaSourcesDir)

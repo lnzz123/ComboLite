@@ -2,6 +2,7 @@ package com.combo.aar2apk.internal.model
 
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Internal // <-- [修复] 导入 @Internal 注解
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import java.io.File
@@ -29,12 +30,23 @@ data class SdkInfo(
         }
     }
 
+    /**
+     * 获取指定名称的构建工具路径
+     */
     fun getTool(name: String): String {
         val buildToolsDir = File(sdkPath, "build-tools/$buildToolsVersion")
-        val isWindows = System.getProperty("os.name").lowercase().contains("windows")
-        val exeName = if (isWindows) "$name.exe" else name
-        val toolFile = File(buildToolsDir, exeName)
-        if (!toolFile.exists()) throw IllegalStateException("在Build Tools目录中找不到工具: $name")
-        return toolFile.absolutePath
+
+        if (System.getProperty("os.name").lowercase().contains("windows")) {
+            val exeFile = File(buildToolsDir, "$name.exe")
+            if (exeFile.exists()) return exeFile.absolutePath
+
+            val batFile = File(buildToolsDir, "$name.bat")
+            if (batFile.exists()) return batFile.absolutePath
+        } else {
+            val toolFile = File(buildToolsDir, name)
+            if (toolFile.exists()) return toolFile.absolutePath
+        }
+
+        throw IllegalStateException("在Build Tools目录 '$buildToolsDir' 中找不到工具: '$name'")
     }
 }

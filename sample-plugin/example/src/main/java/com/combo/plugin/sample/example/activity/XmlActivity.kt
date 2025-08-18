@@ -8,6 +8,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupWithNavController
 import com.combo.core.base.BasePluginActivity
 import com.combo.plugin.sample.example.R
+import com.google.android.material.R as MaterialR
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
@@ -23,7 +24,7 @@ class XmlActivity : BasePluginActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        proxyActivity?.setTheme(com.google.android.material.R.style.Theme_MaterialComponents_DayNight_NoActionBar)
+        proxyActivity?.setTheme(MaterialR.style.Theme_MaterialComponents_DayNight_NoActionBar)
         // 使用代理 Activity 设置布局
         proxyActivity?.setContentView(R.layout.activity_xml)
 

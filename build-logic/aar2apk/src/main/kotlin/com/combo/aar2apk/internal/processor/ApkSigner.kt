@@ -15,7 +15,7 @@ internal class ApkSigner(
     private val logger: TaskLogger
 ) {
     fun sign(unsignedApk: File, outputFile: File, config: SigningConfig) {
-        logger.log("步骤8: 签名APK")
+        logger.log("步骤6: 签名APK")
         outputFile.parentFile.mkdirs()
         if (outputFile.exists()) outputFile.delete()
 
@@ -27,7 +27,7 @@ internal class ApkSigner(
                 "--ks-key-alias", config.keyAlias.get(),
                 "--key-pass", "pass:${config.keyPassword.get()}",
                 "--min-sdk-version", "21",
-                "--v4-signing-enabled", "false", // v4签名用于IDE快速部署，插件包通常不需要
+                "--v4-signing-enabled", "false",
                 "--out", outputFile.absolutePath,
                 unsignedApk.absolutePath
             )
