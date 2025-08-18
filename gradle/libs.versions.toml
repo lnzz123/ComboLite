@@ -1,4 +1,5 @@
 [versions]
+aarToApkPlugin = "unspecified"
 agp = "8.12.0"
 kotlin = "2.2.0"
 ksp = "2.2.0-2.0.2"
@@ -156,3 +157,4 @@ kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref =
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprofile" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+aar2apk = { id = "com.combo.aar2apk", version.ref = "aarToApkPlugin" }

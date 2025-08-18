@@ -1,0 +1,14 @@
+[versions]
+agp = "8.12.0"
+kotlin = "2.2.0"
+
+[libraries]
+# 依赖 AGP 的 API
+android-gradle-api = { group = "com.android.tools.build", name = "gradle-api", version.ref = "agp" }
+
+# 依赖 Kotlin Gradle 插件
+kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+
+[plugins]
+# 定义 Kotlin 插件，方便在 build.gradle.kts 中使用
+kotlin-dsl = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

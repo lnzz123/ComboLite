@@ -23,7 +23,7 @@ class XmlActivity : BasePluginActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        proxyActivity?.setTheme(com.google.android.material.R.style.Theme_MaterialComponents_DayNight_NoActionBar)
         // 使用代理 Activity 设置布局
         proxyActivity?.setContentView(R.layout.activity_xml)
 
