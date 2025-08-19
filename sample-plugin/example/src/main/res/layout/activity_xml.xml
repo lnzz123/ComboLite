@@ -1,36 +1,129 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:fitsSystemWindows="true">
 
-    <com.google.android.material.appbar.AppBarLayout
+    <RelativeLayout
+        android:id="@+id/relativeLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize" />
+        android:background="#ff666666">
 
         <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_arrow"
+            android:layout_marginStart="16dp"
+            android:layout_centerVertical="true" />
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/compose_multiplatform" />
+            android:layout_centerInParent="true"
+            android:padding="16dp"
+            android:text="基础控件展示"
+            android:textSize="24sp"
+            android:textColor="#ffffffff" />
 
-    </com.google.android.material.appbar.AppBarLayout>
+    </RelativeLayout>
 
-    <include layout="@layout/content_xml" />
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="@dimen/fab_margin"
-        android:layout_marginBottom="16dp"
-        app:srcCompat="@android:drawable/ic_dialog_email" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+            <Button
+                android:id="@+id/button_first"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/next" />
+
+            <Switch
+                android:id="@+id/switch_first"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="开关" />
+
+            <SeekBar
+                android:id="@+id/seekBar_first"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:max="100"
+                android:progress="50" />
+
+            <ProgressBar
+                android:id="@+id/progressBar_first"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:max="100"
+                android:progress="50" />
+
+            <RatingBar
+                android:id="@+id/ratingBar_first"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:numStars="5"
+                android:rating="3" />
+
+            <CheckBox
+                android:id="@+id/checkBox_first"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="复选框" />
+
+            <RadioGroup
+                android:id="@+id/radioGroup_first"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp">
+
+                <RadioButton
+                    android:id="@+id/radioButton_first"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="单选框1" />
+
+                <RadioButton
+                    android:id="@+id/radioButton_second"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="单选框2" />
+
+            </RadioGroup>
+
+            <EditText
+                android:id="@+id/editText_first"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="请输入" />
+
+            <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" />
+
+            <TextView
+                android:id="@+id/textview_first"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/lorem_ipsum" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

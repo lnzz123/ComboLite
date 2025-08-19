@@ -63,7 +63,7 @@ android {
 }
 
 dependencies {
-    api(projects.dependencies)
+    implementation(projects.dependencies)
     // ========== 插件化框架接口 ==========
     compileOnly(projects.comboLiteCore)
 }

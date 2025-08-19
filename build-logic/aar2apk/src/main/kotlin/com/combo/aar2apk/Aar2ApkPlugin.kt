@@ -5,7 +5,6 @@ import com.combo.aar2apk.internal.utils.SdkLocator
 import com.combo.aar2apk.tasks.ConvertAarToApkTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.tasks.Delete
 import org.gradle.kotlin.dsl.register
@@ -26,7 +25,7 @@ class Aar2ApkPlugin : Plugin<Project> {
         val extension = project.extensions.create("aar2apk", Aar2ApkExtension::class.java)
 
         project.afterEvaluate {
-            if (extension.modules.get().isNotEmpty()) {
+            if (extension.moduleConfigs.modules.isNotEmpty()) {
                 configureTasks(project, extension)
             }
         }
@@ -38,14 +37,16 @@ class Aar2ApkPlugin : Plugin<Project> {
         val platformVersion = SdkLocator.findLatestPlatform(sdkPath)
         val sdkInfo = SdkInfo(sdkPath, buildToolsVersion, platformVersion)
 
-        val pluginPackageIds = extension.modules.get().mapIndexed { index, modulePath ->
-            modulePath to String.format("0x%02x", 0x80 + index)
+        val pluginPackageIds = extension.moduleConfigs.modules.mapIndexed { index, config ->
+            config.path to String.format("0x%02x", 0x80 + index)
         }.toMap()
 
         val debugTaskNames = mutableListOf<String>()
         val releaseTaskNames = mutableListOf<String>()
 
-        extension.modules.get().forEach { modulePath ->
+        // **FIXED**: Using the cleaner property chain
+        extension.moduleConfigs.modules.forEach { options ->
+            val modulePath = options.path
             val subproject = project.project(modulePath)
             val baseTaskName = modulePath.replace(":", "_").removePrefix("_")
 
@@ -57,7 +58,6 @@ class Aar2ApkPlugin : Plugin<Project> {
 
                 project.tasks.register<ConvertAarToApkTask>(taskName) {
                     group = taskGroup
-                    description = "构建 ${subproject.name} 模块并转换为 $buildTypeCapitalized 插件APK"
                     dependsOn(subproject.tasks.named(assembleTaskName))
 
                     val aarFileName = "${subproject.name}-$buildType.aar"
@@ -67,32 +67,59 @@ class Aar2ApkPlugin : Plugin<Project> {
                     this.sdkInfo.set(sdkInfo)
                     this.buildType.set(buildType)
                     this.packageId.set(pluginPackageIds[modulePath]!!)
+                    this.packagingOptions.set(options)
 
-                    val config = subproject.configurations.getByName("${buildType}RuntimeClasspath")
+                    description = "构建 ${subproject.name} 模块并转换为 $buildTypeCapitalized 插件APK (精细化配置)"
 
-                    val remoteAars = config.incoming.artifactView {
-                        attributes {
-                            attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "aar")
-                        }
-                        lenient(true)
-                    }.files
+                    if (options.isAnyDependencyIncluded()) {
+                        val config = subproject.configurations.getByName("${buildType}RuntimeClasspath")
+                        remoteDependencyAars.from(config.incoming.artifactView {
+                            attributes { attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "aar") }
+                            componentFilter { it is org.gradle.api.artifacts.component.ModuleComponentIdentifier }
+                            lenient(true)
+                        }.files)
+                    }
 
-                    val projectAars = config.allDependencies
-                        .filterIsInstance<ProjectDependency>()
-                        .map { projectDep ->
-                            val dependencyProject = projectDep.dependencyProject
-                            val dependencyAssembleTask = dependencyProject.tasks.named("assemble${buildTypeCapitalized}")
-                            dependsOn(dependencyAssembleTask)
-                            val dependencyAarFileName = "${dependencyProject.name}-$buildType.aar"
-                            dependencyProject.layout.buildDirectory.file("outputs/aar/$dependencyAarFileName").get().asFile
-                        }
+                    // Resolve local artifacts based on each specific flag
+                    if (options.includeDependenciesRes.get()) {
+                        val config = subproject.configurations.getByName("${buildType}RuntimeClasspath")
+                        localDependencyResDirs.from(config.incoming.artifactView {
+                            attributes { attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "android-res") }
+                            componentFilter { it is org.gradle.api.artifacts.component.ProjectComponentIdentifier }
+                            lenient(true)
+                        }.files)
+                    }
 
-                    dependencyAars.from(remoteAars, projectAars)
+                    if (options.includeDependenciesDex.get()) {
+                        val config = subproject.configurations.getByName("${buildType}RuntimeClasspath")
+                        localDependencyClasses.from(config.incoming.artifactView {
+                            attributes { attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "android-classes-jar") }
+                            componentFilter { it is org.gradle.api.artifacts.component.ProjectComponentIdentifier }
+                            lenient(true)
+                        }.files)
+                    }
+
+                    if (options.includeDependenciesAssets.get()) {
+                        val config = subproject.configurations.getByName("${buildType}RuntimeClasspath")
+                        localDependencyAssets.from(config.incoming.artifactView {
+                            attributes { attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "android-assets") }
+                            componentFilter { it is org.gradle.api.artifacts.component.ProjectComponentIdentifier }
+                            lenient(true)
+                        }.files)
+                    }
+
+                    if (options.includeDependenciesJni.get()) {
+                        val config = subproject.configurations.getByName("${buildType}RuntimeClasspath")
+                        localDependencyJniLibs.from(config.incoming.artifactView {
+                            attributes { attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "android-jni") }
+                            componentFilter { it is org.gradle.api.artifacts.component.ProjectComponentIdentifier }
+                            lenient(true)
+                        }.files)
+                    }
 
                     outputDirectory.set(project.layout.buildDirectory.dir("outputs/plugin-apks/$buildType"))
                 }
 
-                // 将注册好的任务名添加到对应的列表中
                 if (buildType == "debug") {
                     debugTaskNames.add(taskName)
                 } else {
@@ -101,7 +128,6 @@ class Aar2ApkPlugin : Plugin<Project> {
             }
         }
 
-        // --- 2. 注册聚合构建任务 ---
         project.tasks.register("buildAllDebugPluginApks") {
             group = GROUP_MAIN
             description = "一键构建所有已配置模块的Debug插件APK"
@@ -113,16 +139,10 @@ class Aar2ApkPlugin : Plugin<Project> {
             dependsOn(releaseTaskNames)
         }
 
-        // --- 3. 注册清理任务 ---
         project.tasks.register<Delete>("cleanAllPluginApks") {
             group = GROUP_MAIN
             description = "清理所有生成的插件APK、相关日志和临时工作目录"
-
-            delete(
-                project.layout.buildDirectory.dir("outputs/plugin-apks"),
-                project.layout.buildDirectory.dir("logs/aar2apk")
-            )
-
+            delete(project.layout.buildDirectory.dir("outputs/plugin-apks"), project.layout.buildDirectory.dir("logs/aar2apk"))
             doLast {
                 val tmpDir = project.layout.buildDirectory.get().asFile.resolve("tmp")
                 if (tmpDir.exists() && tmpDir.isDirectory) {

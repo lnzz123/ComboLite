@@ -31,14 +31,13 @@ plugins {
 }
 
 aar2apk {
-    // 配置需要转换的模块
-    modules.set(listOf(
-        ":sample-plugin:common",
-        ":sample-plugin:home",
-        ":sample-plugin:guide",
-        ":sample-plugin:example",
-        ":sample-plugin:setting"
-    ))
+    modules {
+        module(":sample-plugin:common")
+        module(":sample-plugin:home")
+        module(":sample-plugin:guide")
+        module(":sample-plugin:example")
+        module(":sample-plugin:setting")
+    }
 
     // 配置签名信息
     signing {

@@ -10,6 +10,7 @@ internal data class LinkedResources(val unsignedApk: File, val rJavaSourcesDir: 
 
 /**
  * 负责处理Android资源 (aapt2 compile, aapt2 link)
+ * (已恢复你提供的正确 linkResources 逻辑)
  */
 internal class ResourceProcessor(
     private val project: Project,
@@ -19,7 +20,8 @@ internal class ResourceProcessor(
 ) {
     fun process(
         extractDir: File,
-        dependencyAars: Set<File>,
+        remoteAars: Set<File>,
+        localResDirs: Set<File>,
         packageId: String,
         workDir: File
     ): LinkedResources? {
@@ -30,36 +32,23 @@ internal class ResourceProcessor(
         }
 
         val buildDir = File(workDir, "build")
-
         buildDir.mkdirs()
 
-        // 步骤2.1: 编译主模块的资源
+        // 1. 编译主模块资源
         val mainCompiledResDir = compileMainModuleResources(extractDir, buildDir)
 
-        // 步骤2.2: 编译所有依赖库AAR的资源
-        val dependencyCompiledResDirs = compileDependencyResources(dependencyAars, buildDir)
+        // 2. 编译远程依赖(AAR)的资源
+        val remoteCompiledResDirs = compileAarDependencyResources(remoteAars, buildDir)
 
-        // 步骤3: 链接所有编译后的资源
-        val allCompiledResourceDirs = listOfNotNull(mainCompiledResDir) + dependencyCompiledResDirs
+        // 3. 编译本地依赖(res目录)的资源
+        val localCompiledResDirs = compileLocalDependencyResources(localResDirs, buildDir)
+
+        // 4. 链接所有资源
+        val allCompiledResourceDirs = listOfNotNull(mainCompiledResDir) + remoteCompiledResDirs + localCompiledResDirs
         return linkResources(allCompiledResourceDirs, manifestFile, packageId, buildDir)
     }
 
-    private fun compileMainModuleResources(extractDir: File, buildDir: File): File? {
-        val mainResDir = File(extractDir, "res")
-        if (!mainResDir.exists() || mainResDir.listFiles()?.isEmpty() == true) {
-            logger.log("步骤2.1: 主模块无资源文件，跳过aapt2 compile。")
-            return null
-        }
-        logger.log("步骤2.1: 使用 aapt2 compile 编译主模块资源")
-        val outputDir = File(buildDir, "compiled_res/main")
-        compileResourceDir(mainResDir, outputDir)
-        return outputDir
-    }
-
-    /**
-     * 遍历、解压并编译所有依赖AAR中的资源。
-     */
-    private fun compileDependencyResources(dependencyAars: Set<File>, buildDir: File): List<File> {
+    private fun compileAarDependencyResources(dependencyAars: Set<File>, buildDir: File): List<File> {
         if (dependencyAars.isEmpty()) return emptyList()
 
         logger.log("步骤2.2: 编译 ${dependencyAars.size} 个依赖库的资源")
@@ -88,9 +77,30 @@ internal class ResourceProcessor(
         }
     }
 
-    /**
-     * 编译单个资源目录
-     */
+    // 新增一个方法，用于直接编译本地的 res 目录
+    private fun compileLocalDependencyResources(resDirs: Set<File>, buildDir: File): List<File> {
+        if (resDirs.isEmpty()) return emptyList()
+        logger.log("步骤2.3: 编译 ${resDirs.size} 个本地项目依赖的资源")
+        val compiledDir = buildDir.resolve("compiled_res/local_deps")
+        return resDirs.mapIndexed { index, resDir ->
+            val outputDir = compiledDir.resolve("${resDir.parentFile.name}_$index")
+            compileResourceDir(resDir, outputDir)
+            outputDir
+        }
+    }
+
+    private fun compileMainModuleResources(extractDir: File, buildDir: File): File? {
+        val mainResDir = File(extractDir, "res")
+        if (!mainResDir.exists() || mainResDir.listFiles()?.isEmpty() == true) {
+            logger.log("主模块无资源文件，跳过aapt2 compile。")
+            return null
+        }
+        logger.log("步骤2.1: 使用 aapt2 compile 编译主模块资源")
+        val outputDir = File(buildDir, "compiled_res/main")
+        compileResourceDir(mainResDir, outputDir)
+        return outputDir
+    }
+
     private fun compileResourceDir(resDir: File, outputDir: File) {
         outputDir.deleteRecursively()
         outputDir.mkdirs()
@@ -104,7 +114,7 @@ internal class ResourceProcessor(
     }
 
     /**
-     * 链接所有编译后的资源
+     * 链接所有编译后的资源 (这是你提供的、经过验证的正确版本)
      */
     private fun linkResources(
         compiledResourceDirs: List<File>,

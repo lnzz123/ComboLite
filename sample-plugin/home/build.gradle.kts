@@ -61,6 +61,7 @@ android {
 }
 
 dependencies {
+    compileOnly(projects.dependencies)
     compileOnly(projects.comboLiteCore)
     compileOnly(projects.samplePlugin.common)
     compileOnly(projects.samplePlugin.guide)

@@ -19,7 +19,33 @@
 打造的新一代安卓插件化框架。一个现代、稳定、灵活的插件化解决方案。核心特性：原生Compose支持 |
 100%官方API | 0 Hook & 0 反射 | 去中心化架构
 
----
+-----
+
+<details>
+<summary>📚 <b>目录 (Table of Contents)</b></summary>
+
+- [📸 示例项目 (Screenshots)](#-示例项目-screenshots)
+- [✨ 核心理念与优势](#-核心理念与优势)
+- [🏗️ 架构概览](#-架构概览)
+- [🚀 快速开始](#-快速开始)
+- [🔌 创建你的第一个插件](#-创建你的第一个插件)
+- [📦 插件打包指南 (Packaging Guide)](#-插件打包指南-packaging-guide)
+  - [核心概念：依赖作用域 `compileOnly` vs `implementation`](#核心概念依赖作用域-compileonly-vs-implementation)
+  - [1. Library 模块打包 (推荐方案)](#1-library-模块打包-推荐方案)
+  - [2. Application 模块打包 (备选方案)](#2-application-模块打包-备选方案)
+  - [3. 如何选择？](#3-如何选择)
+  - [☢️ 重要实践建议与风险警告](#-重要实践建议与风险警告)
+- [🔧 核心 API 用法](#-核心-api-用法)
+- [🔧 四大组件用法](#-四大组件用法)
+- [🛠️ 四大组件实现原理](#-四大组件实现原理)
+- [🆚 与其他框架对比](#-与其他框架对比)
+- [如何贡献](#如何贡献)
+- [❤️ 支持与赞助 (Support & Sponsor)](#-支持与赞助-support--sponsor)
+- [许可 (License)](#许可-license)
+
+</details>
+
+-----
 
 随着 Android 生态的不断演进，众多诞生于 View
 时代的经典插件化框架放现在的开发场景已经显得力不从心。其中多数项目已停止维护，其庞大而晦涩的内部实现、对**
@@ -34,6 +60,8 @@ API 为基石，实现了 0 Hook、0 反射 的纯净架构，逻辑清晰、接
 无论你是想构建一个所有功能皆可插拔的“空壳”应用，还是想为现有项目赋予动态化能力，`ComboLite`
 都将是你最可靠、最现代化的选择。
 
+-----
+
 ## 📸 示例项目 (Screenshots)
 
 下载示例App：https://github.com/lnzz123/ComboLite/releases
@@ -46,11 +74,13 @@ API 为基石，实现了 0 Hook、0 反射 的纯净架构，逻辑清晰、接
 |:-------------------------:|:-------------------------:|:-------------------------:|
 | ![示例图](image/figure4.jpg) | ![示例图](image/figure5.jpg) | ![示例图](image/figure6.jpg) |
 
+-----
+
 ## ✨ 核心理念与优势
 
 `ComboLite` 的设计哲学根植于四个核心原则：
 
-#### 1\. 现代化的设计 (Modern by Design)
+#### 1. 现代化的设计 (Modern by Design)
 
 * **原生为 Compose 而生**: `ComboLite` 是为满足新一代 Android UI 工具包 Jetpack Compose
   的需求而设计的。插件可以无缝使用 `@Composable` 函数构建界面，享受声明式 UI 带来的开发便利。
@@ -58,7 +88,7 @@ API 为基石，实现了 0 Hook、0 反射 的纯净架构，逻辑清晰、接
   进行依赖注入，让你在插件开发中也能使用最前沿、最高效的技术。
 * **最新的工具链**: 基于最新版 Android Studio、Gradle 和 AGP 构建，杜绝了老旧框架因工具链不兼容带来的集成噩梦。
 
-#### 2\. 极致的稳定与兼容 (Stability & Compatibility)
+#### 2. 极致的稳定与兼容 (Stability & Compatibility)
 
 * **0 Hook, 0 反射**: 这是 ComboLite 最核心的承诺。我们完全基于 Android 官方推荐的 ClassLoader
   机制，不使用任何 Hook。在Resources资源加载方面，我们优先使用最新的官方 API，仅在兼容 Android 11
@@ -77,7 +107,7 @@ API 为基石，实现了 0 Hook、0 反射 的纯净架构，逻辑清晰、接
 
   这个机制将一个潜在的、导致整个应用瘫痪的致命错误，转化为一个可隔离、可恢复的局部问题，从而最大限度地保障了宿主应用的稳定性。
 
-#### 3\. 终极的灵活与解耦 (Flexibility & Decoupling)
+#### 3. 终极的灵活与解耦 (Flexibility & Decoupling)
 
 * **去中心化架构**: 打破了传统“宿主-插件”的强中心化模式。任何插件都拥有管理（下载、安装、更新、卸载）自身或其他插件的能力，可以轻松实现“插件商店”、“按需下载”等高级功能。
 * **“空壳”宿主支持**: 宿主 App 可以没有任何业务逻辑，完全退化为一个启动入口。所有功能、所有 UI
@@ -85,7 +115,7 @@ API 为基石，实现了 0 Hook、0 反射 的纯净架构，逻辑清晰、接
 * **灵活的插件形态**: 一个标准的 Android `Application` 或 `Library` (AAR)
   库项目，都可以被轻松打包成一个独立的插件，极大地降低了插件开发和迁移的门槛。
 
-#### 4\. 卓越的开发者体验 (Developer Experience)
+#### 4. 卓越的开发者体验 (Developer Experience)
 
 * **轻量级核心**: 框架核心模块仅包含十几个核心类，依赖库除了 Koin 和 dexlib2 (用于类索引)
   外几乎没有其他第三方库，对应用体积影响极小。
@@ -93,6 +123,8 @@ API 为基石，实现了 0 Hook、0 反射 的纯净架构，逻辑清晰、接
   App 或 Module 一样自然。
 * **闪电般的类查找**: 通过在加载时为所有插件建立全局类索引，`ComboLite` 实现了 `O(1)`
   时间复杂度的跨插件类查找，彻底告别了传统插件框架中普遍存在的类查找性能瓶颈。
+
+-----
 
 ## 🏗️ 架构概览
 
@@ -133,11 +165,13 @@ graph TD
 - **`ProxyManager`**: 负责 Android 四大组件的代理和生命周期分发。
 - **`DependencyManager`**: 负责维护插件间的动态依赖关系图和类索引。
 
+-----
+
 ## 🚀 快速开始
 
 集成 `ComboLite` 只需简单的三步。
 
-### 1\. 添加依赖
+### 1. 添加依赖
 
 在你的宿主（或壳）应用的 `build.gradle.kts` 中添加核心库依赖：
 
@@ -147,7 +181,7 @@ dependencies {
 }
 ```
 
-### 2\. 初始化框架
+### 2. 初始化框架
 
 `ComboLite` 提供了基类来帮助您完成一键式初始化，这是我们**推荐**的方式。
 
@@ -192,7 +226,9 @@ class MainApplication : Application() {
 }
 ```
 
-### 3\. 创建你的第一个插件
+-----
+
+## 🔌 创建你的第一个插件
 
 插件可以是一个独立的 `com.android.library` 或 `com.android.application` 模块。
 
@@ -241,33 +277,32 @@ class HomePluginEntry : IPluginEntryClass {
 
 你已经完成了！现在只需将插件打包成 APK，就可以通过 `PluginManager` 进行安装和启动了。
 
+-----
+
 ## 📦 插件打包指南 (Packaging Guide)
 
-`ComboLite` 框架在设计上提供了极高的灵活性，支持将两种不同类型的 Android 模块打包成可独立安装和加载的插件：**`Application` 模块**和 **`Library` 模块**。这两种模式各有其技术原理和最佳应用场景，理解它们的差异对于构建一个高效、可维护的插件化应用至关重要。
+`ComboLite` 框架在设计上提供了极高的灵活性，支持将两种不同类型的 Android 模块打包成可独立安装和加载的插件：**`Application` 模块**和 **`Library` 模块**。
 
-我们项目内置了一个 **`aar2apk` Gradle插件**，专门用于将 `Library` 模块**一键打包**成轻量级的插件APK，这是我们**首选并推荐**的方式。
+我们项目内置了一个强大的 **`aar2apk` Gradle插件**，专门用于将 `Library` 模块**一键打包**成轻量级的插件APK，这是我们**首选并推荐**的方式。
 
 -----
 
-### 1\. Library 模块：通过 `aar2apk` 插件一键打包 (推荐)
+### 核心概念：依赖作用域 `compileOnly` vs `implementation`
 
-将 `com.android.library` 模块打包成插件，是一种更高级、更轻量化的方式。这种插件本身不包含任何第三方依赖，其运行依赖于宿主 App 提供的公共依赖环境。
+为了实现插件的最小化打包和依赖共享，正确使用 Gradle 的依赖作用域至关重要。这是理解 `ComboLite` 打包策略的基石。
 
-#### 打包原理
+* **`compileOnly` (首选)**: 这是插件模块**最优先**使用的作用域。它告诉编译器：“这个依赖在编译时是可用的，但在运行时，请假设宿主 App 会提供它，不要将它打包进我的产物里。” 这是实现插件“轻量化”和“依赖共享”的关键。
 
-此过程由项目内置的 `aar2apk` 插件 (`com.combo.aar2apk`) 全自动化驱动。其核心原理如下：
+* **`implementation`**: 只有当你计划使用 `aar2apk` 的 `include...` 选项来打包某个特定依赖时，才需要将它从 `compileOnly` 修改为 `implementation`。`implementation` 会将依赖的产物暴露给 `aar2apk` 插件，使其能够在打包时访问和处理它们。
 
-1.  **自动任务依赖**: 插件会自动关联 Gradle 的 `assemble` 任务。当你执行打包时，它会先确保模块的 `AAR` 文件被正确构建。
-2.  **解构 AAR**: 任务自动解压这个 `AAR` 文件，获得其中的 `classes.jar`、`res` 资源、`AndroidManifest.xml` 等内容。
-3.  **资源编译与隔离**: 使用 Android 构建工具链中的 `aapt2`，对插件资源及其所有依赖库的资源进行独立编译。同时，插件会根据配置**自动为每个插件分配一个唯一的 `packageId`** (如 `0x80`, `0x81` ...)，从根源上解决了多插件间的资源 ID 冲突。
-4.  **代码 DEX 化**: 使用 `d8` 编译器，将 `AAR` 中的 `classes.jar` 和编译资源后生成的 `R.java` 文件转换为 Android 虚拟机可执行的 `classes.dex` 文件。
-5.  **重组为 APK**: 最后，将处理过的 `AndroidManifest.xml`、资源、`classes.dex` 以及其他资产（如 `assets`、`jniLibs`）重新打包，并使用配置好的签名文件进行签名，生成一个合法的、可被框架加载的 APK 文件。
+> **重要规则**: 如果你为一个模块开启了 `includeDependenciesRes.set(true)`，那么它在 `build.gradle.kts` 中引用的、需要打包资源的那个库，**必须**从 `compileOnly` 改为 `implementation`，否则 `aar2apk` 插件在构建时将找不到对应的资源，导致打包失败。
 
-#### 配置步骤
+### 1. Library 模块打包 (推荐方案)
 
-整个配置流程极其简单，只需在项目根目录进行几处修改。
+`aar2apk` 插件 (`com.combo.aar2apk`) 提供了强大而灵活的打包能力，能将一个 `com.android.library` 模块打包成一个高度可定制的插件 APK。
 
-**a. (第一步) 引入并应用插件**
+#### 1. 引入并应用插件
+
 首先，确保在项目根 `settings.gradle.kts` 中包含了我们的构建逻辑模块。
 
 ```kotlin
@@ -285,50 +320,53 @@ plugins {
 }
 ```
 
-**b. (第二步) 配置打包任务**
-在根 `build.gradle.kts` 文件中，使用 `aar2apk` 配置块来指定需要打包的模块和签名信息。
+#### 2. 配置打包任务
+
+在根 `build.gradle.kts` 文件中，使用 `aar2apk` 配置块来指定需要打包的模块、打包策略和签名信息。得益于全新的精细化配置，您可以为每个模块量身定制打包方案。
 
 ```kotlin
 // in /build.gradle.kts
 aar2apk {
-    // 1. 配置所有需要作为插件打包的 Library 模块路径
-    modules.set(listOf(
-        ":sample-plugin:common",
-        ":sample-plugin:home",
-        ":sample-plugin:guide",
-        ":sample-plugin:example",
-        ":sample-plugin:setting"
-    ))
-
-    // 2. 配置统一的签名信息
+    // a. 配置签名信息
     signing {
         keystorePath.set(rootProject.file("jctech.jks").absolutePath)
         keystorePassword.set("he1755858138")
         keyAlias.set("jctech")
         keyPassword.set("he1755858138")
     }
-}
-```
-
-**c. (第三步) 在插件模块中声明依赖作用域**
-在 **所有** 作为插件的 Library 模块的 `build.gradle.kts` 中，**所有第三方依赖库都必须使用 `compileOnly` 作用域**。这确保了它们仅用于编译，不会被打包进最终产物，从而保持插件的轻量。
-
-```kotlin
-// in your-library-plugin/build.gradle.kts
-dependencies {
-    // 框架核心库
-    compileOnly(projects.comboLiteCore)
     
-    // 所有第三方依赖都必须是 compileOnly
-    compileOnly("io.coil-kt:coil-compose:2.5.0")
-    compileOnly("com.squareup.okhttp3:okhttp:4.12.0")
+    // b. 配置所有需要作为插件打包的 Library 模块
+    modules {
+        // 模块一：默认最小化打包 (所有 include... 选项都为 false)
+        // 这是最常用的模式，插件体积最小。
+        module(":sample-plugin:common")
+        module(":sample-plugin:setting")
 
-    // 只有项目内的其他模块依赖可以使用 implementation
-    // implementation(project(":common-utils")) 
+        // 模块二：只打包外部资源，不打包外部代码
+        // 适用于修复XML布局中对外部库资源的引用问题。
+        module(":sample-plugin:example") {
+            includeDependenciesRes.set(true)
+        }
+
+        // 模块三：完整打包所有依赖
+        // 适用于该插件依赖了宿主或其他插件没有的、专属的库。
+        module(":sample-plugin:guide") {
+            includeAllDependencies() // 使用便捷方法一键开启
+        }
+        
+        // 你也可以手动精细控制每一种依赖
+        module(":sample-plugin:home") {
+            includeDependenciesRes.set(true)
+            includeDependenciesDex.set(true)
+            includeDependenciesAssets.set(false) // 不打包 assets
+            includeDependenciesJni.set(false)   // 不打包 jni
+        }
+    }
 }
 ```
 
-**d. (第四步) 一键执行打包**
+#### 3. 执行打包
+
 配置完成后，运行 `aar2apk` 插件为你自动生成的 Gradle 任务即可。
 
 ```bash
@@ -347,7 +385,7 @@ dependencies {
 
 打包产物将位于项目根目录的 `build/outputs/plugin-apks/` 文件夹下，并已按 `debug` 和 `release` 分类。
 
-#### 优劣势分析
+#### 4. 优劣势分析
 
 * ✅ **优点**:
   * **体积极致轻量**: APK 体积通常只有几十到几百 KB，更新和下载成本极低。
@@ -358,9 +396,7 @@ dependencies {
   * **依赖宿主环境**: 插件的运行强依赖于宿主。如果宿主未能提供其运行时所需的依赖，插件将在运行时因 `ClassNotFoundException` 而造成依赖链断裂，插件框架将会自动熔断禁用该插件。
   * **依赖版本受限**: 插件必须使用宿主提供的依赖版本，无法在内部自由引入特定版本的库。
 
------
-
-### 2\. Application 模块：自包含的完整插件 (备选方案)
+### 2. Application 模块打包 (备选方案)
 
 将标准的 `com.android.application` 模块打包为插件，是一种传统的、在特定场景下仍然有用的方式。这种插件是一个功能完备、依赖自包含的微型应用。
 
@@ -394,7 +430,7 @@ android {
 }
 ```
 
-> **注意**: 每个 `Application` 插件的 `Package ID` 都必须是唯一的。例如，插件 A 使用 `0x80`，插件 B 使用 `0x81`，以此类推。
+> **注意**: 每个 `Application` 插件的 `Package ID` 都必须是唯一的。例如，插件 A 使用 `0x80`，插件 B 使用 `0x81`，以此推-。
 
 **c. 执行打包**
 使用 AGP 提供的标准任务即可完成打包。
@@ -412,9 +448,7 @@ android {
   * **体积较大**: 由于打包了所有依赖，插件 APK 的体积会相对较大。
   * **潜在的依赖冗余**: 如果多个插件使用了相同的库，这些库会被重复打包，造成总体积增大。
 
------
-
-### 3\. 如何选择？
+### 3. 如何选择？
 
 | 场景                        | 推荐方案                       | 理由                                  |
 |:--------------------------|:---------------------------|:------------------------------------|
@@ -425,6 +459,74 @@ android {
 | **提供给第三方集成的插件**           | **Application 模块**         | 无法控制宿主环境，必须自包含所有依赖以确保稳定运行。          |
 
 通过合理选择打包策略，您可以充分利用 `ComboLite` 框架的优势，构建一个既灵活又健壮的现代化 Android 应用。
+
+### ☢️ 重要实践建议与风险警告
+
+#### a. 关于打包完整依赖的深度警告
+
+虽然 `aar2apk` 插件提供了将依赖（代码、资源、JNI等）打包进插件的能力，但这应该被视为一个**处理特殊情况的备用方案，而不是常规操作**。
+
+> **在绝大多数情况下，我们强烈建议您采用默认的最小化打包模式。**
+
+打包完整依赖可能会引入一系列严重且难以排查的问题：
+
+* **类重复冲突 (Class Duplication)**: 如果插件打包了 `OkHttp 4.9.0`，而宿主或其他插件使用了 `OkHttp 4.10.0`，运行时可能会因为类定义不一致而导致 `NoSuchMethodError`、`ClassCastException` 等各种致命崩溃。
+* **资源重复与覆盖 (Resource Duplication)**: 多个插件或宿主包含同名的资源，可能会导致运行时加载的资源非你所想，造成 UI 错乱。
+* **APK 体积冗余**: 重复打包相同的依赖库，会显著增加插件 APK 的体积和最终应用的总大小。
+
+**经验法则**：只在你**完全确定**某个依赖库是此插件**专属私有**，且不会与宿主或其他任何插件产生冲突时，才考虑将其打包进去。
+
+#### b. 优先使用 Compose，谨慎使用 XML
+
+`ComboLite` 是一个为 **Jetpack Compose 设计的开源插件化框架**，我们强烈推荐您将 **Compose 作为插件 UI 的第一选择**。
+
+虽然框架目前也兼容加载传统的 XML 布局，但这应被视为一种处理历史遗留代码或特殊场景（如 `WebView` 等 Compose 尚未完美支持的控件）的**备用方案**。我们不推荐在新的插件功能中继续使用 XML，原因如下：
+
+* **缺陷一：主题与基类强耦合**
+
+  许多来自 `com.google.android.material` 等三方库的 XML 控件，强制要求其所在的 `Activity` 必须继承自特定的基类（如 `FragmentActivity`）或使用特定的主题（如 `Theme.MaterialComponents`）。
+
+  在 `ComboLite` 的代理 `Activity` 机制下，插件 `Activity` 无法改变宿主代理 `Activity` 的基类和主题。如果强行在插件中使用这类控件，将在运行时抛出 `InflateException` 导致应用崩溃。
+
+  > **崩溃日志示例:**
+
+  > ```text
+    > FATAL EXCEPTION: main
+    > Process: com.combo.plugin.sample, PID: 30083 
+    > java.lang.RuntimeException: Unable to start activity ComponentInfo{...}: android.view.InflateException: Binary XML file line #9 in com.combo.plugin.sample.example:layout/activity_xml: Error inflating class com.google.android.material.appbar.AppBarLayout 
+    >   at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4409)
+    >   ...
+    > ```
+
+* **缺陷二：跨模块资源引用困难**
+
+  在最小化打包模式下，插件模块使用 `compileOnly` 依赖其他库。在这种情况下，XML 布局无法像 Compose 一样，在开发时通过 `R.drawable.xxx` 的方式直接引用 `compileOnly` 依赖中的资源。如果你在 XML 中使用 `@drawable/ic_arrow` 来引用一个外部模块的资源，AGP 在编译当前模块时会因为找不到该资源而直接报错。
+
+  > **编译失败日志示例:**
+
+  > ```text
+    > Execution failed for task ':sample-plugin:example:verifyReleaseResources'.
+    > > A failure occurred while executing com.android.build.gradle.tasks.VerifyLibraryResourcesTask$Action
+    >    > Android resource linking failed
+    >      ERROR: /.../layout/activity_xml.xml:20: AAPT: error: resource drawable/ic_arrow (aka com.combo.plugin.sample.example:drawable/ic_arrow) not found.
+    > ```
+
+  **如何解决这个问题？**
+  唯一的解决方案是，采取一系列“破坏最小化原则”的操作：
+
+  1.  在插件的 `build.gradle.kts` 中，将被引用的资源所在的库从 `compileOnly` 改为 `implementation`。
+  2.  在根 `build.gradle.kts` 的 `aar2apk` 配置中，为该插件模块开启资源打包：
+      ```kotlin
+      module(":sample-plugin:example") {
+          includeDependenciesRes.set(true)
+      }
+      ```
+
+  这不仅增加了配置的复杂性，也增大了插件的体积。
+
+  **总结**: 除非有绝对必要，请在插件中坚持使用 Jetpack Compose。它不仅是现代 Android UI 的未来，也从根本上规避了上述所有与插件化框架相关的棘手问题。
+
+-----
 
 ## 🔧 核心 API 用法
 
@@ -463,7 +565,7 @@ if (uninstallSuccess) {
 PluginManager.setPluginEnabled("pluginId", false)
 ````
 
-### 2\. 插件运行与交互
+### 2. 插件运行与交互
 
 启动插件并获取其入口实例，是与插件功能交互的基础。
 
@@ -484,7 +586,7 @@ val homePlugin: IPluginEntryClass? = PluginManager.getPluginInstance("com.exampl
 // }
 ```
 
-### 3\. 访问插件资源
+### 3. 访问插件资源
 
 如果需要，你也可以直接访问某个特定插件的 `Resources` 对象。
 
@@ -498,6 +600,8 @@ val title = pluginResources?.getString(R.string.plugin_title)
 ```
 
 更多用法请参考sample项目插件示例模块
+
+-----
 
 ## 🔧 四大组件用法
 
@@ -575,12 +679,14 @@ val proxyUri = Uri.parse("content://$hostAuthority/$pluginProviderClassName/$ori
 context.contentResolver.query(proxyUri, null, null, null, null)
 ```
 
+-----
+
 ## 🛠️ 四大组件实现原理
 
 * **Activity**: 通过在宿主 `AndroidManifest` 中只需要注册一个透明的 `BaseHostActivity` 作为代理“占坑”。启动插件
   Activity 时，框架会启动这个代理 Activity，并将真正的插件 Activity 类名通过 `Intent` 传递过去。
   `BaseHostActivity` 在内部完成插件 Activity 的实例化，并将其生命周期与自身进行绑定和分发。
-* **Service**: 采用创新的\*\*“代理服务池”\*\*模式。你在宿主 `AndroidManifest` 中预注册多个
+* **Service**: 采用创新的**“代理服务池”**模式。你在宿主 `AndroidManifest` 中预注册多个
   `BaseHostService`。当启动一个插件 Service 时，`ProxyManager` 会从池中寻找一个空闲的代理 Service
   进行绑定，并将插件 Service 的生命周期与该代理进行关联。这使得多个插件 Service 可以同时、独立地运行。
 * **BroadcastReceiver**: 框架在插件加载时，解析其 `AndroidManifest.xml` 中注册的静态广播，并由
@@ -590,6 +696,8 @@ context.contentResolver.query(proxyUri, null, null, null, null)
   的唯一入口。外部通过上文约定的特殊 `Uri` 格式来访问。代理 `Provider` 根据 `Uri` 的第一段路径解析出目标插件
   `Provider` 类名，实例化后将重写过的、符合插件原始 `Authority` 的 `Uri` 和请求一并转发给它。同时，代理层还负责了插件
   `Provider` 的 `exported` 安全检查。
+
+-----
 
 ## 🆚 与其他框架对比
 
@@ -656,6 +764,8 @@ Hook。
 **总而言之，如果您正在开发一个面向未来的、使用 Jetpack Compose
 等现代化技术栈、且将长期稳定性和可维护性放在首位的项目，`ComboLite` 将是您的不二之选。**
 
+-----
+
 ## 如何贡献
 
 我们热切欢迎任何形式的贡献，让 `ComboLite` 变得更好！无论是提交功能建议、报告 Bug、发起 Pull
@@ -668,6 +778,8 @@ Request，还是帮助改进文档，都是对社区的巨大帮助。
 如果您有更复杂的想法需要讨论，或者希望进行私下联系（例如报告安全问题），我们也非常欢迎您通过邮件联系我们。
 
 📧 **联系邮箱**: `1755858138@qq.com`
+
+-----
 
 ## ❤️ 支持与赞助 (Support & Sponsor)
 
@@ -691,6 +803,8 @@ Request，还是帮助改进文档，都是对社区的巨大帮助。
     </tr>
   </table>
 </details>
+
+-----
 
 ## 许可 (License)
 
