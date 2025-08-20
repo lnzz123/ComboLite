@@ -1,3 +1,21 @@
+/*
+ *
+ *  * Copyright (c) 2025, 贵州君城网络科技有限公司
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
+ */
+
 package com.combo.aar2apk
 
 import com.combo.aar2apk.internal.model.SdkInfo
@@ -44,7 +62,6 @@ class Aar2ApkPlugin : Plugin<Project> {
         val debugTaskNames = mutableListOf<String>()
         val releaseTaskNames = mutableListOf<String>()
 
-        // **FIXED**: Using the cleaner property chain
         extension.moduleConfigs.modules.forEach { options ->
             val modulePath = options.path
             val subproject = project.project(modulePath)
@@ -54,7 +71,8 @@ class Aar2ApkPlugin : Plugin<Project> {
                 val buildTypeCapitalized = buildType.replaceFirstChar { it.uppercase() }
                 val taskName = "convert_${baseTaskName}_${buildType}"
                 val assembleTaskName = "assemble$buildTypeCapitalized"
-                val taskGroup = if (buildType == "debug") GROUP_DEBUG_BUILDS else GROUP_RELEASE_BUILDS
+                val taskGroup =
+                    if (buildType == "debug") GROUP_DEBUG_BUILDS else GROUP_RELEASE_BUILDS
 
                 project.tasks.register<ConvertAarToApkTask>(taskName) {
                     group = taskGroup
@@ -69,49 +87,71 @@ class Aar2ApkPlugin : Plugin<Project> {
                     this.packageId.set(pluginPackageIds[modulePath]!!)
                     this.packagingOptions.set(options)
 
-                    description = "构建 ${subproject.name} 模块并转换为 $buildTypeCapitalized 插件APK (精细化配置)"
+                    description =
+                        "构建 ${subproject.name} 模块并转换为 $buildTypeCapitalized 插件APK (精细化配置)"
+
+                    val config = subproject.configurations.getByName("${buildType}RuntimeClasspath")
 
                     if (options.isAnyDependencyIncluded()) {
-                        val config = subproject.configurations.getByName("${buildType}RuntimeClasspath")
                         remoteDependencyAars.from(config.incoming.artifactView {
-                            attributes { attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "aar") }
+                            attributes {
+                                attribute(
+                                    ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
+                                    "aar"
+                                )
+                            }
                             componentFilter { it is org.gradle.api.artifacts.component.ModuleComponentIdentifier }
                             lenient(true)
                         }.files)
                     }
 
-                    // Resolve local artifacts based on each specific flag
                     if (options.includeDependenciesRes.get()) {
-                        val config = subproject.configurations.getByName("${buildType}RuntimeClasspath")
                         localDependencyResDirs.from(config.incoming.artifactView {
-                            attributes { attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "android-res") }
+                            attributes {
+                                attribute(
+                                    ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
+                                    "android-res"
+                                )
+                            }
                             componentFilter { it is org.gradle.api.artifacts.component.ProjectComponentIdentifier }
                             lenient(true)
                         }.files)
                     }
 
                     if (options.includeDependenciesDex.get()) {
-                        val config = subproject.configurations.getByName("${buildType}RuntimeClasspath")
                         localDependencyClasses.from(config.incoming.artifactView {
-                            attributes { attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "android-classes-jar") }
+                            attributes {
+                                attribute(
+                                    ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
+                                    "android-classes-jar"
+                                )
+                            }
                             componentFilter { it is org.gradle.api.artifacts.component.ProjectComponentIdentifier }
                             lenient(true)
                         }.files)
                     }
 
                     if (options.includeDependenciesAssets.get()) {
-                        val config = subproject.configurations.getByName("${buildType}RuntimeClasspath")
                         localDependencyAssets.from(config.incoming.artifactView {
-                            attributes { attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "android-assets") }
+                            attributes {
+                                attribute(
+                                    ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
+                                    "android-assets"
+                                )
+                            }
                             componentFilter { it is org.gradle.api.artifacts.component.ProjectComponentIdentifier }
                             lenient(true)
                         }.files)
                     }
 
                     if (options.includeDependenciesJni.get()) {
-                        val config = subproject.configurations.getByName("${buildType}RuntimeClasspath")
                         localDependencyJniLibs.from(config.incoming.artifactView {
-                            attributes { attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "android-jni") }
+                            attributes {
+                                attribute(
+                                    ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
+                                    "android-jni"
+                                )
+                            }
                             componentFilter { it is org.gradle.api.artifacts.component.ProjectComponentIdentifier }
                             lenient(true)
                         }.files)
@@ -142,7 +182,10 @@ class Aar2ApkPlugin : Plugin<Project> {
         project.tasks.register<Delete>("cleanAllPluginApks") {
             group = GROUP_MAIN
             description = "清理所有生成的插件APK、相关日志和临时工作目录"
-            delete(project.layout.buildDirectory.dir("outputs/plugin-apks"), project.layout.buildDirectory.dir("logs/aar2apk"))
+            delete(
+                project.layout.buildDirectory.dir("outputs/plugin-apks"),
+                project.layout.buildDirectory.dir("logs/aar2apk")
+            )
             doLast {
                 val tmpDir = project.layout.buildDirectory.get().asFile.resolve("tmp")
                 if (tmpDir.exists() && tmpDir.isDirectory) {

@@ -1,3 +1,21 @@
+/*
+ *
+ *  * Copyright (c) 2025, 贵州君城网络科技有限公司
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
+ */
+
 package com.combo.aar2apk.tasks
 
 import com.combo.aar2apk.PackagingOptions
@@ -92,7 +110,8 @@ abstract class ConvertAarToApkTask @Inject constructor(
 
             // --- 1. 数据准备 ---
             val extractor = AarExtractor(project)
-            val mainAarExtractDir = extractor.extract(aarFile.get().asFile, workDir.resolve("main_aar"))
+            val mainAarExtractDir =
+                extractor.extract(aarFile.get().asFile, workDir.resolve("main_aar"))
 
             // 根据配置，有条件地解压远程AAR并收集产物
             val remoteClassesJars = mutableSetOf<File>()
@@ -103,9 +122,12 @@ abstract class ConvertAarToApkTask @Inject constructor(
                 remoteDependencyAars.files.forEach { aar ->
                     val outDir = remoteAarExtractDir.resolve(aar.nameWithoutExtension)
                     extractor.extract(aar, outDir)
-                    outDir.resolve("classes.jar").takeIf { it.exists() }?.let { remoteClassesJars.add(it) }
-                    outDir.resolve("assets").takeIf { it.exists() && it.isDirectory }?.let { remoteAssetsDirs.add(it) }
-                    outDir.resolve("jni").takeIf { it.exists() && it.isDirectory }?.let { remoteJniDirs.add(it) }
+                    outDir.resolve("classes.jar").takeIf { it.exists() }
+                        ?.let { remoteClassesJars.add(it) }
+                    outDir.resolve("assets").takeIf { it.exists() && it.isDirectory }
+                        ?.let { remoteAssetsDirs.add(it) }
+                    outDir.resolve("jni").takeIf { it.exists() && it.isDirectory }
+                        ?.let { remoteJniDirs.add(it) }
                 }
             }
 
@@ -125,7 +147,8 @@ abstract class ConvertAarToApkTask @Inject constructor(
 
             // --- 3. DEX处理 ---
             val allClassJars = mutableSetOf<File>()
-            mainAarExtractDir.resolve("classes.jar").takeIf { it.exists() }?.let { allClassJars.add(it) }
+            mainAarExtractDir.resolve("classes.jar").takeIf { it.exists() }
+                ?.let { allClassJars.add(it) }
 
             if (options.includeDependenciesDex.get()) {
                 logger.log("DEX打包: 包含依赖库的代码。")
@@ -136,11 +159,17 @@ abstract class ConvertAarToApkTask @Inject constructor(
             }
 
             val dexProcessor = DexProcessor(shellExecutor, sdk, logger)
-            val dexFile = dexProcessor.process(allClassJars, linkedResources.rJavaSourcesDir, buildType.get(), workDir)
+            val dexFile = dexProcessor.process(
+                allClassJars,
+                linkedResources.rJavaSourcesDir,
+                buildType.get(),
+                workDir
+            )
 
             // --- 4. 打包 ---
             val allAssetDirs = mutableSetOf<File>()
-            mainAarExtractDir.resolve("assets").takeIf { it.exists() && it.isDirectory }?.let { allAssetDirs.add(it) }
+            mainAarExtractDir.resolve("assets").takeIf { it.exists() && it.isDirectory }
+                ?.let { allAssetDirs.add(it) }
 
             if (options.includeDependenciesAssets.get()) {
                 logger.log("Assets打包: 包含依赖库的Assets。")
@@ -151,7 +180,8 @@ abstract class ConvertAarToApkTask @Inject constructor(
             }
 
             val allJniDirs = mutableSetOf<File>()
-            mainAarExtractDir.resolve("jni").takeIf { it.exists() && it.isDirectory }?.let { allJniDirs.add(it) }
+            mainAarExtractDir.resolve("jni").takeIf { it.exists() && it.isDirectory }
+                ?.let { allJniDirs.add(it) }
 
             if (options.includeDependenciesJni.get()) {
                 logger.log("JNI打包: 包含依赖库的so库。")
@@ -168,7 +198,8 @@ abstract class ConvertAarToApkTask @Inject constructor(
 
             // --- 5. 签名 ---
             val signer = ApkSigner(shellExecutor, sdk, logger)
-            val signedApk = outputDirectory.get().file("${pluginName.get()}-${buildType.get()}.apk").asFile
+            val signedApk =
+                outputDirectory.get().file("${pluginName.get()}-${buildType.get()}.apk").asFile
             signer.sign(linkedResources.unsignedApk, signedApk, signingConfig.get())
 
             logger.log("✅ 转换成功! APK 大小: ${signedApk.length() / 1024} KB")

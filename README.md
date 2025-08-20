@@ -30,11 +30,12 @@
 - [🚀 快速开始](#-快速开始)
 - [🔌 创建你的第一个插件](#-创建你的第一个插件)
 - [📦 插件打包指南 (Packaging Guide)](#-插件打包指南-packaging-guide)
-  - [核心概念：依赖作用域 `compileOnly` vs `implementation`](#核心概念依赖作用域-compileonly-vs-implementation)
-  - [1. Library 模块打包 (推荐方案)](#1-library-模块打包-推荐方案)
-  - [2. Application 模块打包 (备选方案)](#2-application-模块打包-备选方案)
-  - [3. 如何选择？](#3-如何选择)
-  - [☢️ 重要实践建议与风险警告](#-重要实践建议与风险警告)
+    - [核心概念：依赖作用域 `compileOnly` vs
+      `implementation`](#核心概念依赖作用域-compileonly-vs-implementation)
+    - [1. Library 模块打包 (推荐方案)](#1-library-模块打包-推荐方案)
+    - [2. Application 模块打包 (备选方案)](#2-application-模块打包-备选方案)
+    - [3. 如何选择？](#3-如何选择)
+    - [注意事项-重要实践建议与风险警告](#注意事项-重要实践建议与风险警告)
 - [🔧 核心 API 用法](#-核心-api-用法)
 - [🔧 四大组件用法](#-四大组件用法)
 - [🛠️ 四大组件实现原理](#-四大组件实现原理)
@@ -281,25 +282,34 @@ class HomePluginEntry : IPluginEntryClass {
 
 ## 📦 插件打包指南 (Packaging Guide)
 
-`ComboLite` 框架在设计上提供了极高的灵活性，支持将两种不同类型的 Android 模块打包成可独立安装和加载的插件：**`Application` 模块**和 **`Library` 模块**。
+`ComboLite` 框架在设计上提供了极高的灵活性，支持将两种不同类型的 Android 模块打包成可独立安装和加载的插件：
+**`Application` 模块**和 **`Library` 模块**。
 
-我们项目内置了一个强大的 **`aar2apk` Gradle插件**，专门用于将 `Library` 模块**一键打包**成轻量级的插件APK，这是我们**首选并推荐**的方式。
+我们项目内置了一个强大的 **`aar2apk` Gradle插件**，专门用于将 `Library` 模块**一键打包**
+成轻量级的插件APK，这是我们**首选并推荐**的方式。
 
 -----
 
 ### 核心概念：依赖作用域 `compileOnly` vs `implementation`
 
-为了实现插件的最小化打包和依赖共享，正确使用 Gradle 的依赖作用域至关重要。这是理解 `ComboLite` 打包策略的基石。
+为了实现插件的最小化打包和依赖共享，正确使用 Gradle 的依赖作用域至关重要。这是理解 `ComboLite`
+打包策略的基石。
 
-* **`compileOnly` (首选)**: 这是插件模块**最优先**使用的作用域。它告诉编译器：“这个依赖在编译时是可用的，但在运行时，请假设宿主 App 会提供它，不要将它打包进我的产物里。” 这是实现插件“轻量化”和“依赖共享”的关键。
+* **`compileOnly` (首选)**: 这是插件模块**最优先**使用的作用域。它告诉编译器：“这个依赖在编译时是可用的，但在运行时，请假设宿主
+  App 会提供它，不要将它打包进我的产物里。” 这是实现插件“轻量化”和“依赖共享”的关键。
 
-* **`implementation`**: 只有当你计划使用 `aar2apk` 的 `include...` 选项来打包某个特定依赖时，才需要将它从 `compileOnly` 修改为 `implementation`。`implementation` 会将依赖的产物暴露给 `aar2apk` 插件，使其能够在打包时访问和处理它们。
+* **`implementation`**: 只有当你计划使用 `aar2apk` 的 `include...` 选项来打包某个特定依赖时，才需要将它从
+  `compileOnly` 修改为 `implementation`。`implementation` 会将依赖的产物暴露给 `aar2apk`
+  插件，使其能够在打包时访问和处理它们。
 
-> **重要规则**: 如果你为一个模块开启了 `includeDependenciesRes.set(true)`，那么它在 `build.gradle.kts` 中引用的、需要打包资源的那个库，**必须**从 `compileOnly` 改为 `implementation`，否则 `aar2apk` 插件在构建时将找不到对应的资源，导致打包失败。
+> **重要规则**: 如果你为一个模块开启了 `includeDependenciesRes.set(true)`，那么它在
+`build.gradle.kts` 中引用的、需要打包资源的那个库，**必须**从 `compileOnly` 改为 `implementation`，否则
+`aar2apk` 插件在构建时将找不到对应的资源，导致打包失败。
 
 ### 1. Library 模块打包 (推荐方案)
 
-`aar2apk` 插件 (`com.combo.aar2apk`) 提供了强大而灵活的打包能力，能将一个 `com.android.library` 模块打包成一个高度可定制的插件 APK。
+`aar2apk` 插件 (`com.combo.aar2apk`) 提供了强大而灵活的打包能力，能将一个 `com.android.library`
+模块打包成一个高度可定制的插件 APK。
 
 #### 1. 引入并应用插件
 
@@ -388,13 +398,14 @@ aar2apk {
 #### 4. 优劣势分析
 
 * ✅ **优点**:
-  * **体积极致轻量**: APK 体积通常只有几十到几百 KB，更新和下载成本极低。
-  * **杜绝依赖冲突**: 所有插件共享宿主提供的同一份依赖，从根本上避免了版本冲突问题。
-  * **统一依赖管理**: 依赖版本由宿主统一升级和管理，维护成本更低。
-  * **提升构建速度**: 共享依赖意味着更少的重复编译。
+    * **体积极致轻量**: APK 体积通常只有几十到几百 KB，更新和下载成本极低。
+    * **杜绝依赖冲突**: 所有插件共享宿主提供的同一份依赖，从根本上避免了版本冲突问题。
+    * **统一依赖管理**: 依赖版本由宿主统一升级和管理，维护成本更低。
+    * **提升构建速度**: 共享依赖意味着更少的重复编译。
 * ⚠️ **权衡**:
-  * **依赖宿主环境**: 插件的运行强依赖于宿主。如果宿主未能提供其运行时所需的依赖，插件将在运行时因 `ClassNotFoundException` 而造成依赖链断裂，插件框架将会自动熔断禁用该插件。
-  * **依赖版本受限**: 插件必须使用宿主提供的依赖版本，无法在内部自由引入特定版本的库。
+    * **依赖宿主环境**: 插件的运行强依赖于宿主。如果宿主未能提供其运行时所需的依赖，插件将在运行时因
+      `ClassNotFoundException` 而造成依赖链断裂，插件框架将会自动熔断禁用该插件。
+    * **依赖版本受限**: 插件必须使用宿主提供的依赖版本，无法在内部自由引入特定版本的库。
 
 ### 2. Application 模块打包 (备选方案)
 
@@ -402,7 +413,8 @@ aar2apk {
 
 #### 打包原理
 
-其原理与构建一个普通的 Android 应用完全相同。Gradle 的 `assemble` 任务会将模块的所有代码、资源以及通过 `implementation` 引入的第三方依赖库，全部打包进最终的 APK 文件中。
+其原理与构建一个普通的 Android 应用完全相同。Gradle 的 `assemble` 任务会将模块的所有代码、资源以及通过
+`implementation` 引入的第三方依赖库，全部打包进最终的 APK 文件中。
 
 #### 配置步骤
 
@@ -418,7 +430,8 @@ dependencies {
 ```
 
 **b. (重要) 配置 Package ID**
-为避免与宿主或其他插件的资源ID冲突，**必须**为每个 `Application` 插件模块手动指定一个唯一的 `Package ID`。
+为避免与宿主或其他插件的资源ID冲突，**必须**为每个 `Application` 插件模块手动指定一个唯一的
+`Package ID`。
 
 ```kotlin
 // in your-plugin/build.gradle.kts
@@ -430,7 +443,8 @@ android {
 }
 ```
 
-> **注意**: 每个 `Application` 插件的 `Package ID` 都必须是唯一的。例如，插件 A 使用 `0x80`，插件 B 使用 `0x81`，以此推-。
+> **注意**: 每个 `Application` 插件的 `Package ID` 都必须是唯一的。例如，插件 A 使用 `0x80`，插件 B 使用
+`0x81`，以此推-。
 
 **c. 执行打包**
 使用 AGP 提供的标准任务即可完成打包。
@@ -442,11 +456,11 @@ android {
 #### 优劣势分析
 
 * ✅ **优点**:
-  * **高度独立**: 插件自包含所有依赖，不依赖宿主的外部环境，部署简单。
-  * **无兼容性烦恼**: 无需担心宿主是否提供了插件所需的依赖库或版本。
+    * **高度独立**: 插件自包含所有依赖，不依赖宿主的外部环境，部署简单。
+    * **无兼容性烦恼**: 无需担心宿主是否提供了插件所需的依赖库或版本。
 * ⚠️ **权衡**:
-  * **体积较大**: 由于打包了所有依赖，插件 APK 的体积会相对较大。
-  * **潜在的依赖冗余**: 如果多个插件使用了相同的库，这些库会被重复打包，造成总体积增大。
+    * **体积较大**: 由于打包了所有依赖，插件 APK 的体积会相对较大。
+    * **潜在的依赖冗余**: 如果多个插件使用了相同的库，这些库会被重复打包，造成总体积增大。
 
 ### 3. 如何选择？
 
@@ -460,33 +474,41 @@ android {
 
 通过合理选择打包策略，您可以充分利用 `ComboLite` 框架的优势，构建一个既灵活又健壮的现代化 Android 应用。
 
-### ☢️ 重要实践建议与风险警告
+### 注意事项-重要实践建议与风险警告
 
 #### a. 关于打包完整依赖的深度警告
 
-虽然 `aar2apk` 插件提供了将依赖（代码、资源、JNI等）打包进插件的能力，但这应该被视为一个**处理特殊情况的备用方案，而不是常规操作**。
+虽然 `aar2apk` 插件提供了将依赖（代码、资源、JNI等）打包进插件的能力，但这应该被视为一个*
+*处理特殊情况的备用方案，而不是常规操作**。
 
 > **在绝大多数情况下，我们强烈建议您采用默认的最小化打包模式。**
 
 打包完整依赖可能会引入一系列严重且难以排查的问题：
 
-* **类重复冲突 (Class Duplication)**: 如果插件打包了 `OkHttp 4.9.0`，而宿主或其他插件使用了 `OkHttp 4.10.0`，运行时可能会因为类定义不一致而导致 `NoSuchMethodError`、`ClassCastException` 等各种致命崩溃。
-* **资源重复与覆盖 (Resource Duplication)**: 多个插件或宿主包含同名的资源，可能会导致运行时加载的资源非你所想，造成 UI 错乱。
+* **类重复冲突 (Class Duplication)**: 如果插件打包了 `OkHttp 4.9.0`，而宿主或其他插件使用了
+  `OkHttp 4.10.0`，运行时可能会因为类定义不一致而导致 `NoSuchMethodError`、`ClassCastException`
+  等各种致命崩溃。
+* **资源重复与覆盖 (Resource Duplication)**: 多个插件或宿主包含同名的资源，可能会导致运行时加载的资源非你所想，造成
+  UI 错乱。
 * **APK 体积冗余**: 重复打包相同的依赖库，会显著增加插件 APK 的体积和最终应用的总大小。
 
 **经验法则**：只在你**完全确定**某个依赖库是此插件**专属私有**，且不会与宿主或其他任何插件产生冲突时，才考虑将其打包进去。
 
 #### b. 优先使用 Compose，谨慎使用 XML
 
-`ComboLite` 是一个为 **Jetpack Compose 设计的开源插件化框架**，我们强烈推荐您将 **Compose 作为插件 UI 的第一选择**。
+`ComboLite` 是一个为 **Jetpack Compose 设计的开源插件化框架**，我们强烈推荐您将 **Compose 作为插件 UI
+的第一选择**。
 
-虽然框架目前也兼容加载传统的 XML 布局，但这应被视为一种处理历史遗留代码或特殊场景（如 `WebView` 等 Compose 尚未完美支持的控件）的**备用方案**。我们不推荐在新的插件功能中继续使用 XML，原因如下：
+虽然框架目前也兼容加载传统的 XML 布局，但这应被视为一种处理历史遗留代码或特殊场景（如 `WebView` 等
+Compose 尚未完美支持的控件）的**备用方案**。我们不推荐在新的插件功能中继续使用 XML，原因如下：
 
 * **缺陷一：主题与基类强耦合**
 
-  许多来自 `com.google.android.material` 等三方库的 XML 控件，强制要求其所在的 `Activity` 必须继承自特定的基类（如 `FragmentActivity`）或使用特定的主题（如 `Theme.MaterialComponents`）。
+  许多来自 `com.google.android.material` 等三方库的 XML 控件，强制要求其所在的 `Activity`
+  必须继承自特定的基类（如 `FragmentActivity`）或使用特定的主题（如 `Theme.MaterialComponents`）。
 
-  在 `ComboLite` 的代理 `Activity` 机制下，插件 `Activity` 无法改变宿主代理 `Activity` 的基类和主题。如果强行在插件中使用这类控件，将在运行时抛出 `InflateException` 导致应用崩溃。
+  在 `ComboLite` 的代理 `Activity` 机制下，插件 `Activity` 无法改变宿主代理 `Activity`
+  的基类和主题。如果强行在插件中使用这类控件，将在运行时抛出 `InflateException` 导致应用崩溃。
 
   > **崩溃日志示例:**
 
@@ -500,7 +522,9 @@ android {
 
 * **缺陷二：跨模块资源引用困难**
 
-  在最小化打包模式下，插件模块使用 `compileOnly` 依赖其他库。在这种情况下，XML 布局无法像 Compose 一样，在开发时通过 `R.drawable.xxx` 的方式直接引用 `compileOnly` 依赖中的资源。如果你在 XML 中使用 `@drawable/ic_arrow` 来引用一个外部模块的资源，AGP 在编译当前模块时会因为找不到该资源而直接报错。
+  在最小化打包模式下，插件模块使用 `compileOnly` 依赖其他库。在这种情况下，XML 布局无法像 Compose
+  一样，在开发时通过 `R.drawable.xxx` 的方式直接引用 `compileOnly` 依赖中的资源。如果你在 XML 中使用
+  `@drawable/ic_arrow` 来引用一个外部模块的资源，AGP 在编译当前模块时会因为找不到该资源而直接报错。
 
   > **编译失败日志示例:**
 
@@ -514,17 +538,18 @@ android {
   **如何解决这个问题？**
   唯一的解决方案是，采取一系列“破坏最小化原则”的操作：
 
-  1.  在插件的 `build.gradle.kts` 中，将被引用的资源所在的库从 `compileOnly` 改为 `implementation`。
-  2.  在根 `build.gradle.kts` 的 `aar2apk` 配置中，为该插件模块开启资源打包：
-      ```kotlin
-      module(":sample-plugin:example") {
-          includeDependenciesRes.set(true)
-      }
-      ```
+    1. 在插件的 `build.gradle.kts` 中，将被引用的资源所在的库从 `compileOnly` 改为 `implementation`。
+    2. 在根 `build.gradle.kts` 的 `aar2apk` 配置中，为该插件模块开启资源打包：
+       ```kotlin
+       module(":sample-plugin:example") {
+           includeDependenciesRes.set(true)
+       }
+       ```
 
   这不仅增加了配置的复杂性，也增大了插件的体积。
 
-  **总结**: 除非有绝对必要，请在插件中坚持使用 Jetpack Compose。它不仅是现代 Android UI 的未来，也从根本上规避了上述所有与插件化框架相关的棘手问题。
+  **总结**: 除非有绝对必要，请在插件中坚持使用 Jetpack Compose。它不仅是现代 Android UI
+  的未来，也从根本上规避了上述所有与插件化框架相关的棘手问题。
 
 -----
 

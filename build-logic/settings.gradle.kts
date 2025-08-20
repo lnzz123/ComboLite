@@ -1,10 +1,19 @@
 /*
- * Copyright (c) 2025. 深圳市德为信息技术有限公司, 深圳市诠云科技有限公司 保留所有权利。
  *
- * 根据《中华人民共和国著作权法》、《计算机软件保护条例》及相关法律法规，
- * 本软件著作权归属于深圳市德为信息技术有限公司与深圳市诠云科技有限公司共同所有，
- * 任何单位或个人未经书面授权不得复制、修改、分发或用于商业用途。
- * （本声明适用于本项目所有源代码、资源配置文件及文档资料）
+ *  * Copyright (c) 2025, 贵州君城网络科技有限公司
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  * http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
  */
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

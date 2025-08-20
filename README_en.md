@@ -16,7 +16,9 @@
 </p>
 
 
-🚀 A next-generation Android plugin framework built for Jetpack Compose. A modern, stable, and flexible plugin solution. Core Features: Native Compose Support | 100% Official APIs | 0 Hooks & 0 Reflection | Decentralized Architecture
+🚀 A next-generation Android plugin framework built for Jetpack Compose. A modern, stable, and
+flexible plugin solution. Core Features: Native Compose Support | 100% Official APIs | 0 Hooks & 0
+Reflection | Decentralized Architecture
 
 -----
 
@@ -29,11 +31,12 @@
 - [🚀 Quick Start](#-quick-start)
 - [🔌 Creating Your First Plugin](#-creating-your-first-plugin)
 - [📦 Packaging Guide](#-packaging-guide)
-  - [Core Concept: Dependency Scopes `compileOnly` vs `implementation`](#core-concept-dependency-scopes-compileonly-vs-implementation)
-  - [1. Library Module Packaging (Recommended)](#1-library-module-packaging-recommended)
-  - [2. Application Module Packaging (Alternative)](#2-application-module-packaging-alternative)
-  - [3. How to Choose?](#3-how-to-choose)
-  - [☢️ Important Best Practices and Risk Warnings](#-important-best-practices-and-risk-warnings)
+    - [Core Concept: Dependency Scopes `compileOnly` vs
+      `implementation`](#core-concept-dependency-scopes-compileonly-vs-implementation)
+    - [1. Library Module Packaging (Recommended)](#1-library-module-packaging-recommended)
+    - [2. Application Module Packaging (Alternative)](#2-application-module-packaging-alternative)
+    - [3. How to Choose?](#3-how-to-choose)
+    - [Notes-Important Best Practices and Risk Warnings](#notes-important-best-practices-and-risk-warnings)
 - [🔧 Core API Usage](#-core-api-usage)
 - [🔧 The Four Major Components Usage](#-the-four-major-components-usage)
 - [🛠️ Implementation Principles of the Four Major Components](#-implementation-principles-of-the-four-major-components)
@@ -46,19 +49,30 @@
 
 -----
 
-As the Android ecosystem evolves, many classic plugin frameworks born in the View era are struggling to keep up with modern development scenarios. Most of these projects are no longer maintained, and their large, opaque implementations, over-reliance on **non-public APIs (Hooks and Reflection)**, and high integration costs make them increasingly out of place in the face of frequent system updates.
+As the Android ecosystem evolves, many classic plugin frameworks born in the View era are struggling
+to keep up with modern development scenarios. Most of these projects are no longer maintained, and
+their large, opaque implementations, over-reliance on **non-public APIs (Hooks and Reflection)**,
+and high integration costs make them increasingly out of place in the face of frequent system
+updates.
 
-**`ComboLite` was born to end this predicament, providing Android developers with a modern, stable, and flexible plugin framework.**
+**`ComboLite` was born to end this predicament, providing Android developers with a modern, stable,
+and flexible plugin framework.**
 
-ComboLite is designed for modern Android development. It completely abandons the risky use of non-public API reflection from the ground up, building a pure architecture with 0 Hooks and 0 Reflection based on entirely public APIs. Its logic is clear and integration is lightweight. It is natively designed for Jetpack Compose and innovatively introduces a decentralized management philosophy, giving developers unprecedented flexibility while ensuring ultimate stability.
+ComboLite is designed for modern Android development. It completely abandons the risky use of
+non-public API reflection from the ground up, building a pure architecture with 0 Hooks and 0
+Reflection based on entirely public APIs. Its logic is clear and integration is lightweight. It is
+natively designed for Jetpack Compose and innovatively introduces a decentralized management
+philosophy, giving developers unprecedented flexibility while ensuring ultimate stability.
 
-Whether you want to build a "shell" application where all features are pluggable or add dynamic capabilities to an existing project, `ComboLite` will be your most reliable and modern choice.
+Whether you want to build a "shell" application where all features are pluggable or add dynamic
+capabilities to an existing project, `ComboLite` will be your most reliable and modern choice.
 
 -----
 
 ## 📸 Screenshots
 
-Download the sample app: [https://github.com/lnzz123/ComboLite/releases](https://github.com/lnzz123/ComboLite/releases)
+Download the sample
+app: [https://github.com/lnzz123/ComboLite/releases](https://github.com/lnzz123/ComboLite/releases)
 
 |          安装启动插件           |          安装启动插件2          |          示例插件页面           |
 |:-------------------------:|:-------------------------:|:-------------------------:|
@@ -76,43 +90,76 @@ The design philosophy of `ComboLite` is rooted in four core principles:
 
 #### 1. Modern by Design
 
-* **Native to Compose**: `ComboLite` is designed to meet the needs of the new generation Android UI toolkit, Jetpack Compose. Plugins can seamlessly use `@Composable` functions to build interfaces, enjoying the development convenience of declarative UI.
-* **Embracing Mainstream Tech Stack**: Perfectly integrates with Kotlin Coroutines, StateFlow, and uses Koin for dependency injection, allowing you to use the most cutting-edge and efficient technologies in plugin development.
-* **Latest Toolchain**: Built on the latest versions of Android Studio, Gradle, and AGP, eliminating the integration nightmares caused by toolchain incompatibilities in older frameworks.
+* **Native to Compose**: `ComboLite` is designed to meet the needs of the new generation Android UI
+  toolkit, Jetpack Compose. Plugins can seamlessly use `@Composable` functions to build interfaces,
+  enjoying the development convenience of declarative UI.
+* **Embracing Mainstream Tech Stack**: Perfectly integrates with Kotlin Coroutines, StateFlow, and
+  uses Koin for dependency injection, allowing you to use the most cutting-edge and efficient
+  technologies in plugin development.
+* **Latest Toolchain**: Built on the latest versions of Android Studio, Gradle, and AGP, eliminating
+  the integration nightmares caused by toolchain incompatibilities in older frameworks.
 
 #### 2. Ultimate Stability & Compatibility
 
-* **0 Hooks, 0 Reflection**: This is the core promise of ComboLite. We rely entirely on the official Android-recommended ClassLoader mechanism without using any Hooks. For resource loading, we prioritize the latest official APIs, only resorting to the industry-standard, stable reflection solution for compatibility with older systems below Android 11. This means the framework's core has unparalleled stability and natural compatibility with future Android versions.
+* **0 Hooks, 0 Reflection**: This is the core promise of ComboLite. We rely entirely on the official
+  Android-recommended ClassLoader mechanism without using any Hooks. For resource loading, we
+  prioritize the latest official APIs, only resorting to the industry-standard, stable reflection
+  solution for compatibility with older systems below Android 11. This means the framework's core
+  has unparalleled stability and natural compatibility with future Android versions.
 
-* **Broad System Support**: Theoretically supports all versions from Android 7.0 (API 24) to Android 16+, freeing you from concerns about system fragmentation.
+* **Broad System Support**: Theoretically supports all versions from Android 7.0 (API 24) to Android
+  16+, freeing you from concerns about system fragmentation.
 
-* **Intelligent Dependency Resolution & Repair**: The framework has powerful **dynamic dependency resolution capabilities**. The dependency relationships between plugins do not need to be pre-configured; they are automatically discovered and built into a dependency graph at class-loading time. When you need to update or restart a core plugin, `ComboLite`'s **chained restart mechanism** will automatically uninstall and reload all affected upstream plugins, perfectly resolving class loader conflicts caused by hot updates and ensuring absolute consistency of the dependency chain.
+* **Intelligent Dependency Resolution & Repair**: The framework has powerful **dynamic dependency
+  resolution capabilities**. The dependency relationships between plugins do not need to be
+  pre-configured; they are automatically discovered and built into a dependency graph at
+  class-loading time. When you need to update or restart a core plugin, `ComboLite`'s **chained
+  restart mechanism** will automatically uninstall and reload all affected upstream plugins,
+  perfectly resolving class loader conflicts caused by hot updates and ensuring absolute consistency
+  of the dependency chain.
 
-* **Crash Circuit Breaker & Self-Healing**: `ComboLite` has a built-in powerful **plugin crash handler** (`PluginCrashHandler`). When a plugin causes a `ClassNotFoundException` due to a missing dependency, the framework catches this proprietary `PluginDependencyException` and performs a series of self-healing operations:
+* **Crash Circuit Breaker & Self-Healing**: `ComboLite` has a built-in powerful **plugin crash
+  handler** (`PluginCrashHandler`). When a plugin causes a `ClassNotFoundException` due to a missing
+  dependency, the framework catches this proprietary `PluginDependencyException` and performs a
+  series of self-healing operations:
 
-  * **Precise Localization**: Accurately identifies which plugin caused the crash.
-  * **Automatic Circuit Breaking**: Automatically **disables** the problematic plugin to prevent the application from falling into an infinite crash loop on the next launch.
-  * **Graceful Degradation**: Guides the user to a friendly error page instead of crashing directly, significantly improving the user experience.
+    * **Precise Localization**: Accurately identifies which plugin caused the crash.
+    * **Automatic Circuit Breaking**: Automatically **disables** the problematic plugin to prevent
+      the application from falling into an infinite crash loop on the next launch.
+    * **Graceful Degradation**: Guides the user to a friendly error page instead of crashing
+      directly, significantly improving the user experience.
 
-  This mechanism transforms a potentially fatal error that could paralyze the entire application into an isolated, recoverable local issue, thus maximizing the stability of the host application.
+  This mechanism transforms a potentially fatal error that could paralyze the entire application
+  into an isolated, recoverable local issue, thus maximizing the stability of the host application.
 
 #### 3. Ultimate Flexibility & Decoupling
 
-* **Decentralized Architecture**: Breaks the traditional strong "host-plugin" centralized model. Any plugin can manage (download, install, update, uninstall) itself or other plugins, making it easy to implement advanced features like a "plugin store" or "on-demand download".
-* **"Shell" Host Support**: The host app can have no business logic, completely degenerating into a launch entry point. All features and UI can be provided dynamically by plugins.
-* **Flexible Plugin Form**: A standard Android `Application` or `Library` (AAR) project can be easily packaged into a standalone plugin, greatly lowering the barrier to plugin development and migration.
+* **Decentralized Architecture**: Breaks the traditional strong "host-plugin" centralized model. Any
+  plugin can manage (download, install, update, uninstall) itself or other plugins, making it easy
+  to implement advanced features like a "plugin store" or "on-demand download".
+* **"Shell" Host Support**: The host app can have no business logic, completely degenerating into a
+  launch entry point. All features and UI can be provided dynamically by plugins.
+* **Flexible Plugin Form**: A standard Android `Application` or `Library` (AAR) project can be
+  easily packaged into a standalone plugin, greatly lowering the barrier to plugin development and
+  migration.
 
 #### 4. Excellent Developer Experience
 
-* **Lightweight Core**: The framework's core module contains only a dozen core classes. Apart from Koin and dexlib2 (for class indexing), there are almost no other third-party library dependencies, having a minimal impact on the application size.
-* **Minimal Intrusion**: Integrating `ComboLite` requires almost no changes to your project's existing structure. Your plugin code can be developed as naturally as a regular app or module.
-* **Lightning-Fast Class Lookup**: By building a global class index for all plugins upon loading, `ComboLite` achieves `O(1)` time complexity for cross-plugin class lookups, completely eliminating the class lookup performance bottlenecks common in traditional plugin frameworks.
+* **Lightweight Core**: The framework's core module contains only a dozen core classes. Apart from
+  Koin and dexlib2 (for class indexing), there are almost no other third-party library dependencies,
+  having a minimal impact on the application size.
+* **Minimal Intrusion**: Integrating `ComboLite` requires almost no changes to your project's
+  existing structure. Your plugin code can be developed as naturally as a regular app or module.
+* **Lightning-Fast Class Lookup**: By building a global class index for all plugins upon loading,
+  `ComboLite` achieves `O(1)` time complexity for cross-plugin class lookups, completely eliminating
+  the class lookup performance bottlenecks common in traditional plugin frameworks.
 
 -----
 
 ## 🏗️ Architecture Overview
 
-`ComboLite` uses a simple yet powerful micro-kernel design, with several core components working in concert.
+`ComboLite` uses a simple yet powerful micro-kernel design, with several core components working in
+concert.
 
 ```mermaid
 graph TD
@@ -143,11 +190,15 @@ graph TD
     PM -- Manages Lifecycle --> P1 & P2
 ```
 
-- **`PluginManager`**: The central coordinator (singleton) of the framework, responsible for loading, unloading, restarting, and managing the lifecycle of plugins.
+- **`PluginManager`**: The central coordinator (singleton) of the framework, responsible for
+  loading, unloading, restarting, and managing the lifecycle of plugins.
 - **`InstallerManager`**: Responsible for the installation, updating, and validation of plugins.
-- **`ResourceManager`**: Responsible for loading and managing plugin resources, compatible with both new and old Android versions.
-- **`ProxyManager`**: Responsible for proxying and dispatching the lifecycle of the four major Android components.
-- **`DependencyManager`**: Responsible for maintaining the dynamic dependency graph and class index between plugins.
+- **`ResourceManager`**: Responsible for loading and managing plugin resources, compatible with both
+  new and old Android versions.
+- **`ProxyManager`**: Responsible for proxying and dispatching the lifecycle of the four major
+  Android components.
+- **`DependencyManager`**: Responsible for maintaining the dynamic dependency graph and class index
+  between plugins.
 
 -----
 
@@ -167,11 +218,14 @@ dependencies {
 
 ### 2. Initialize the Framework
 
-`ComboLite` provides a base class to help you complete the initialization with one click, which is our **recommended** method.
+`ComboLite` provides a base class to help you complete the initialization with one click, which is
+our **recommended** method.
 
 #### Method 1: Inherit from Base Class (Recommended)
 
-Simply have your `Application` class inherit from `com.combo.core.base.BaseHostApplication` to automatically complete all initialization work, including the plugin loader, resource manager, and crash handler.
+Simply have your `Application` class inherit from `com.combo.core.base.BaseHostApplication` to
+automatically complete all initialization work, including the plugin loader, resource manager, and
+crash handler.
 
 **This is all the initialization code you need!**
 
@@ -187,7 +241,8 @@ class MainApplication : BaseHostApplication() {
 
 #### Method 2: Manual Initialization (For Special Cases)
 
-If your `Application` cannot inherit from `BaseHostApplication`, you can also initialize it manually. Please ensure all steps are configured correctly to avoid potential issues.
+If your `Application` cannot inherit from `BaseHostApplication`, you can also initialize it
+manually. Please ensure all steps are configured correctly to avoid potential issues.
 
 ```kotlin
 class MainApplication : Application() {
@@ -242,7 +297,8 @@ class HomePluginEntry : IPluginEntryClass {
 
 #### b. Declare the Plugin in `AndroidManifest.xml`
 
-In the plugin module's `AndroidManifest.xml`, declare the plugin information using `<meta-data>` tags.
+In the plugin module's `AndroidManifest.xml`, declare the plugin information using `<meta-data>`
+tags.
 
 ```xml
 <manifest>
@@ -256,31 +312,48 @@ In the plugin module's `AndroidManifest.xml`, declare the plugin information usi
 </manifest>
 ```
 
-You're done! Now just package the plugin into an APK, and you can install and launch it via the `PluginManager`.
+You're done! Now just package the plugin into an APK, and you can install and launch it via the
+`PluginManager`.
 
 -----
 
 ## 📦 Packaging Guide
 
-The `ComboLite` framework is designed with extreme flexibility, supporting the packaging of two different types of Android modules into independently installable and loadable plugins: **`Application` modules** and **`Library` modules**.
+The `ComboLite` framework is designed with extreme flexibility, supporting the packaging of two
+different types of Android modules into independently installable and loadable plugins: *
+*`Application` modules** and **`Library` modules**.
 
-Our project includes a powerful **`aar2apk` Gradle plugin** specifically for **seamlessly packaging `Library` modules** into lightweight plugin APKs. This is our **primary and recommended approach**.
+Our project includes a powerful **`aar2apk` Gradle plugin** specifically for **seamlessly
+packaging `Library` modules** into lightweight plugin APKs. This is our **primary and recommended
+approach**.
 
 -----
 
 ### Core Concept: Dependency Scopes `compileOnly` vs `implementation`
 
-To achieve minimal packaging and dependency sharing for plugins, it is crucial to use Gradle's dependency scopes correctly. This is the cornerstone of understanding `ComboLite`'s packaging strategy.
+To achieve minimal packaging and dependency sharing for plugins, it is crucial to use Gradle's
+dependency scopes correctly. This is the cornerstone of understanding `ComboLite`'s packaging
+strategy.
 
-* **`compileOnly` (Preferred)**: This is the **primary** scope to be used in plugin modules. It tells the compiler, "This dependency is available at compile time, but at runtime, assume the Host App will provide it. Do not package it into my output." This is key to making plugins lightweight and enabling shared dependencies.
+* **`compileOnly` (Preferred)**: This is the **primary** scope to be used in plugin modules. It
+  tells the compiler, "This dependency is available at compile time, but at runtime, assume the Host
+  App will provide it. Do not package it into my output." This is key to making plugins lightweight
+  and enabling shared dependencies.
 
-* **`implementation`**: You should only change a dependency from `compileOnly` to `implementation` when you plan to use the `aar2apk` plugin's `include...` options to package that specific dependency. The `implementation` scope exposes the dependency's artifacts to the `aar2apk` plugin, allowing it to access and process them during packaging.
+* **`implementation`**: You should only change a dependency from `compileOnly` to `implementation`
+  when you plan to use the `aar2apk` plugin's `include...` options to package that specific
+  dependency. The `implementation` scope exposes the dependency's artifacts to the `aar2apk` plugin,
+  allowing it to access and process them during packaging.
 
-> **Important Rule**: If you enable `includeDependenciesRes.set(true)` for a module, the corresponding library whose resources you need to package **must** be changed from `compileOnly` to `implementation` in its `build.gradle.kts`. Otherwise, the `aar2apk` plugin will not be able to find the resources during the build, causing it to fail.
+> **Important Rule**: If you enable `includeDependenciesRes.set(true)` for a module, the
+> corresponding library whose resources you need to package **must** be changed from `compileOnly` to
+`implementation` in its `build.gradle.kts`. Otherwise, the `aar2apk` plugin will not be able to find
+> the resources during the build, causing it to fail.
 
 ### 1. Library Module Packaging (Recommended)
 
-The `aar2apk` plugin (`com.combo.aar2apk`) provides powerful and flexible packaging capabilities, allowing you to transform a `com.android.library` module into a highly customizable plugin APK.
+The `aar2apk` plugin (`com.combo.aar2apk`) provides powerful and flexible packaging capabilities,
+allowing you to transform a `com.android.library` module into a highly customizable plugin APK.
 
 #### 1. Include and Apply the Plugin
 
@@ -303,7 +376,9 @@ plugins {
 
 #### 2. Configure the Packaging Task
 
-In the root `build.gradle.kts` file, use the `aar2apk` configuration block to specify the modules to be packaged, the packaging strategy, and the signing information. Thanks to the new fine-grained configuration, you can tailor the packaging solution for each module.
+In the root `build.gradle.kts` file, use the `aar2apk` configuration block to specify the modules to
+be packaged, the packaging strategy, and the signing information. Thanks to the new fine-grained
+configuration, you can tailor the packaging solution for each module.
 
 ```kotlin
 // in /build.gradle.kts
@@ -348,7 +423,8 @@ aar2apk {
 
 #### 3. Execute the Packaging Task
 
-Once configured, simply run the Gradle tasks automatically generated for you by the `aar2apk` plugin.
+Once configured, simply run the Gradle tasks automatically generated for you by the `aar2apk`
+plugin.
 
 ```bash
 # Seamlessly package all configured Library plugins (Release version)
@@ -364,26 +440,38 @@ Once configured, simply run the Gradle tasks automatically generated for you by 
 # They are clearly organized under the "Plugin APKs" group.
 ```
 
-The packaged artifacts will be located in the `build/outputs/plugin-apks/` directory of your project root, categorized by `debug` and `release`.
+The packaged artifacts will be located in the `build/outputs/plugin-apks/` directory of your project
+root, categorized by `debug` and `release`.
 
 #### 4. Pros and Cons
 
 * ✅ **Pros**:
-  * **Extremely Lightweight**: APK sizes are typically only tens to hundreds of KB, making update and download costs minimal.
-  * **Prevents Dependency Conflicts**: All plugins share the same dependency set provided by the host, fundamentally avoiding version conflict issues.
-  * **Unified Dependency Management**: Dependency versions are upgraded and managed centrally by the host, reducing maintenance costs.
-  * **Improved Build Speed**: Shared dependencies mean less redundant compilation.
+    * **Extremely Lightweight**: APK sizes are typically only tens to hundreds of KB, making update
+      and download costs minimal.
+    * **Prevents Dependency Conflicts**: All plugins share the same dependency set provided by the
+      host, fundamentally avoiding version conflict issues.
+    * **Unified Dependency Management**: Dependency versions are upgraded and managed centrally by
+      the host, reducing maintenance costs.
+    * **Improved Build Speed**: Shared dependencies mean less redundant compilation.
 * ⚠️ **Trade-offs**:
-  * **Relies on the Host Environment**: The plugin's execution is heavily dependent on the host. If the host fails to provide a dependency required at runtime, the plugin will break the dependency chain due to a `ClassNotFoundException`, and the framework will automatically circuit-break and disable the plugin.
-  * **Restricted Dependency Versions**: The plugin must use the dependency versions provided by the host and cannot freely introduce specific library versions internally.
+    * **Relies on the Host Environment**: The plugin's execution is heavily dependent on the host.
+      If the host fails to provide a dependency required at runtime, the plugin will break the
+      dependency chain due to a `ClassNotFoundException`, and the framework will automatically
+      circuit-break and disable the plugin.
+    * **Restricted Dependency Versions**: The plugin must use the dependency versions provided by
+      the host and cannot freely introduce specific library versions internally.
 
 ### 2. Application Module Packaging (Alternative)
 
-Packaging a standard `com.android.application` module as a plugin is a traditional method that is still useful in certain scenarios. This type of plugin is a fully-functional, self-contained micro-application.
+Packaging a standard `com.android.application` module as a plugin is a traditional method that is
+still useful in certain scenarios. This type of plugin is a fully-functional, self-contained
+micro-application.
 
 #### Packaging Principle
 
-The principle is identical to building a regular Android application. The Gradle `assemble` task will package all of the module's code, resources, and third-party dependencies introduced via `implementation` into the final APK file.
+The principle is identical to building a regular Android application. The Gradle `assemble` task
+will package all of the module's code, resources, and third-party dependencies introduced via
+`implementation` into the final APK file.
 
 #### Configuration Steps
 
@@ -399,7 +487,8 @@ dependencies {
 ```
 
 **b. (Important) Configure Package ID**
-To avoid resource ID conflicts with the host or other plugins, you **must** manually specify a unique `Package ID` for each `Application` plugin module.
+To avoid resource ID conflicts with the host or other plugins, you **must** manually specify a
+unique `Package ID` for each `Application` plugin module.
 
 ```kotlin
 // in your-plugin/build.gradle.kts
@@ -411,7 +500,8 @@ android {
 }
 ```
 
-> **Note**: The `Package ID` for each `Application` plugin must be unique. For example, Plugin A uses `0x80`, Plugin B uses `0x81`, and so on.
+> **Note**: The `Package ID` for each `Application` plugin must be unique. For example, Plugin A
+> uses `0x80`, Plugin B uses `0x81`, and so on.
 
 **c. Execute Packaging**
 Use the standard task provided by AGP to complete the packaging.
@@ -423,11 +513,14 @@ Use the standard task provided by AGP to complete the packaging.
 #### Pros and Cons
 
 * ✅ **Pros**:
-  * **Highly Independent**: The plugin is self-contained with all its dependencies, does not rely on the host's external environment, and is simple to deploy.
-  * **No Compatibility Worries**: No need to worry if the host provides the required libraries or versions for the plugin.
+    * **Highly Independent**: The plugin is self-contained with all its dependencies, does not rely
+      on the host's external environment, and is simple to deploy.
+    * **No Compatibility Worries**: No need to worry if the host provides the required libraries or
+      versions for the plugin.
 * ⚠️ **Trade-offs**:
-  * **Larger Size**: The plugin APK will be relatively large due to packaging all dependencies.
-  * **Potential Dependency Redundancy**: If multiple plugins use the same library, these libraries will be packaged repeatedly, increasing the overall application size.
+    * **Larger Size**: The plugin APK will be relatively large due to packaging all dependencies.
+    * **Potential Dependency Redundancy**: If multiple plugins use the same library, these libraries
+      will be packaged repeatedly, increasing the overall application size.
 
 ### 3. How to Choose?
 
@@ -439,35 +532,51 @@ Use the standard task provided by AGP to complete the packaging.
 | **Large, independent feature modules** (e.g., shopping, game center) | **Application Module**              | Complex business logic with many dependencies, requiring high cohesion and independence.                      |
 | **Plugins provided for third-party integration**                     | **Application Module**              | Cannot control the host environment; must be self-contained with all dependencies to ensure stable operation. |
 
-By choosing the right packaging strategy, you can fully leverage the advantages of the `ComboLite` framework to build a flexible and robust modern Android application.
+By choosing the right packaging strategy, you can fully leverage the advantages of the `ComboLite`
+framework to build a flexible and robust modern Android application.
 
-### ☢️ Important Best Practices and Risk Warnings
+### Notes-Important Best Practices and Risk Warnings
 
 #### a. A Strong Warning About Packaging Full Dependencies
 
-Although the `aar2apk` plugin provides the ability to package dependencies (code, resources, JNI, etc.) into a plugin, this should be considered a **fallback solution for special cases, not a routine operation**.
+Although the `aar2apk` plugin provides the ability to package dependencies (code, resources, JNI,
+etc.) into a plugin, this should be considered a **fallback solution for special cases, not a
+routine operation**.
 
 > **In the vast majority of cases, we strongly recommend using the default minimal packaging mode.**
 
 Packaging full dependencies can introduce a series of severe and hard-to-diagnose problems:
 
-* **Class Duplication Conflicts**: If a plugin packages `OkHttp 4.9.0` while the host or another plugin uses `OkHttp 4.10.0`, runtime crashes like `NoSuchMethodError` or `ClassCastException` can occur due to inconsistent class definitions.
-* **Resource Duplication and Overwriting**: If multiple plugins or the host contain resources with the same name, the resource loaded at runtime may not be what you expect, leading to UI glitches.
-* **APK Size Bloat**: Repackaging the same dependency libraries repeatedly will significantly increase the size of the plugin APKs and the total size of the final application.
+* **Class Duplication Conflicts**: If a plugin packages `OkHttp 4.9.0` while the host or another
+  plugin uses `OkHttp 4.10.0`, runtime crashes like `NoSuchMethodError` or `ClassCastException` can
+  occur due to inconsistent class definitions.
+* **Resource Duplication and Overwriting**: If multiple plugins or the host contain resources with
+  the same name, the resource loaded at runtime may not be what you expect, leading to UI glitches.
+* **APK Size Bloat**: Repackaging the same dependency libraries repeatedly will significantly
+  increase the size of the plugin APKs and the total size of the final application.
 
-**Rule of Thumb**: Only consider packaging a dependency if you are **absolutely certain** that it is **exclusive and private** to this plugin and will not conflict with the host or any other plugin.
+**Rule of Thumb**: Only consider packaging a dependency if you are **absolutely certain** that it is
+**exclusive and private** to this plugin and will not conflict with the host or any other plugin.
 
 #### b. Prioritize Compose, Use XML with Caution
 
-`ComboLite` is an open-source plugin framework **designed for Jetpack Compose**. We strongly recommend that you make **Compose the first choice for your plugin's UI**.
+`ComboLite` is an open-source plugin framework **designed for Jetpack Compose**. We strongly
+recommend that you make **Compose the first choice for your plugin's UI**.
 
-Although the framework is currently compatible with loading traditional XML layouts, this should be considered a **fallback option** for handling legacy code or special cases (such as `WebView` and other controls not yet perfectly supported by Compose). We do not recommend using XML for new plugin features for the following reasons:
+Although the framework is currently compatible with loading traditional XML layouts, this should be
+considered a **fallback option** for handling legacy code or special cases (such as `WebView` and
+other controls not yet perfectly supported by Compose). We do not recommend using XML for new plugin
+features for the following reasons:
 
 * **Pitfall 1: Strong Coupling with Themes and Base Classes**
 
-  Many XML widgets from third-party libraries like `com.google.android.material` require their host `Activity` to inherit from a specific base class (e.g., `FragmentActivity`) or use a specific theme (e.g., `Theme.MaterialComponents`).
+  Many XML widgets from third-party libraries like `com.google.android.material` require their host
+  `Activity` to inherit from a specific base class (e.g., `FragmentActivity`) or use a specific
+  theme (e.g., `Theme.MaterialComponents`).
 
-  Under `ComboLite`'s proxy `Activity` mechanism, a plugin `Activity` cannot change the base class or theme of the host's proxy `Activity`. Forcing the use of such widgets in a plugin will cause the app to crash at runtime with an `InflateException`.
+  Under `ComboLite`'s proxy `Activity` mechanism, a plugin `Activity` cannot change the base class
+  or theme of the host's proxy `Activity`. Forcing the use of such widgets in a plugin will cause
+  the app to crash at runtime with an `InflateException`.
 
   > **Example Crash Log:**
 
@@ -481,7 +590,11 @@ Although the framework is currently compatible with loading traditional XML layo
 
 * **Pitfall 2: Difficulty in Cross-Module Resource Referencing**
 
-  In minimal packaging mode, plugin modules depend on other libraries using `compileOnly`. In this scenario, XML layouts—unlike Compose—cannot directly reference resources from `compileOnly` dependencies using `R.drawable.xxx` during development. If you use `@drawable/ic_arrow` in your XML to reference a resource from an external module, AGP will fail the build for the current module because it cannot find that resource.
+  In minimal packaging mode, plugin modules depend on other libraries using `compileOnly`. In this
+  scenario, XML layouts—unlike Compose—cannot directly reference resources from `compileOnly`
+  dependencies using `R.drawable.xxx` during development. If you use `@drawable/ic_arrow` in your
+  XML to reference a resource from an external module, AGP will fail the build for the current
+  module because it cannot find that resource.
 
   > **Example Build Failure Log:**
 
@@ -495,25 +608,31 @@ Although the framework is currently compatible with loading traditional XML layo
   **How to solve this problem?**
   The only solution is to take a series of steps that "break" the minimal packaging principle:
 
-  1.  In the plugin's `build.gradle.kts`, change the dependency containing the referenced resource from `compileOnly` to `implementation`.
-  2.  In the root `build.gradle.kts`'s `aar2apk` configuration, enable resource packaging for that plugin module:
-      ```kotlin
-      module(":sample-plugin:example") {
-          includeDependenciesRes.set(true)
-      }
-      ```
+    1. In the plugin's `build.gradle.kts`, change the dependency containing the referenced resource
+       from `compileOnly` to `implementation`.
+    2. In the root `build.gradle.kts`'s `aar2apk` configuration, enable resource packaging for that
+       plugin module:
+       ```kotlin
+       module(":sample-plugin:example") {
+           includeDependenciesRes.set(true)
+       }
+       ```
 
   This not only increases configuration complexity but also bloats the plugin's size.
 
-  **In Summary**: Unless absolutely necessary, please stick to using Jetpack Compose in your plugins. It is not only the future of modern Android UI but also fundamentally avoids all of the tricky plugin-related issues mentioned above.
+  **In Summary**: Unless absolutely necessary, please stick to using Jetpack Compose in your
+  plugins. It is not only the future of modern Android UI but also fundamentally avoids all of the
+  tricky plugin-related issues mentioned above.
 
 ## 🔧 Core API Usage
 
-`PluginManager` provides a rich set of APIs for managing and interacting with plugins. Here are some of the most essential usage examples.
+`PluginManager` provides a rich set of APIs for managing and interacting with plugins. Here are some
+of the most essential usage examples.
 
 ### 1. Plugin Management: Install, Uninstall & Enable
 
-The lifecycle of a plugin is managed through `PluginManager.installerManager` and `PluginManager` itself.
+The lifecycle of a plugin is managed through `PluginManager.installerManager` and `PluginManager`
+itself.
 
 ```kotlin
 // --- Install a plugin ---
@@ -582,7 +701,8 @@ For more usage examples, please refer to the sample plugin modules in the projec
 
 ## 🔧 The Four Major Components Usage
 
-`ComboLite` provides a series of elegant `Context` extension functions that make invoking plugin features feel as seamless as native calls.
+`ComboLite` provides a series of elegant `Context` extension functions that make invoking plugin
+features feel as seamless as native calls.
 
 ### Activity Usage
 
@@ -608,7 +728,8 @@ Define a Service in your plugin by inheriting from `BasePluginService`.
 class MusicService : BasePluginService() { /* ... */ }
 ```
 
-The framework manages plugin Services through a **proxy service pool**. You can start, bind, and stop them transparently.
+The framework manages plugin Services through a **proxy service pool**. You can start, bind, and
+stop them transparently.
 
 ```kotlin
 context.startPluginService(MusicService::class.java)
@@ -624,7 +745,8 @@ Define a Receiver in your plugin by implementing the `IPluginReceiver` interface
 class DownloadReceiver : IPluginReceiver { /* ... */ }
 ```
 
-Send a broadcast via `sendInternalBroadcast`, and the framework will automatically route it to registered plugin receivers.
+Send a broadcast via `sendInternalBroadcast`, and the framework will automatically route it to
+registered plugin receivers.
 
 ```kotlin
 context.sendInternalBroadcast("com.example.DOWNLOAD_COMPLETE") {
@@ -658,16 +780,35 @@ context.contentResolver.query(proxyUri, null, null, null, null)
 
 ## 🛠️ Implementation Principles of the Four Major Components
 
-* **Activity**: A transparent `BaseHostActivity` is registered in the host's `AndroidManifest` as a proxy placeholder. When a plugin Activity is started, the framework launches this proxy Activity, passing the real plugin Activity's class name via the `Intent`. The `BaseHostActivity` then instantiates the plugin Activity internally and binds its lifecycle to its own.
-* **Service**: An innovative **"proxy service pool"** model is used. You pre-register multiple `BaseHostService`s in the host's `AndroidManifest`. When a plugin Service is started, the `ProxyManager` finds a free proxy Service from the pool to bind with, associating the plugin Service's lifecycle with that proxy. This allows multiple plugin Services to run concurrently and independently.
-* **BroadcastReceiver**: When a plugin is loaded, the framework parses the static receivers registered in its `AndroidManifest.xml`, and they are managed centrally by the `ProxyManager`. When a system broadcast arrives, it is received by the proxy `BaseHostReceiver` in the host, which then asynchronously dispatches it to all matching plugin `IPluginReceiver`s based on the `Action` and other information.
-* **ContentProvider**: A proxy `BaseHostProvider` is pre-registered in the host and serves as the single entry point for all plugin `Provider`s. External access is done through the specially formatted `Uri` described above. The proxy `Provider` parses the target plugin `Provider`'s class name from the first path segment of the `Uri`, instantiates it, and forwards the request along with a rewritten `Uri` that matches the plugin's original `Authority`. The proxy layer is also responsible for enforcing the plugin `Provider`'s `exported` security checks.
+* **Activity**: A transparent `BaseHostActivity` is registered in the host's `AndroidManifest` as a
+  proxy placeholder. When a plugin Activity is started, the framework launches this proxy Activity,
+  passing the real plugin Activity's class name via the `Intent`. The `BaseHostActivity` then
+  instantiates the plugin Activity internally and binds its lifecycle to its own.
+* **Service**: An innovative **"proxy service pool"** model is used. You pre-register multiple
+  `BaseHostService`s in the host's `AndroidManifest`. When a plugin Service is started, the
+  `ProxyManager` finds a free proxy Service from the pool to bind with, associating the plugin
+  Service's lifecycle with that proxy. This allows multiple plugin Services to run concurrently and
+  independently.
+* **BroadcastReceiver**: When a plugin is loaded, the framework parses the static receivers
+  registered in its `AndroidManifest.xml`, and they are managed centrally by the `ProxyManager`.
+  When a system broadcast arrives, it is received by the proxy `BaseHostReceiver` in the host, which
+  then asynchronously dispatches it to all matching plugin `IPluginReceiver`s based on the `Action`
+  and other information.
+* **ContentProvider**: A proxy `BaseHostProvider` is pre-registered in the host and serves as the
+  single entry point for all plugin `Provider`s. External access is done through the specially
+  formatted `Uri` described above. The proxy `Provider` parses the target plugin `Provider`'s class
+  name from the first path segment of the `Uri`, instantiates it, and forwards the request along
+  with a rewritten `Uri` that matches the plugin's original `Authority`. The proxy layer is also
+  responsible for enforcing the plugin `Provider`'s `exported` security checks.
 
 ## 🆚 Comparison with Other Frameworks
 
-Plugin technology has evolved over many years, with many excellent open-source projects emerging. `ComboLite` was designed by drawing on the experience of its predecessors and innovating to address the pain points of modern Android development.
+Plugin technology has evolved over many years, with many excellent open-source projects emerging.
+`ComboLite` was designed by drawing on the experience of its predecessors and innovating to address
+the pain points of modern Android development.
 
-We have chosen to compare it with several well-known and representative frameworks in the industry to help you make a better technical choice.
+We have chosen to compare it with several well-known and representative frameworks in the industry
+to help you make a better technical choice.
 
 ### Detailed Comparison Table
 
@@ -690,42 +831,75 @@ We have chosen to compare it with several well-known and representative framewor
 
 #### About VirtualAPK / DroidPlugin
 
-These two frameworks are **outstanding representatives of the Hooking approach**. In the era they were created, they achieved nearly perfect system "deception" capabilities by hooking core system services (`ActivityManagerService`, `PackageManagerService`, etc.), making them very feature-complete.
+These two frameworks are **outstanding representatives of the Hooking approach**. In the era they
+were created, they achieved nearly perfect system "deception" capabilities by hooking core system
+services (`ActivityManagerService`, `PackageManagerService`, etc.), making them very
+feature-complete.
 
 * **Pros**: Powerful and supports most native app features on specific system versions.
-* **Trade-offs**: Their **fatal flaw** is their strong coupling to the Android system's implementation. With the rapid iteration of Android versions and deep customization by manufacturers, these hook points based on non-public APIs are prone to failure, leading to severe compatibility and stability issues. Today, they are **no longer maintained**, cannot keep up with the modern Android development toolchain (like AGP 8.x), and are not suitable for new projects.
+* **Trade-offs**: Their **fatal flaw** is their strong coupling to the Android system's
+  implementation. With the rapid iteration of Android versions and deep customization by
+  manufacturers, these hook points based on non-public APIs are prone to failure, leading to severe
+  compatibility and stability issues. Today, they are **no longer maintained**, cannot keep up with
+  the modern Android development toolchain (like AGP 8.x), and are not suitable for new projects.
 
 #### About Shadow
 
-`Shadow` is a framework with an **extremely clever design**. It takes a different path, rewriting code at compile time and delegating plugin component calls to a separate "runtime" at execution time, thus avoiding direct hooks into system services.
+`Shadow` is a framework with an **extremely clever design**. It takes a different path, rewriting
+code at compile time and delegating plugin component calls to a separate "runtime" at execution
+time, thus avoiding direct hooks into system services.
 
 * **Pros**: Excellent Activity compatibility and much higher stability than hooking solutions.
-* **Trade-offs**: `Shadow`'s power comes from its **complex build system**. Developers need to rely heavily on its custom Gradle plugin and understand its unique "host-runtime-plugin" model, which has a steep learning curve. Additionally, the project's **maintenance has slowed down**, and support for the latest Android features and toolchains is lagging.
+* **Trade-offs**: `Shadow`'s power comes from its **complex build system**. Developers need to rely
+  heavily on its custom Gradle plugin and understand its unique "host-runtime-plugin" model, which
+  has a steep learning curve. Additionally, the project's **maintenance has slowed down**, and
+  support for the latest Android features and toolchains is lagging.
 
 #### About ComboLite (Us)
 
-`ComboLite` has chosen the path of **returning to official standards and embracing simplicity**. We believe that for the vast majority of business scenarios, stability and maintainability are far more important than achieving certain fringe features through "black magic".
+`ComboLite` has chosen the path of **returning to official standards and embracing simplicity**. We
+believe that for the vast majority of business scenarios, stability and maintainability are far more
+important than achieving certain fringe features through "black magic".
 
 * **Pros**:
-  * **Ultimate Stability**: Entirely based on the official public Proxy pattern and `ClassLoader` mechanism, without touching any non-public APIs, providing natural cross-version and cross-manufacturer compatibility.
-  * **Embracing Modernity**: Natively designed for Jetpack Compose, actively maintained, and always in sync with the latest development toolchains.
-  * **Simple and Transparent**: The framework's core code is minimal and its logic is clear, making both integration and secondary development very easy.
-  * **Flexible Architecture**: The unique decentralized design offers more possibilities for application architecture.
+    * **Ultimate Stability**: Entirely based on the official public Proxy pattern and `ClassLoader`
+      mechanism, without touching any non-public APIs, providing natural cross-version and
+      cross-manufacturer compatibility.
+    * **Embracing Modernity**: Natively designed for Jetpack Compose, actively maintained, and
+      always in sync with the latest development toolchains.
+    * **Simple and Transparent**: The framework's core code is minimal and its logic is clear,
+      making both integration and secondary development very easy.
+    * **Flexible Architecture**: The unique decentralized design offers more possibilities for
+      application architecture.
 * **Trade-offs** (Revised Description):
-  While the proxy pattern is extremely stable, its flexibility is relatively limited compared to hooking solutions that can deeply modify system behavior, especially in handling complex **Activity launch modes (`LaunchMode`) and task affinities**. This is because the proxy Activity's own `LaunchMode` and task behavior are pre-declared in the host, and plugins cannot fully change them dynamically at runtime. `ComboLite`'s choice is to provide the purest and simplest solution for 99% of mainstream scenarios, rather than sacrificing the reliability of the entire framework for 1% of edge cases.
+  While the proxy pattern is extremely stable, its flexibility is relatively limited compared to
+  hooking solutions that can deeply modify system behavior, especially in handling complex *
+  *Activity launch modes (`LaunchMode`) and task affinities**. This is because the proxy Activity's
+  own `LaunchMode` and task behavior are pre-declared in the host, and plugins cannot fully change
+  them dynamically at runtime. `ComboLite`'s choice is to provide the purest and simplest solution
+  for 99% of mainstream scenarios, rather than sacrificing the reliability of the entire framework
+  for 1% of edge cases.
 
-**In conclusion, if you are developing a forward-looking project that uses a modern tech stack like Jetpack Compose and prioritizes long-term stability and maintainability, `ComboLite` is your definitive choice.**
+**In conclusion, if you are developing a forward-looking project that uses a modern tech stack like
+Jetpack Compose and prioritizes long-term stability and maintainability, `ComboLite` is your
+definitive choice.**
 
 -----
 
 ## How to Contribute
 
-We warmly welcome any form of contribution to make `ComboLite` better! Whether it's submitting feature suggestions, reporting bugs, creating pull requests, or helping to improve the documentation, it's all a great help to the community.
+We warmly welcome any form of contribution to make `ComboLite` better! Whether it's submitting
+feature suggestions, reporting bugs, creating pull requests, or helping to improve the
+documentation, it's all a great help to the community.
 
-* **Report Bugs or Suggest Features**: Please submit them via [GitHub Issues](https://github.com/lnzz123/ComboLite/issues), which is the best channel for public discussion and tracking.
-* **Contribute Code**: Please fork this repository, make your changes on your branch, and then create a pull request upstream. Ensure your code follows the project's existing coding standards.
+* **Report Bugs or Suggest Features**: Please submit them
+  via [GitHub Issues](https://github.com/lnzz123/ComboLite/issues), which is the best channel for
+  public discussion and tracking.
+* **Contribute Code**: Please fork this repository, make your changes on your branch, and then
+  create a pull request upstream. Ensure your code follows the project's existing coding standards.
 
-If you have more complex ideas to discuss or wish to contact us privately (e.g., to report a security issue), you are also very welcome to email us.
+If you have more complex ideas to discuss or wish to contact us privately (e.g., to report a
+security issue), you are also very welcome to email us.
 
 📧 **Contact Email**: `1755858138@qq.com`
 
@@ -733,7 +907,8 @@ If you have more complex ideas to discuss or wish to contact us privately (e.g.,
 
 ## ❤️ Support & Sponsor
 
-`ComboLite` is a free, open-source project developed and maintained in my spare time. If this project is helpful to you, your support will be a great motivation for my continued dedication.
+`ComboLite` is a free, open-source project developed and maintained in my spare time. If this
+project is helpful to you, your support will be a great motivation for my continued dedication.
 
 <details>
 <summary>Click to see sponsorship methods</summary>
@@ -768,7 +943,10 @@ This means you are free to:
 
 You only need to comply with the following simple conditions:
 
-* **Retain Notice**: You must retain the original copyright and license notices in your code and distribution packages.
-* **State Changes**: If you modify the source code, you must state the changes in the modified files.
+* **Retain Notice**: You must retain the original copyright and license notices in your code and
+  distribution packages.
+* **State Changes**: If you modify the source code, you must state the changes in the modified
+  files.
 
-For the full license text, please refer to the [LICENSE](https://github.com/lnzz123/ComboLite/blob/main/LICENSE) file in the project root.
+For the full license text, please refer to
+the [LICENSE](https://github.com/lnzz123/ComboLite/blob/main/LICENSE) file in the project root.

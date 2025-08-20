@@ -55,11 +55,12 @@ android {
     }
     buildFeatures {
         compose = true
+        viewBinding = true
     }
 }
 
 dependencies {
-    compileOnly(projects.dependencies)
+    implementation(projects.dependencies)
     compileOnly(projects.comboLiteCore)
     compileOnly(projects.samplePlugin.common)
 }

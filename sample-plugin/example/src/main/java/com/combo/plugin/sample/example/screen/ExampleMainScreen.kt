@@ -67,7 +67,7 @@ fun ExampleMainScreen() {
     val navigator = currentComposeNavigator
     // 更新数据列表，移除图标
     val exampleItems = listOf(
-        ExampleItem("Activity 示例", "生命周期、启动模式、Intent 传递等"){
+        ExampleItem("Activity 示例", "生命周期、启动模式、Intent 传递等") {
             navigator.navigate(AppScreen.Activity)
         },
         ExampleItem("Service 示例", "前后台服务、绑定服务等不同类型"),

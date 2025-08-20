@@ -86,7 +86,11 @@ class ComposeActivity : BasePluginActivity() {
                 Spacer(modifier = Modifier.height(32.dp))
                 Button(
                     onClick = {
-                        Toast.makeText(proxyActivity, "这是一个由插件Activity加载的 Compose 页面", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            proxyActivity,
+                            "这是一个由插件Activity加载的 Compose 页面",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 ) {
                     Text("Click me")

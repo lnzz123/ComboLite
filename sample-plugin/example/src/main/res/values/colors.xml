@@ -17,9 +17,13 @@
   -->
 
 <resources>
-    <dimen name="screen_padding">16dp</dimen>
-    <dimen name="item_spacing_normal">16dp</dimen>
-    <dimen name="item_spacing_small">8dp</dimen>
-    <dimen name="title_bar_height">56dp</dimen>
-    <dimen name="card_padding">16dp</dimen>
+    <color name="classic_blue">#3F51B5</color>
+    <color name="classic_blue_dark">#303F9F</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="page_background">#F5F5F5</color>
+    <color name="card_border">#E0E0E0</color>
+    <color name="divider_color">#CCCCCC</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="special_blue">#2196F3</color>
 </resources>

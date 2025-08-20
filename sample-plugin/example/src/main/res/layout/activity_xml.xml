@@ -1,129 +1,249 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ /*
+  ~  * Copyright (c) 2025, 贵州君城网络科技有限公司
+  ~  *
+  ~  * Licensed under the Apache License, Version 2.0 (the "License");
+  ~  * you may not use this file except in compliance with the License.
+  ~  * You may obtain a copy of the License at
+  ~  *
+  ~  * http://www.apache.org/licenses/LICENSE-2.0
+  ~  *
+  ~  * Unless required by applicable law or agreed to in writing, software
+  ~  * distributed under the License is distributed on an "AS IS" BASIS,
+  ~  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  * See the License for the specific language governing permissions and
+  ~  * limitations under the License.
+  ~  */
+  -->
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/page_background"
+    android:fitsSystemWindows="true"
     android:orientation="vertical"
-    android:fitsSystemWindows="true">
+    tools:context=".activity.XmlActivity">
 
     <RelativeLayout
-        android:id="@+id/relativeLayout"
+        android:id="@+id/title_bar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#ff666666">
+        android:layout_height="@dimen/title_bar_height"
+        android:background="@color/classic_blue"
+        android:elevation="4dp">
 
         <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/ic_arrow"
-            android:layout_marginStart="16dp"
-            android:layout_centerVertical="true" />
+            android:id="@+id/iv_back"
+            android:layout_width="@dimen/title_bar_height"
+            android:layout_height="@dimen/title_bar_height"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/back"
+            android:padding="14dp"
+            android:src="@drawable/ic_arrow_back" />
 
         <TextView
+            android:id="@+id/tv_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:padding="16dp"
-            android:text="基础控件展示"
-            android:textSize="24sp"
-            android:textColor="#ffffffff" />
-
+            android:text="@string/xml"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
     </RelativeLayout>
 
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/nestedScrollView"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="@dimen/screen_padding">
 
-            <Button
-                android:id="@+id/button_first"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/next" />
-
-            <Switch
-                android:id="@+id/switch_first"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="开关" />
-
-            <SeekBar
-                android:id="@+id/seekBar_first"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:max="100"
-                android:progress="50" />
-
-            <ProgressBar
-                android:id="@+id/progressBar_first"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:max="100"
-                android:progress="50" />
-
-            <RatingBar
-                android:id="@+id/ratingBar_first"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:numStars="5"
-                android:rating="3" />
-
-            <CheckBox
-                android:id="@+id/checkBox_first"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="复选框" />
-
-            <RadioGroup
-                android:id="@+id/radioGroup_first"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp">
-
-                <RadioButton
-                    android:id="@+id/radioButton_first"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="单选框1" />
-
-                <RadioButton
-                    android:id="@+id/radioButton_second"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="单选框2" />
-
-            </RadioGroup>
-
-            <EditText
-                android:id="@+id/editText_first"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="请输入" />
-
-            <Spinner
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp" />
 
             <TextView
-                android:id="@+id/textview_first"
-                android:layout_width="wrap_content"
+                android:id="@+id/tv_feedback"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/lorem_ipsum" />
+                android:layout_marginBottom="@dimen/item_spacing_normal"
+                android:background="@drawable/bg_card_container"
+                android:gravity="center"
+                android:minHeight="48dp"
+                android:padding="12dp"
+                android:text="@string/string1"
+                android:textColor="@color/text_primary" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/item_spacing_normal"
+                android:background="@drawable/bg_card_special"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        style="@style/Widget.App.TextView.Label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/view_binding"
+                        android:textColor="@color/special_blue" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/item_spacing_small"
+                    android:lineSpacingExtra="4dp"
+                    android:text="@string/view_binding_n_n1_app_view_binding_n2"
+                    android:textColor="@color/text_secondary" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card_container"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding">
+
+                <TextView
+                    style="@style/Widget.App.TextView.Label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/string2" />
+
+                <EditText
+                    android:id="@+id/edit_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/item_spacing_normal"
+                    android:background="@drawable/bg_edittext"
+                    android:hint="@string/string3"
+                    android:inputType="text"
+                    android:padding="12dp"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_secondary"
+                    android:textSize="16sp" />
+
+                <Button
+                    android:id="@+id/button_show_toast"
+                    style="@style/Widget.App.Button.Primary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="@dimen/item_spacing_normal"
+                    android:paddingHorizontal="24dp"
+                    android:text="@string/string4" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/screen_padding"
+                android:background="@drawable/bg_card_container"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding">
+
+                <TextView
+                    style="@style/Widget.App.TextView.Label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/string5" />
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/item_spacing_small"
+                    android:columnCount="2">
+
+                    <CheckBox
+                        android:id="@+id/checkbox"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="start"
+                        android:text="@string/string6" />
+
+                    <Switch
+                        android:id="@+id/control_switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:checked="true"
+                        android:text="@string/string7" />
+                </GridLayout>
+
+                <RadioGroup
+                    android:id="@+id/radio_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/item_spacing_small"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/radio_button_1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/string8" />
+
+                    <RadioButton
+                        android:id="@+id/radio_button_2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/item_spacing_normal"
+                        android:text="@string/string9" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/screen_padding"
+                android:background="@drawable/bg_card_container"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding">
+
+                <TextView
+                    style="@style/Widget.App.TextView.Label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/string10" />
+
+                <SeekBar
+                    android:id="@+id/seek_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/item_spacing_normal"
+                    android:max="100"
+                    android:progress="75" />
+
+                <ProgressBar
+                    android:id="@+id/progress_bar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/item_spacing_small"
+                    android:max="100"
+                    android:progress="75" />
+
+                <RatingBar
+                    android:id="@+id/rating_bar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="@dimen/item_spacing_normal"
+                    android:numStars="5"
+                    android:rating="3.5"
+                    android:stepSize="0.5" />
+            </LinearLayout>
 
         </LinearLayout>
-
-    </androidx.core.widget.NestedScrollView>
-
+    </ScrollView>
 </LinearLayout>

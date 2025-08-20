@@ -16,10 +16,11 @@
   ~  */
   -->
 
-<resources>
-    <dimen name="screen_padding">16dp</dimen>
-    <dimen name="item_spacing_normal">16dp</dimen>
-    <dimen name="item_spacing_small">8dp</dimen>
-    <dimen name="title_bar_height">56dp</dimen>
-    <dimen name="card_padding">16dp</dimen>
-</resources>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/white" />
+    <corners android:radius="8dp" />
+    <stroke
+        android:width="2dp"
+        android:color="@color/special_blue" />
+</shape>

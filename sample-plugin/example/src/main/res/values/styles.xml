@@ -17,9 +17,21 @@
   -->
 
 <resources>
-    <dimen name="screen_padding">16dp</dimen>
-    <dimen name="item_spacing_normal">16dp</dimen>
-    <dimen name="item_spacing_small">8dp</dimen>
-    <dimen name="title_bar_height">56dp</dimen>
-    <dimen name="card_padding">16dp</dimen>
+
+    <style name="Widget.App.TextView" parent="android:Widget.TextView" />
+
+    <style name="Widget.App.Button" parent="android:Widget.Button" />
+
+    <style name="Widget.App.TextView.Label" parent="Widget.App.TextView">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/classic_blue</item>
+
+    </style>
+
+    <style name="Widget.App.Button.Primary" parent="Widget.App.Button">
+        <item name="android:background">@drawable/btn_primary</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textStyle">bold</item>
+    </style>
 </resources>
