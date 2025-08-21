@@ -37,6 +37,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.combo.core.ext.startPluginActivity
 import com.combo.plugin.sample.example.activity.ComposeActivity
+import com.combo.plugin.sample.example.activity.IntentSenderActivity
+import com.combo.plugin.sample.example.activity.LifecycleActivity
 import com.combo.plugin.sample.example.activity.XmlActivity
 import com.combo.plugin.sample.example.component.JumpButton
 
@@ -79,10 +81,10 @@ fun ActivityScreen() {
                 context.startPluginActivity(XmlActivity::class.java)
             }
             JumpButton(text = "生命周期示例") {
-
+                context.startPluginActivity(LifecycleActivity::class.java)
             }
             JumpButton(text = "Intent 传递示例") {
-
+                context.startPluginActivity(IntentSenderActivity::class.java)
             }
         }
     }

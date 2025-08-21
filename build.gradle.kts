@@ -35,9 +35,7 @@ aar2apk {
         module(":sample-plugin:common")
         module(":sample-plugin:home")
         module(":sample-plugin:guide")
-        module(":sample-plugin:example") {
-            //includeDependenciesRes.set(true)
-        }
+        module(":sample-plugin:example")
         module(":sample-plugin:setting")
     }
 
