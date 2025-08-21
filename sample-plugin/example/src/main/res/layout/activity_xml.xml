@@ -130,7 +130,8 @@
                     android:padding="12dp"
                     android:textColor="@color/text_primary"
                     android:textColorHint="@color/text_secondary"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    android:gravity="center_vertical"/>
 
                 <Button
                     android:id="@+id/button_show_toast"

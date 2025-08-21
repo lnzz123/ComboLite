@@ -31,8 +31,9 @@ sealed interface AppScreen {
     data object Home : AppScreen
 
     @Serializable
-    data object Service : AppScreen
+    data object PluginService : AppScreen
 
     @Serializable
-    data object Activity : AppScreen
+    data object PluginActivity : AppScreen
+
 }
