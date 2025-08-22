@@ -344,7 +344,7 @@ aar2apk {
         keyAlias.set("jctech")
         keyPassword.set("he1755858138")
     }
-    
+
     // b. 配置所有需要作为插件打包的 Library 模块
     modules {
         // 模块一：默认最小化打包 (所有 include... 选项都为 false)
@@ -363,7 +363,7 @@ aar2apk {
         module(":sample-plugin:guide") {
             includeAllDependencies() // 使用便捷方法一键开启
         }
-        
+
         // 你也可以手动精细控制每一种依赖
         module(":sample-plugin:home") {
             includeDependenciesRes.set(true)
@@ -613,9 +613,11 @@ val homePlugin: IPluginEntryClass? = PluginManager.getPluginInstance("com.exampl
 
 ### 3. 访问插件资源
 
-`ComboLite` 采用**合并式资源管理**。当插件被加载时，它的所有资源（layouts, drawables, strings 等）会被动态地合并到宿主应用的全局 `Resources` 对象中。这意味着你无需关心资源来自哪个插件，可以像访问宿主自身资源一样，透明地访问所有已加载插件的资源。
+`ComboLite` 采用**合并式资源管理**。当插件被加载时，它的所有资源（layouts, drawables, strings
+等）会被动态地合并到宿主应用的全局 `Resources` 对象中。这意味着你无需关心资源来自哪个插件，可以像访问宿主自身资源一样，透明地访问所有已加载插件的资源。
 
-由于框架重写了 `Context` 的 `getResources()` 方法，所以在任何 `Context` 环境下（包括 Activity、Service、Compose 的 `LocalContext`）都能直接访问到合并后的完整资源。
+由于框架重写了 `Context` 的 `getResources()` 方法，所以在任何 `Context` 环境下（包括
+Activity、Service、Compose 的 `LocalContext`）都能直接访问到合并后的完整资源。
 
 ```kotlin
 // 1. 在 Activity 或 Service 中，直接使用 context 即可
@@ -675,7 +677,8 @@ context.stopPluginService(MusicService::class.java)
 
 #### 多实例服务 (Multi-instance Services)
 
-`ComboLite` 的一个强大特性是支持**服务实例池**。通过在调用时提供一个唯一的 `instanceId` 字符串，你可以将同一个插件 `Service` 类启动为多个相互隔离、独立运行的实例。这对于需要同时处理多个独立任务（如下载管理、计时器、网络连接等）的场景非常有用。
+`ComboLite` 的一个强大特性是支持**服务实例池**。通过在调用时提供一个唯一的 `instanceId` 字符串，你可以将同一个插件
+`Service` 类启动为多个相互隔离、独立运行的实例。这对于需要同时处理多个独立任务（如下载管理、计时器、网络连接等）的场景非常有用。
 
 ```kotlin
 val downloadTask1Id = "task-001"

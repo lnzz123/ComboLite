@@ -84,7 +84,7 @@ class Aar2ApkPlugin : Plugin<Project> {
                     this.signingConfig.set(extension.signingConfig)
                     this.sdkInfo.set(sdkInfo)
                     this.buildType.set(buildType)
-                    this.packageId.set(pluginPackageIds[modulePath]!!)
+                    this.packageId.set(pluginPackageIds[modulePath] !!)
                     this.packagingOptions.set(options)
 
                     description =

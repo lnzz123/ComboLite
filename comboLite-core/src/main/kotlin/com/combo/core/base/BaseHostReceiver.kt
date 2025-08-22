@@ -54,7 +54,7 @@ open class BaseHostReceiver : BroadcastReceiver() {
 
         coroutineScope.launch {
             try {
-                if (!PluginManager.isInitialized) {
+                if (! PluginManager.isInitialized) {
                     Timber.w("PluginManager 尚未初始化，无法分发广播。")
                     return@launch
                 }

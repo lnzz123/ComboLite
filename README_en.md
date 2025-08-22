@@ -301,6 +301,7 @@ In the plugin module's `AndroidManifest.xml`, declare the plugin information usi
 tags.
 
 ```xml
+
 <manifest>
     <application>
         <meta-data android:name="plugin.id" android:value="com.example.home" />
@@ -346,7 +347,7 @@ strategy.
   allowing it to access and process them during packaging.
 
 > **Important Rule**: If you enable `includeDependenciesRes.set(true)` for a module, the
-> corresponding library whose resources you need to package **must** be changed from `compileOnly` to
+> corresponding library whose resources you need to package **must** be changed from `compileOnly`to
 `implementation` in its `build.gradle.kts`. Otherwise, the `aar2apk` plugin will not be able to find
 > the resources during the build, causing it to fail.
 
@@ -390,7 +391,7 @@ aar2apk {
         keyAlias.set("jctech")
         keyPassword.set("he1755858138")
     }
-    
+
     // b. Configure all Library modules to be packaged as plugins
     modules {
         // Module 1: Default minimal packaging (all include... options are false)
@@ -409,7 +410,7 @@ aar2apk {
         module(":sample-plugin:guide") {
             includeAllDependencies() // Use the convenient helper method to enable all
         }
-        
+
         // You can also manually control each dependency type with fine granularity
         module(":sample-plugin:home") {
             includeDependenciesRes.set(true)
@@ -686,9 +687,15 @@ val homePlugin: IPluginEntryClass? = PluginManager.getPluginInstance("com.exampl
 
 ### 3. Accessing Plugin Resources
 
-`ComboLite` uses a **merged resource management** approach. When a plugin is loaded, all of its resources (layouts, drawables, strings, etc.) are dynamically merged into the host application's global `Resources` object. This means you don't need to worry about which plugin a resource comes from; you can access all loaded plugin resources transparently, just as you would with the host's own resources.
+`ComboLite` uses a **merged resource management** approach. When a plugin is loaded, all of its
+resources (layouts, drawables, strings, etc.) are dynamically merged into the host application's
+global `Resources` object. This means you don't need to worry about which plugin a resource comes
+from; you can access all loaded plugin resources transparently, just as you would with the host's
+own resources.
 
-Because the framework overrides the `Context`'s `getResources()` method, you can directly access the complete, merged resources in any `Context` environment (including an Activity, Service, or Compose's `LocalContext`).
+Because the framework overrides the `Context`'s `getResources()` method, you can directly access the
+complete, merged resources in any `Context` environment (including an Activity, Service, or
+Compose's `LocalContext`).
 
 ```kotlin
 // 1. In an Activity or Service, simply use the context directly
@@ -746,7 +753,11 @@ context.stopPluginService(MusicService::class.java)
 
 #### Multi-instance Services
 
-A powerful feature of `ComboLite` is its support for a **service instance pool**. By providing a unique `instanceId` string when making a call, you can launch the same plugin `Service` class as multiple, isolated, and independently running instances. This is extremely useful for scenarios that require handling multiple independent tasks simultaneously, such as download management, timers, network connections, etc.
+A powerful feature of `ComboLite` is its support for a **service instance pool**. By providing a
+unique `instanceId` string when making a call, you can launch the same plugin `Service` class as
+multiple, isolated, and independently running instances. This is extremely useful for scenarios that
+require handling multiple independent tasks simultaneously, such as download management, timers,
+network connections, etc.
 
 ```kotlin
 val downloadTask1Id = "task-001"
@@ -796,7 +807,8 @@ Clients need to access the plugin Provider through a **specially formatted URI**
 // "content://[Host_Provider_Authority]/[Plugin_Provider_Full_ClassName]/[Original_Path]"
 
 val pluginProviderClassName = MyPluginProvider::class.java.name
-val hostAuthority = "com.jctech.plugin.sample.proxy.provider" // The authority of the host's proxy Provider
+val hostAuthority =
+    "com.jctech.plugin.sample.proxy.provider" // The authority of the host's proxy Provider
 val originalPath = "items/1"
 
 val proxyUri = Uri.parse("content://$hostAuthority/$pluginProviderClassName/$originalPath")

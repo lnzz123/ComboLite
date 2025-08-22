@@ -58,7 +58,7 @@ object NavigationAnimations {
     fun slideOutToLeft(duration: Int = AnimationDuration.MEDIUM) =
         slideOutHorizontally(
             animationSpec = tween(duration),
-            targetOffsetX = { fullWidth -> -fullWidth },
+            targetOffsetX = { fullWidth -> - fullWidth },
         )
 
     /**
@@ -68,7 +68,7 @@ object NavigationAnimations {
     fun slideInFromLeft(duration: Int = AnimationDuration.MEDIUM) =
         slideInHorizontally(
             animationSpec = tween(duration),
-            initialOffsetX = { fullWidth -> -fullWidth },
+            initialOffsetX = { fullWidth -> - fullWidth },
         )
 
     /**
@@ -98,7 +98,7 @@ object NavigationAnimations {
     fun slideOutToTop(duration: Int = AnimationDuration.MEDIUM) =
         slideOutVertically(
             animationSpec = tween(duration),
-            targetOffsetY = { fullHeight -> -fullHeight },
+            targetOffsetY = { fullHeight -> - fullHeight },
         )
 
     /**

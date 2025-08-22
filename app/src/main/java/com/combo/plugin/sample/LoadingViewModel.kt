@@ -136,7 +136,7 @@ class LoadingViewModel(
         // 检查插件是否已安装
         val isInstalled = PluginManager.getAllInstallPlugins().any { it.pluginId == pluginId }
 
-        if (!isInstalled) {
+        if (! isInstalled) {
             return PluginStatus.NOT_INSTALLED
         }
 

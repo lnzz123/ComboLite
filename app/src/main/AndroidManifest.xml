@@ -22,10 +22,10 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
@@ -66,25 +66,35 @@
 
         </receiver>
 
-        <service android:name=".HostService1"
+        <service
+            android:name=".HostService1"
             android:foregroundServiceType="dataSync|mediaPlayback|shortService" />
-        <service android:name=".HostService2"
+        <service
+            android:name=".HostService2"
             android:foregroundServiceType="dataSync|mediaPlayback|shortService" />
-        <service android:name=".HostService3"
+        <service
+            android:name=".HostService3"
             android:foregroundServiceType="dataSync|mediaPlayback|shortService" />
-        <service android:name=".HostService4"
+        <service
+            android:name=".HostService4"
             android:foregroundServiceType="dataSync|mediaPlayback|shortService" />
-        <service android:name=".HostService5"
+        <service
+            android:name=".HostService5"
             android:foregroundServiceType="dataSync|mediaPlayback|shortService" />
-        <service android:name=".HostService6"
+        <service
+            android:name=".HostService6"
             android:foregroundServiceType="dataSync|mediaPlayback|shortService" />
-        <service android:name=".HostService7"
+        <service
+            android:name=".HostService7"
             android:foregroundServiceType="dataSync|mediaPlayback|shortService" />
-        <service android:name=".HostService8"
+        <service
+            android:name=".HostService8"
             android:foregroundServiceType="dataSync|mediaPlayback|shortService" />
-        <service android:name=".HostService9"
+        <service
+            android:name=".HostService9"
             android:foregroundServiceType="dataSync|mediaPlayback|shortService" />
-        <service android:name=".HostService10"
+        <service
+            android:name=".HostService10"
             android:foregroundServiceType="dataSync|mediaPlayback|shortService" />
 
         <activity

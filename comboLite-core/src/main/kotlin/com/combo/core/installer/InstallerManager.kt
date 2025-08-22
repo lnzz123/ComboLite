@@ -66,7 +66,7 @@ class InstallerManager(
     private val signatureValidator = SignatureValidator(context)
     private val pluginsDir: File by lazy {
         File(context.filesDir, PLUGINS_DIR).apply {
-            if (!exists()) {
+            if (! exists()) {
                 mkdirs()
                 Timber.tag(TAG).d("创建插件目录: $absolutePath")
             }
@@ -116,7 +116,7 @@ class InstallerManager(
 
             try {
                 // 1. 检查文件是否存在
-                if (!pluginApkFile.exists()) {
+                if (! pluginApkFile.exists()) {
                     val reason = "插件文件不存在: ${pluginApkFile.absolutePath}"
                     Timber.tag(TAG).e(reason)
                     return@withContext InstallResult.Failure(reason)
@@ -128,7 +128,7 @@ class InstallerManager(
                         ?: return@withContext InstallResult.Failure("插件配置元数据验证失败")
 
                 // 3. 验证插件APK签名（较重的验证操作）
-                if (!validateSignature(pluginApkFile)) {
+                if (! validateSignature(pluginApkFile)) {
                     val reason = "插件签名验证失败: ${pluginApkFile.name}"
                     Timber.tag(TAG).e(reason)
                     return@withContext InstallResult.Failure(reason)
@@ -136,7 +136,7 @@ class InstallerManager(
 
                 // 4. 检查插件是否已安装并进行版本比较
                 val existingPlugin = xmlManager.getPluginById(pluginConfig.pluginId)
-                if (existingPlugin != null && !forceOverwrite) {
+                if (existingPlugin != null && ! forceOverwrite) {
                     val newVersion = pluginConfig.pluginVersion
                     val currentVersion = existingPlugin.version
 
@@ -299,7 +299,7 @@ class InstallerManager(
 
                 when {
                     v1 > v2 -> return 1
-                    v1 < v2 -> return -1
+                    v1 < v2 -> return - 1
                 }
             }
 
@@ -505,7 +505,7 @@ class InstallerManager(
                             "receiver" ->
                                 if (inReceiverTag) {
                                     inReceiverTag = false
-                                    if (!currentReceiverName.isNullOrBlank() && !currentFilters.isNullOrEmpty()) {
+                                    if (! currentReceiverName.isNullOrBlank() && ! currentFilters.isNullOrEmpty()) {
                                         receivers.add(
                                             StaticReceiverInfo(
                                                 className = currentReceiverName,
@@ -551,7 +551,7 @@ class InstallerManager(
             val providerList = mutableListOf<ProviderInfo>()
             packageInfo?.providers?.forEach { provider ->
                 val authorities = provider.authority?.split(";")?.filter { it.isNotBlank() }
-                if (!authorities.isNullOrEmpty()) {
+                if (! authorities.isNullOrEmpty()) {
                     val metaDataList = mutableListOf<MetaDataInfo>()
                     provider.metaData?.keySet()?.forEach { key ->
                         val rawValue = provider.metaData.get(key)
@@ -630,20 +630,20 @@ class InstallerManager(
                 FileInputStream(sourceFile).use { input ->
                     FileOutputStream(targetFile).use { output ->
                         var bytesRead: Int
-                        while (input.read(buffer).also { bytesRead = it } != -1) {
+                        while (input.read(buffer).also { bytesRead = it } != - 1) {
                             output.write(buffer, 0, bytesRead)
                         }
                     }
                 }
 
                 // 验证复制结果
-                if (!targetFile.exists() || targetFile.length() != sourceFile.length()) {
+                if (! targetFile.exists() || targetFile.length() != sourceFile.length()) {
                     Timber.tag(TAG).e("文件复制验证失败")
                     return@withContext null
                 }
 
                 // 设置文件为只读权限，防止Android系统报"Writable dex file"错误
-                if (!targetFile.setReadOnly()) {
+                if (! targetFile.setReadOnly()) {
                     Timber.tag(TAG).w("设置插件文件为只读失败: ${targetFile.absolutePath}")
                 } else {
                     Timber.tag(TAG).d("插件文件已设置为只读: ${targetFile.absolutePath}")

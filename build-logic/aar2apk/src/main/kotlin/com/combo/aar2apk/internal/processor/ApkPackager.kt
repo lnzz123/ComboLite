@@ -33,7 +33,7 @@ internal class ApkPackager(
      * 将 DEX 文件添加到 APK 的根目录。
      */
     fun addDex(apkFile: File, dexFile: File?) {
-        if (dexFile == null || !dexFile.exists()) return
+        if (dexFile == null || ! dexFile.exists()) return
         logger.log("步骤4.1: 添加DEX文件到APK") // 调整了日志步骤编号，使其更连贯
         shellExecutor.execute(
             listOf("jar", "uf", apkFile.absolutePath, "-C", dexFile.parent, dexFile.name)

@@ -43,7 +43,7 @@ data class SdkInfo(
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     val androidJar: File by lazy {
         File(sdkPath, "platforms/$platformVersion/android.jar").also {
-            if (!it.exists()) throw IllegalStateException("Android Platform JAR不存在: ${it.absolutePath}")
+            if (! it.exists()) throw IllegalStateException("Android Platform JAR不存在: ${it.absolutePath}")
         }
     }
 

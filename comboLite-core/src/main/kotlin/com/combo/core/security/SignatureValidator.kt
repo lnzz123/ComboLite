@@ -53,7 +53,7 @@ class SignatureValidator(
         context: Context,
         pluginApkFile: File,
     ): Boolean {
-        if (!pluginApkFile.exists()) {
+        if (! pluginApkFile.exists()) {
             Timber.w("Plugin file does not exist: %s", pluginApkFile.absolutePath)
             return false
         }

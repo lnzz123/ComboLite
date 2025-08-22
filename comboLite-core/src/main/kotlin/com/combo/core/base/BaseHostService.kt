@@ -81,15 +81,16 @@ open class BaseHostService : Service() {
                     try {
                         val instance = intent?.getPluginService()
                         if (instance == null) {
-                            val className = intent?.getStringExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME)
+                            val className =
+                                intent?.getStringExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME)
                             throw IllegalStateException("创建插件服务实例失败: $className")
                         }
                         this.pluginService = instance
                         this.instanceIdentifier =
                             intent.getStringExtra(ExtConstant.PLUGIN_SERVICE_INSTANCE_ID)
 
-                        pluginService!!.onAttach(this@BaseHostService)
-                        pluginService!!.onCreate()
+                        pluginService !!.onAttach(this@BaseHostService)
+                        pluginService !!.onCreate()
                     } catch (e: Exception) {
                         Timber.e(e, "初始化插件服务 [${this.instanceIdentifier}] 失败。")
                         pluginService = null

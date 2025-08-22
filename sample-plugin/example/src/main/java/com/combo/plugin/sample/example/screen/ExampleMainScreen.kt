@@ -67,10 +67,10 @@ fun ExampleMainScreen() {
     val navigator = currentComposeNavigator
     // 更新数据列表，移除图标
     val exampleItems = listOf(
-        ExampleItem("Activity 示例", "生命周期、启动模式、Intent 传递等"){
+        ExampleItem("Activity 示例", "生命周期、启动模式、Intent 传递等") {
             navigator.navigate(AppScreen.PluginActivity)
         },
-        ExampleItem("Service 示例", "前后台服务、绑定服务等不同类型"){
+        ExampleItem("Service 示例", "前后台服务、绑定服务等不同类型") {
             navigator.navigate(AppScreen.PluginService)
         },
         ExampleItem("广播接收器", "系统广播、自定义广播的发送与接收"),

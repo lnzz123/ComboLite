@@ -82,7 +82,7 @@ object PluginManager : IPluginStateProvider {
     // 运行时缓存目录
     private val runtimeCacheDir: File by lazy {
         File(context.cacheDir, RUNTIME_CACHE_DIR_NAME).apply {
-            if (!exists()) {
+            if (! exists()) {
                 mkdirs()
                 Timber.tag(TAG).d("创建运行时插件缓存目录: $absolutePath")
             }
@@ -189,7 +189,7 @@ object PluginManager : IPluginStateProvider {
             try {
                 Timber.tag(TAG).i("开始异步初始化所有已启用的插件")
 
-                val enabledPlugins = getEnabledPlugins().filter { !isPluginLoaded(it.pluginId) }
+                val enabledPlugins = getEnabledPlugins().filter { ! isPluginLoaded(it.pluginId) }
                 if (enabledPlugins.isEmpty()) {
                     return@withContext 0
                 }
@@ -625,7 +625,7 @@ object PluginManager : IPluginStateProvider {
      * @param pluginId 插件ID
      */
     suspend fun unloadPlugin(pluginId: String) = withContext(Dispatchers.IO) {
-        if (!isPluginLoaded(pluginId)) {
+        if (! isPluginLoaded(pluginId)) {
             Timber.tag(TAG).w("尝试卸载一个未加载的插件: $pluginId")
             return@withContext
         }
@@ -695,7 +695,7 @@ object PluginManager : IPluginStateProvider {
                 }
 
                 val sourceFile = File(pluginInfo.path)
-                if (!sourceFile.exists()) {
+                if (! sourceFile.exists()) {
                     Timber.tag(TAG).e("插件源文件不存在: ${pluginInfo.path}")
                     return@withContext null
                 }
@@ -714,14 +714,14 @@ object PluginManager : IPluginStateProvider {
                 }
 
                 // 验证复制结果
-                if (!cacheFile.exists() || cacheFile.length() != sourceFile.length()) {
+                if (! cacheFile.exists() || cacheFile.length() != sourceFile.length()) {
                     Timber.tag(TAG).e("运行时缓存文件创建验证失败: $pluginId")
                     cacheFile.delete()
                     return@withContext null
                 }
 
                 // 设置文件为只读权限，防止Android系统报"Writable dex file"错误
-                if (!cacheFile.setReadOnly()) {
+                if (! cacheFile.setReadOnly()) {
                     Timber.tag(TAG).w("设置运行时缓存文件为只读失败: ${cacheFile.absolutePath}")
                 } else {
                     Timber.tag(TAG).d("运行时缓存文件已设置为只读: ${cacheFile.absolutePath}")
@@ -753,7 +753,7 @@ object PluginManager : IPluginStateProvider {
                 cacheFiles.forEach { cacheFile ->
                     try {
                         if (cacheFile.delete()) {
-                            deletedCount++
+                            deletedCount ++
                             Timber.tag(TAG).d("清理缓存文件: ${cacheFile.name}")
                         } else {
                             Timber.tag(TAG).w("清理缓存文件失败: ${cacheFile.name}")
@@ -886,7 +886,7 @@ object PluginManager : IPluginStateProvider {
                 Timber.tag(CLASS_INDEX_TAG).d("为类 [$className] 建立索引...")
                 val existingPluginId = classIndex.putIfAbsent(className, pluginId)
                 if (existingPluginId == null) {
-                    totalIndexedClasses++
+                    totalIndexedClasses ++
                 }
             }
         } catch (e: Exception) {
@@ -920,7 +920,7 @@ object PluginManager : IPluginStateProvider {
             val entry = iterator.next()
             if (entry.value == pluginId) {
                 iterator.remove()
-                removedCount++
+                removedCount ++
             }
         }
         Timber.tag(CLASS_INDEX_TAG).d("从索引中移除了插件 [$pluginId] 的 $removedCount 个类。")

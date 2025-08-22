@@ -125,13 +125,13 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/item_spacing_normal"
                     android:background="@drawable/bg_edittext"
+                    android:gravity="center_vertical"
                     android:hint="@string/string3"
                     android:inputType="text"
                     android:padding="12dp"
                     android:textColor="@color/text_primary"
                     android:textColorHint="@color/text_secondary"
-                    android:textSize="16sp"
-                    android:gravity="center_vertical"/>
+                    android:textSize="16sp" />
 
                 <Button
                     android:id="@+id/button_show_toast"

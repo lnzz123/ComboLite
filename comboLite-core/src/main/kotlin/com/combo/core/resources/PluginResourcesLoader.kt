@@ -49,7 +49,7 @@ object PluginResourcesLoader {
     @RequiresApi(Build.VERSION_CODES.R)
     fun loadPluginResources(pluginFile: File): ResourcesLoader? {
         return try {
-            if (!pluginFile.exists()) {
+            if (! pluginFile.exists()) {
                 Timber.tag(TAG).e("插件文件未找到: ${pluginFile.path}")
                 return null
             }

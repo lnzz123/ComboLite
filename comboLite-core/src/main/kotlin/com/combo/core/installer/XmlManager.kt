@@ -177,7 +177,7 @@ class XmlManager(
      */
     private fun initializeCache() {
         write {
-            if (!cacheInitialized) {
+            if (! cacheInitialized) {
                 try {
                     val plugins = loadPluginsFromDisk()
                     pluginCache.clear()
@@ -219,7 +219,7 @@ class XmlManager(
      */
     private fun loadPluginsFromDisk(useBackup: Boolean = false): List<PluginInfo> {
         val targetFile = if (useBackup) backupConfigFile else pluginsConfigFile
-        if (!targetFile.exists()) return emptyList()
+        if (! targetFile.exists()) return emptyList()
 
         val pluginList = mutableListOf<PluginInfo>()
         try {
@@ -653,7 +653,7 @@ class XmlManager(
      */
     fun getAllPlugins(): List<PluginInfo> =
         read {
-            if (!cacheInitialized) {
+            if (! cacheInitialized) {
                 initializeCache()
             }
             pluginCache.values.toList()
@@ -666,7 +666,7 @@ class XmlManager(
      */
     fun getPluginById(pluginId: String): PluginInfo? =
         read {
-            if (!cacheInitialized) {
+            if (! cacheInitialized) {
                 initializeCache()
             }
             pluginCache[pluginId]
@@ -679,7 +679,7 @@ class XmlManager(
      */
     fun addPlugin(plugin: PluginInfo) {
         write {
-            if (!cacheInitialized) {
+            if (! cacheInitialized) {
                 initializeCache()
             }
 
@@ -700,11 +700,11 @@ class XmlManager(
      */
     fun updatePlugin(plugin: PluginInfo) {
         write {
-            if (!cacheInitialized) {
+            if (! cacheInitialized) {
                 initializeCache()
             }
 
-            if (!pluginCache.containsKey(plugin.pluginId)) {
+            if (! pluginCache.containsKey(plugin.pluginId)) {
                 throw NoSuchElementException("Plugin with ID ${plugin.pluginId} not found for update.")
             }
 
@@ -721,7 +721,7 @@ class XmlManager(
      */
     fun removePlugin(pluginId: String): Boolean =
         write {
-            if (!cacheInitialized) {
+            if (! cacheInitialized) {
                 initializeCache()
             }
 

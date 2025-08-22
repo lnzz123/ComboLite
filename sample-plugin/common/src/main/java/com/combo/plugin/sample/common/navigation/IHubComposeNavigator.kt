@@ -38,7 +38,7 @@ class IHubComposeNavigator : AppComposeNavigator<AppScreen>() {
         route: AppScreen,
         optionsBuilder: (NavOptionsBuilder.() -> Unit)?,
     ) {
-        if (!canNavigate()) return
+        if (! canNavigate()) return
 
         val options = optionsBuilder?.let { navOptions(it) }
         navigationCommands.tryEmit(ComposeNavigationCommand.NavigateToRoute(route, options))
@@ -56,7 +56,7 @@ class IHubComposeNavigator : AppComposeNavigator<AppScreen>() {
         result: R,
         route: AppScreen?,
     ) {
-        if (!canNavigate()) return
+        if (! canNavigate()) return
 
         navigationCommands.tryEmit(
             ComposeNavigationCommand.NavigateUpWithResult(
@@ -77,7 +77,7 @@ class IHubComposeNavigator : AppComposeNavigator<AppScreen>() {
         route: AppScreen,
         inclusive: Boolean,
     ) {
-        if (!canNavigate()) return
+        if (! canNavigate()) return
 
         navigationCommands.tryEmit(ComposeNavigationCommand.PopUpToRoute(route, inclusive))
     }
@@ -88,7 +88,7 @@ class IHubComposeNavigator : AppComposeNavigator<AppScreen>() {
      * @param route 目标路由
      */
     override fun navigateAndClearBackStack(route: AppScreen) {
-        if (!canNavigate()) return
+        if (! canNavigate()) return
 
         navigationCommands.tryEmit(ComposeNavigationCommand.NavigateAndClearBackStack(route))
     }
@@ -99,7 +99,7 @@ class IHubComposeNavigator : AppComposeNavigator<AppScreen>() {
      * @param route 目标路由
      */
     override fun replace(route: AppScreen) {
-        if (!canNavigate()) return
+        if (! canNavigate()) return
 
         navigationCommands.tryEmit(ComposeNavigationCommand.ReplaceRoute(route))
     }
@@ -110,7 +110,7 @@ class IHubComposeNavigator : AppComposeNavigator<AppScreen>() {
      * @param route 目标路由
      */
     override fun navigateAndFinish(route: AppScreen) {
-        if (!canNavigate()) return
+        if (! canNavigate()) return
 
         navigationCommands.tryEmit(ComposeNavigationCommand.NavigateAndFinishCurrent(route))
     }

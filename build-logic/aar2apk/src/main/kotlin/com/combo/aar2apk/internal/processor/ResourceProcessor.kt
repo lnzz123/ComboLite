@@ -44,7 +44,7 @@ internal class ResourceProcessor(
         workDir: File
     ): LinkedResources? {
         val manifestFile = File(extractDir, "AndroidManifest.xml")
-        if (!manifestFile.exists()) {
+        if (! manifestFile.exists()) {
             logger.log("⚠️ 未找到AndroidManifest.xml，跳过资源处理。")
             return null
         }
@@ -113,7 +113,7 @@ internal class ResourceProcessor(
 
     private fun compileMainModuleResources(extractDir: File, buildDir: File): File? {
         val mainResDir = File(extractDir, "res")
-        if (!mainResDir.exists() || mainResDir.listFiles()?.isEmpty() == true) {
+        if (! mainResDir.exists() || mainResDir.listFiles()?.isEmpty() == true) {
             logger.log("主模块无资源文件，跳过aapt2 compile。")
             return null
         }

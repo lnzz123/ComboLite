@@ -89,7 +89,7 @@ class PluginResourcesManager(
             Timber.tag(TAG).d("开始加载插件资源: $pluginId (Android ${Build.VERSION.SDK_INT})")
 
             // 检查插件文件是否存在
-            if (!pluginFile.exists()) {
+            if (! pluginFile.exists()) {
                 Timber.tag(TAG).e("插件文件不存在: ${pluginFile.absolutePath}")
                 return false
             }

@@ -185,7 +185,7 @@ abstract class AppComposeNavigator<T : Any> : Navigator() {
         popUpToInclusive: Boolean = false,
         restoreState: Boolean = false,
     ) {
-        if (!canNavigate()) return
+        if (! canNavigate()) return
 
         // 获取动画方案
         val animationScheme = NavigationAnimations.getAnimationScheme(transition)

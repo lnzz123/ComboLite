@@ -56,7 +56,7 @@ internal class DexProcessor(
 
         // 编译 R.java (如果存在)
         val rClassesJar = if (rJavaFiles.isNotEmpty()) {
-            compileRJava(rJavaSourcesDir!!, buildDir)
+            compileRJava(rJavaSourcesDir !!, buildDir)
         } else null
 
         // 将编译后的 R.jar 和其他所有 jar 文件合并，一起转换为 DEX
@@ -112,7 +112,7 @@ internal class DexProcessor(
         shellExecutor.execute(command)
 
         val classesDex = File(dexOutputDir, "classes.dex")
-        if (!classesDex.exists()) throw IllegalStateException("DEX转换失败，未生成classes.dex文件。")
+        if (! classesDex.exists()) throw IllegalStateException("DEX转换失败，未生成classes.dex文件。")
         return classesDex
     }
 }

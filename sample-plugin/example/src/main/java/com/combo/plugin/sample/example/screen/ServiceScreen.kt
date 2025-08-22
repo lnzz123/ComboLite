@@ -117,7 +117,7 @@ fun ServiceScreen() {
     )
 
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ! hasNotificationPermission) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
@@ -147,7 +147,11 @@ private fun PermissionRequestContent(paddingValues: PaddingValues) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("需要通知权限", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(
+            "需要通知权限",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             "此功能需要通知权限才能启动前台服务并实时显示秒表状态。请在应用设置中开启通知权限。",
@@ -204,7 +208,7 @@ private fun ServiceControlContent(paddingValues: PaddingValues) {
         val runningInstanceIds = PluginManager.proxyManager.getRunningInstancesFor(serviceClassName)
 
         runningServices.clear()
-        var maxIdNumber = -1
+        var maxIdNumber = - 1
 
         runningInstanceIds.forEach { fullIdentifier ->
             val shortId = fullIdentifier.substringAfter(':', fullIdentifier)
@@ -232,6 +236,7 @@ private fun ServiceControlContent(paddingValues: PaddingValues) {
                             statusMessage = "服务实例 #$serviceId 已启动"
                         }
                     }
+
                     StopwatchService.ACTION_SERVICE_STOPPED -> {
                         val toRemove = runningServices.find { it.id == serviceId }
                         if (toRemove != null) {
@@ -255,7 +260,12 @@ private fun ServiceControlContent(paddingValues: PaddingValues) {
             addAction(StopwatchService.ACTION_SERVICE_STARTED)
             addAction(StopwatchService.ACTION_SERVICE_STOPPED)
         }
-        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        ContextCompat.registerReceiver(
+            context,
+            receiver,
+            filter,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
 
         onDispose {
             context.unregisterReceiver(receiver)
@@ -286,7 +296,10 @@ private fun ServiceControlContent(paddingValues: PaddingValues) {
             .padding(16.dp)
     ) {
         Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Text("主控制", style = MaterialTheme.typography.titleLarge)
                 Text(
                     "框架支持服务代理池，允许多次启动同一个Service类来创建多个独立实例。",
@@ -296,7 +309,8 @@ private fun ServiceControlContent(paddingValues: PaddingValues) {
                     val newServiceId = "stopwatch-${serviceIdCounter.getAndIncrement()}"
                     val instanceIdentifier = "${StopwatchService::class.java.name}:$newServiceId"
 
-                    val proxyClass = PluginManager.proxyManager.acquireServiceProxy(instanceIdentifier)
+                    val proxyClass =
+                        PluginManager.proxyManager.acquireServiceProxy(instanceIdentifier)
 
                     if (proxyClass != null) {
                         PluginManager.proxyManager.releaseServiceProxy(instanceIdentifier)
@@ -310,7 +324,8 @@ private fun ServiceControlContent(paddingValues: PaddingValues) {
                         statusMessage = "正在尝试启动服务实例 #$newServiceId..."
                     } else {
                         statusMessage = "启动失败：服务代理池已达上限！"
-                        Toast.makeText(context, "启动失败：服务代理池已达上限！", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "启动失败：服务代理池已达上限！", Toast.LENGTH_SHORT)
+                            .show()
                     }
 
                 }) { Text("启动一个新的秒表服务") }

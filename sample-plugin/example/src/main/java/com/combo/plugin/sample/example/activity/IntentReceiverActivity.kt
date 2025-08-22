@@ -20,8 +20,15 @@ package com.combo.plugin.sample.example.activity
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -35,8 +42,9 @@ class IntentReceiverActivity : BasePluginActivity() {
 
         // 从 Intent 中提取数据
         val receivedString = proxyActivity?.intent?.getStringExtra("EXTRA_STRING") ?: "未收到字符串"
-        val receivedInt = proxyActivity?.intent?.getIntExtra("EXTRA_INT", -1) ?: -1
-        val receivedBoolean = proxyActivity?.intent?.getBooleanExtra("EXTRA_BOOLEAN", false) ?: false
+        val receivedInt = proxyActivity?.intent?.getIntExtra("EXTRA_INT", - 1) ?: - 1
+        val receivedBoolean =
+            proxyActivity?.intent?.getBooleanExtra("EXTRA_BOOLEAN", false) ?: false
 
         proxyActivity?.setContent {
             IntentReceiverScreen(
@@ -62,7 +70,10 @@ class IntentReceiverActivity : BasePluginActivity() {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text("已成功从 Intent 中接收到以下数据：", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "已成功从 Intent 中接收到以下数据：",
+                    style = MaterialTheme.typography.titleMedium
+                )
 
                 InfoRow(label = "字符串 (EXTRA_STRING):", value = strValue)
                 InfoRow(label = "整数 (EXTRA_INT):", value = intValue.toString())
@@ -74,8 +85,16 @@ class IntentReceiverActivity : BasePluginActivity() {
     @Composable
     private fun InfoRow(label: String, value: String) {
         Column {
-            Text(text = label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Text(text = value, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 8.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(start = 8.dp)
+            )
         }
     }
 }

@@ -18,6 +18,7 @@
 
 package com.combo.plugin.sample.example.service
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service.START_NOT_STICKY
@@ -27,6 +28,9 @@ import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.IconCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.combo.core.base.BasePluginService
 import com.combo.core.ext.sendInternalBroadcast
 import com.combo.plugin.sample.example.R
@@ -152,23 +156,43 @@ class StopwatchService : BasePluginService() {
     private fun updateNotification(time: String) {
         if (instanceId == null) return
         val notification = createNotification("计时: $time")
-        val manager = proxyService?.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        val manager =
+            proxyService?.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         manager?.notify(notificationId, notification)
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, "秒表服务通知", NotificationManager.IMPORTANCE_LOW)
+            val channel =
+                NotificationChannel(CHANNEL_ID, "秒表服务通知", NotificationManager.IMPORTANCE_LOW)
             val manager = proxyService?.getSystemService(NotificationManager::class.java)
             manager?.createNotificationChannel(channel)
         }
     }
 
-    private fun createNotification(contentText: String) = NotificationCompat.Builder(proxyService!!, CHANNEL_ID)
-        .setContentTitle("插件秒表服务 [#$instanceId]")
-        .setContentText(contentText)
-        .setSmallIcon(R.drawable.ic_timer)
-        .setWhen(creationTime)
-        .setOnlyAlertOnce(true)
-        .build()
+    private fun createNotification(contentText: String): Notification {
+        val iconResId = R.drawable.ic_timer
+
+        val builder = NotificationCompat.Builder(proxyService !!, CHANNEL_ID)
+            .setContentTitle("插件秒表服务 [#$instanceId]")
+            .setContentText(contentText)
+            .setWhen(creationTime)
+            .setOnlyAlertOnce(true)
+
+        try {
+            val drawable = ContextCompat.getDrawable(proxyService !!, iconResId)
+            val bitmap = drawable?.toBitmap(width = 128, height = 128)
+
+            if (bitmap != null) {
+                builder.setSmallIcon(IconCompat.createWithBitmap(bitmap))
+            } else {
+                builder.setSmallIcon(android.R.drawable.ic_dialog_info)
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "加载插件图标资源失败，使用默认系统图标")
+            builder.setSmallIcon(android.R.drawable.ic_dialog_info)
+        }
+
+        return builder.build()
+    }
 }
