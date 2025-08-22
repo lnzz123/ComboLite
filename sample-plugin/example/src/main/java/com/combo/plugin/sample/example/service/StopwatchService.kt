@@ -69,7 +69,8 @@ class StopwatchService : BasePluginService() {
 
     private val _elapsedTime = MutableStateFlow(0L)
     val elapsedTime = _elapsedTime.asStateFlow()
-    private var timerJob: Job? = null
+    private var uiTimerJob: Job? = null
+    private var notificationUpdateJob: Job? = null
 
     inner class StopwatchBinder : Binder() {
         fun getService(): StopwatchService = this@StopwatchService
@@ -96,7 +97,7 @@ class StopwatchService : BasePluginService() {
 
             this.creationTime = System.currentTimeMillis()
 
-            startTimer()
+            startTimers()
 
             proxyService?.sendInternalBroadcast(ACTION_SERVICE_STARTED) {
                 putExtra(EXTRA_SERVICE_ID, instanceId)
@@ -105,7 +106,8 @@ class StopwatchService : BasePluginService() {
 
         Timber.d("$TAG: onStartCommand received.")
 
-        val notification = createNotification("计时中...")
+        // 首次启动时，创建一个包含系统计时器的通知
+        val notification = createNotification("计时准备中...")
         proxyService?.startForeground(notificationId, notification)
         return START_NOT_STICKY
     }
@@ -121,7 +123,7 @@ class StopwatchService : BasePluginService() {
                     this.creationTime = System.currentTimeMillis()
                 }
                 Timber.d("$TAG: Initialized via onBind.")
-                startTimer()
+                startTimers()
             }
         }
         return binder
@@ -137,19 +139,31 @@ class StopwatchService : BasePluginService() {
         }
     }
 
-    private fun startTimer() {
-        if (timerJob?.isActive == true) return
-        timerJob = serviceScope.launch {
-            while (isActive) {
-                _elapsedTime.value = System.currentTimeMillis() - creationTime
-                updateNotification(formatTime(_elapsedTime.value))
-                delay(50)
+    /**
+     * 2. 拆分为两个独立的计时器循环
+     */
+    private fun startTimers() {
+        if (uiTimerJob?.isActive != true) {
+            uiTimerJob = serviceScope.launch {
+                while (isActive) {
+                    _elapsedTime.value = System.currentTimeMillis() - creationTime
+                }
+            }
+        }
+
+        // 计时器二：低频更新，专门给通知栏使用，避免系统节流
+        if (notificationUpdateJob?.isActive != true) {
+            notificationUpdateJob = serviceScope.launch {
+                while (isActive) {
+                    updateNotification(formatTime(_elapsedTime.value))
+                    delay(1000)
+                }
             }
         }
     }
 
     private fun formatTime(millis: Long): String {
-        val format = SimpleDateFormat("mm:ss.SSS", Locale.getDefault())
+        val format = SimpleDateFormat("mm:ss", Locale.getDefault())
         return format.format(Date(millis))
     }
 
@@ -173,14 +187,16 @@ class StopwatchService : BasePluginService() {
     private fun createNotification(contentText: String): Notification {
         val iconResId = R.drawable.ic_timer
 
-        val builder = NotificationCompat.Builder(proxyService !!, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(proxyService!!, CHANNEL_ID)
             .setContentTitle("插件秒表服务 [#$instanceId]")
             .setContentText(contentText)
             .setWhen(creationTime)
             .setOnlyAlertOnce(true)
+            .setUsesChronometer(true)
+            .setChronometerCountDown(false)
 
         try {
-            val drawable = ContextCompat.getDrawable(proxyService !!, iconResId)
+            val drawable = ContextCompat.getDrawable(proxyService!!, iconResId)
             val bitmap = drawable?.toBitmap(width = 128, height = 128)
 
             if (bitmap != null) {

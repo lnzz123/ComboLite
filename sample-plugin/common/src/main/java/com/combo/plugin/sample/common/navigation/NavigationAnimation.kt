@@ -18,6 +18,7 @@
 
 package com.combo.plugin.sample.common.navigation
 
+//noinspection SuspiciousImport
 import android.R
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
