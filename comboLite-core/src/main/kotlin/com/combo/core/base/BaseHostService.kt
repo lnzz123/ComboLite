@@ -46,10 +46,10 @@ open class BaseHostService : Service() {
         private set
 
     /**
-     * 存储当前代理的插件Service的完整类名。
-     * 这个字段至关重要，用于在onDestroy时通知ProxyManager要释放哪个插件的映射。
+     * 存储当前代理的插件 Service 的唯一实例标识符。
+     * 例如："com.combo.plugin.MyService:download1"
      */
-    private var pluginClassName: String? = null
+    private var instanceIdentifier: String? = null
 
     /**
      * 重写getResources方法，返回插件资源
@@ -81,15 +81,17 @@ open class BaseHostService : Service() {
                     try {
                         val instance = intent?.getPluginService()
                         if (instance == null) {
-                            throw IllegalStateException("创建插件服务实例失败: $pluginClassName")
+                            val className = intent?.getStringExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME)
+                            throw IllegalStateException("创建插件服务实例失败: $className")
                         }
                         this.pluginService = instance
-                        this.pluginClassName =
-                            intent.getStringExtra(ExtConstant.PLUGIN_SERVICE_CLASS_NAME)
+                        this.instanceIdentifier =
+                            intent.getStringExtra(ExtConstant.PLUGIN_SERVICE_INSTANCE_ID)
+
                         pluginService!!.onAttach(this@BaseHostService)
                         pluginService!!.onCreate()
                     } catch (e: Exception) {
-                        Timber.e(e, "初始化插件 [${this.pluginClassName}] 失败。")
+                        Timber.e(e, "初始化插件服务 [${this.instanceIdentifier}] 失败。")
                         pluginService = null
                         stopSelf()
                     }
@@ -126,7 +128,7 @@ open class BaseHostService : Service() {
         super.onDestroy()
         pluginService?.onDestroy()
         pluginService = null
-        pluginClassName?.let {
+        instanceIdentifier?.let {
             PluginManager.proxyManager.releaseServiceProxy(it)
         }
     }

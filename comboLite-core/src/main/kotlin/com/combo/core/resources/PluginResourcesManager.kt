@@ -154,7 +154,7 @@ class PluginResourcesManager(
     /**
      * Android 11以下使用 AssetManager.addAssetPath 反射API加载资源
      */
-    @SuppressLint("DiscouragedPrivateApi")
+    @SuppressLint("DiscouragedPrivateApi", "PrivateApi")
     private fun loadResourcesWithAddAssetPath(
         pluginId: String,
         pluginFile: File,

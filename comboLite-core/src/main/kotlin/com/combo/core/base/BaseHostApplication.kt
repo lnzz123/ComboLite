@@ -19,6 +19,8 @@
 package com.combo.core.base
 
 import android.app.Application
+import android.content.res.AssetManager
+import android.content.res.Resources
 import com.combo.core.manager.PluginManager
 import com.combo.core.security.PluginCrashHandler
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +32,9 @@ import kotlinx.coroutines.launch
  * 用于快速一键初始化插件框架，加载插件
  */
 open class BaseHostApplication : Application() {
+    /**
+     * 初始化工作
+     */
     override fun onCreate() {
         super.onCreate()
         PluginCrashHandler.initialize(this)
@@ -39,4 +44,24 @@ open class BaseHostApplication : Application() {
             }
         }
     }
+
+    /**
+     * 重写getResources方法，返回插件资源
+     */
+    override fun getResources(): Resources =
+        if (PluginManager.isInitialized) {
+            PluginManager.resourcesManager.getResources()
+        } else {
+            super.getResources()
+        }
+
+    /**
+     * 重写getAssets方法，返回插件资源
+     */
+    override fun getAssets(): AssetManager =
+        if (PluginManager.isInitialized) {
+            PluginManager.resourcesManager.getResources().assets
+        } else {
+            super.getAssets()
+        }
 }

@@ -686,18 +686,25 @@ val homePlugin: IPluginEntryClass? = PluginManager.getPluginInstance("com.exampl
 
 ### 3. Accessing Plugin Resources
 
-If needed, you can also directly access the `Resources` object of a specific plugin.
+`ComboLite` uses a **merged resource management** approach. When a plugin is loaded, all of its resources (layouts, drawables, strings, etc.) are dynamically merged into the host application's global `Resources` object. This means you don't need to worry about which plugin a resource comes from; you can access all loaded plugin resources transparently, just as you would with the host's own resources.
+
+Because the framework overrides the `Context`'s `getResources()` method, you can directly access the complete, merged resources in any `Context` environment (including an Activity, Service, or Compose's `LocalContext`).
 
 ```kotlin
-// Get the resource manager for the "com.example.home" plugin
-val pluginResources: Resources? = PluginManager.resourcesManager.getResources("com.example.home")
+// 1. In an Activity or Service, simply use the context directly
+val stringFromPlugin = context.getString(R.string.plugin_string_id)
+val drawableFromPlugin = ContextCompat.getDrawable(context, R.drawable.plugin_drawable_id)
 
-// Use the plugin's resource IDs to load resources
-val icon = pluginResources?.getDrawable(R.drawable.plugin_icon)
-val title = pluginResources?.getString(R.string.plugin_title)
+// 2. In Jetpack Compose, it is also completely transparent
+// @Composable
+// fun MyPluginComponent() {
+//     Text(text = stringResource(id = R.string.plugin_string_id))
+//     Image(
+//         painter = painterResource(id = R.drawable.plugin_drawable_id),
+//         contentDescription = null
+//     )
+// }
 ```
-
-For more usage examples, please refer to the sample plugin modules in the project.
 
 ## 🔧 The Four Major Components Usage
 
@@ -735,6 +742,26 @@ stop them transparently.
 context.startPluginService(MusicService::class.java)
 context.bindPluginService(MusicService::class.java, serviceConnection, Context.BIND_AUTO_CREATE)
 context.stopPluginService(MusicService::class.java)
+```
+
+#### Multi-instance Services
+
+A powerful feature of `ComboLite` is its support for a **service instance pool**. By providing a unique `instanceId` string when making a call, you can launch the same plugin `Service` class as multiple, isolated, and independently running instances. This is extremely useful for scenarios that require handling multiple independent tasks simultaneously, such as download management, timers, network connections, etc.
+
+```kotlin
+val downloadTask1Id = "task-001"
+val downloadTask2Id = "task-002"
+
+// Start two independent file download service instances
+context.startPluginService(DownloadService::class.java, instanceId = downloadTask1Id) {
+    putExtra("URL", "http://example.com/file1.zip")
+}
+context.startPluginService(DownloadService::class.java, instanceId = downloadTask2Id) {
+    putExtra("URL", "http://example.com/file2.zip")
+}
+
+// Independently stop one of the instances
+context.stopPluginService(DownloadService::class.java, instanceId = downloadTask1Id)
 ```
 
 ### BroadcastReceiver Usage

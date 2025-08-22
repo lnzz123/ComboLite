@@ -56,7 +56,7 @@ class ProxyManager(
 
     /**
      * 存储正在运行的插件 Service 与其占用的代理 Service 之间的映射关系。
-     * Key: 插件 Service 的完整类名。
+     * Key: 插件 Service 的唯一实例标识符 (例如："com.example.MyService:task1")
      * Value: 正在代理它的 HostService 的 Class 对象。
      */
     private val activeServiceProxies = ConcurrentHashMap<String, Class<out BaseHostService>>()
@@ -120,24 +120,24 @@ class ProxyManager(
      * 为一个插件 Service 请求一个可用的代理 Service。
      * 这是启动或绑定插件 Service 的第一步。此方法是线程安全的。
      *
-     * @param pluginServiceClassName 需要启动的插件 Service 的完整类名。
+     * @param instanceIdentifier 插件 Service 的实例标识符。
      * @return 一个可用的代理 Service 的 Class 对象；如果池已耗尽，则返回 null。
      */
-    fun acquireServiceProxy(pluginServiceClassName: String): Class<out BaseHostService>? {
+    fun acquireServiceProxy(instanceIdentifier: String): Class<out BaseHostService>? {
         synchronized(this.activeServiceProxies) {
-            val existingProxy = activeServiceProxies[pluginServiceClassName]
+            val existingProxy = activeServiceProxies[instanceIdentifier]
             if (existingProxy != null) {
-                Timber.d("插件 [$pluginServiceClassName] 已在运行，复用代理 [${existingProxy.simpleName}]")
+                Timber.d("插件实例 [$instanceIdentifier] 已在运行，复用代理 [${existingProxy.simpleName}]")
                 return existingProxy
             }
 
             val acquiredProxy = availableServiceProxies.poll()
             if (acquiredProxy != null) {
-                activeServiceProxies[pluginServiceClassName] = acquiredProxy
-                Timber.i("为插件 [$pluginServiceClassName] 分配了代理 [${acquiredProxy.simpleName}]。")
+                activeServiceProxies[instanceIdentifier] = acquiredProxy
+                Timber.i("为插件实例 [$instanceIdentifier] 分配了代理 [${acquiredProxy.simpleName}]。")
                 return acquiredProxy
             } else {
-                Timber.e("无法为插件 [$pluginServiceClassName] 分配代理，代理池已耗尽！")
+                Timber.e("无法为插件实例 [$instanceIdentifier] 分配代理，代理池已耗尽！")
                 return null
             }
         }
@@ -147,27 +147,42 @@ class ProxyManager(
      * 释放一个被插件 Service 占用的代理，使其返回到可用池中。
      * 此方法应该在代理 Service 的 onDestroy() 生命周期中被调用。此方法是线程安全的。
      *
-     * @param pluginServiceClassName 之前占用代理的插件 Service 的完整类名。
+     * @param instanceIdentifier 插件 Service 的实例标识符。
      */
-    fun releaseServiceProxy(pluginServiceClassName: String) {
+    fun releaseServiceProxy(instanceIdentifier: String) {
         synchronized(this.activeServiceProxies) {
-            val releasedProxy = activeServiceProxies.remove(pluginServiceClassName)
+            val releasedProxy = activeServiceProxies.remove(instanceIdentifier)
             if (releasedProxy != null) {
                 availableServiceProxies.add(releasedProxy)
-                Timber.i("代理 [${releasedProxy.simpleName}] 已被插件 [$pluginServiceClassName] 释放，返回池中。")
+                Timber.i("代理 [${releasedProxy.simpleName}] 已被插件实例 [$instanceIdentifier] 释放，返回池中。")
             }
         }
     }
 
     /**
-     * 根据插件 Service 的类名，查询其当前正在使用的代理 Service。
+     * 获取正在代理它的 HostService 的 Class 对象。
      * 主要用于 stopService 和 bindService 等需要目标 Intent 的操作。
      *
-     * @param pluginServiceClassName 插件 Service 的完整类名。
+     * @param instanceIdentifier 插件 Service 的实例标识符。
      * @return 正在代理它的 HostService 的 Class 对象；如果该插件未运行，则返回 null。
      */
-    fun getServiceProxyFor(pluginServiceClassName: String): Class<out BaseHostService>? =
-        activeServiceProxies[pluginServiceClassName]
+    fun getServiceProxyFor(instanceIdentifier: String): Class<out BaseHostService>? =
+        activeServiceProxies[instanceIdentifier]
+
+    /**
+     * 根据 Service 的类名，获取其所有正在运行的实例标识符。
+     *
+     * 这是解决 UI 状态与服务实际状态同步问题的关键。
+     * UI 可以在初始化时调用此方法，来恢复当前所有正在运行的服务实例的列表。
+     *
+     * @param serviceClassName 插件 Service 的完整类名。
+     * @return 一个包含所有正在运行的实例标识符的列表 (e.g., ["com.example.MyService:task1", "com.example.MyService:task2"])
+     */
+    fun getRunningInstancesFor(serviceClassName: String): List<String> {
+        return activeServiceProxies.keys.filter { instanceIdentifier ->
+            instanceIdentifier.startsWith(serviceClassName)
+        }
+    }
 
     /**
      * 注册一个插件的所有静态广播

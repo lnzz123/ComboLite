@@ -24,6 +24,7 @@ import android.content.ServiceConnection
 import android.os.Bundle
 import com.combo.core.ext.ExtConstant.PLUGIN_ACTIVITY_CLASS_NAME
 import com.combo.core.ext.ExtConstant.PLUGIN_SERVICE_CLASS_NAME
+import com.combo.core.ext.ExtConstant.PLUGIN_SERVICE_INSTANCE_ID
 import com.combo.core.interfaces.IPluginActivity
 import com.combo.core.interfaces.IPluginService
 import com.combo.core.manager.PluginManager
@@ -32,6 +33,11 @@ import timber.log.Timber
 internal object ExtConstant {
     const val PLUGIN_ACTIVITY_CLASS_NAME = "plugin_activity_class_name"
     const val PLUGIN_SERVICE_CLASS_NAME = "plugin_service_class_name"
+    const val PLUGIN_SERVICE_INSTANCE_ID = "plugin_service_instance_id"
+}
+
+private fun generateInstanceId(className: String, instanceId: String?): String {
+    return if (instanceId.isNullOrEmpty()) className else "$className:$instanceId"
 }
 
 /**
@@ -42,7 +48,6 @@ fun Intent.getPluginActivity(): IPluginActivity? =
     getStringExtra(PLUGIN_ACTIVITY_CLASS_NAME)?.let {
         PluginManager.getInterface(IPluginActivity::class.java, it)
     }
-
 
 /**
  * 跳转插件Activity
@@ -81,19 +86,23 @@ fun Intent.getPluginService(): IPluginService? =
 /**
  * 启动一个插件Service
  * @param cls 插件Service的Class
+ * @param instanceId 可选的字符串，用于标识插件Service的实例。
  * @param block 一个可选的 Lambda 表达式，用于对 Intent 进行额外配置。
  */
 fun Context.startPluginService(
     cls: Class<out IPluginService>,
+    instanceId: String? = null, // 新增参数
     block: (Intent.() -> Unit)? = null
 ) {
-    val hostServiceClass = PluginManager.proxyManager.acquireServiceProxy(cls.name)
+    val instanceIdentifier = generateInstanceId(cls.name, instanceId)
+    val hostServiceClass = PluginManager.proxyManager.acquireServiceProxy(instanceIdentifier)
     if (hostServiceClass == null) {
-        Timber.e("启动失败 [${cls.name}]：Service服务繁忙或未找到类。")
+        Timber.e("启动失败 [$instanceIdentifier]：Service服务繁忙或未找到类。")
         return
     }
     val intent = Intent(this, hostServiceClass).apply {
         putExtra(PLUGIN_SERVICE_CLASS_NAME, cls.name)
+        putExtra(PLUGIN_SERVICE_INSTANCE_ID, instanceIdentifier)
         block?.invoke(this)
     }
     startService(intent)
@@ -102,23 +111,27 @@ fun Context.startPluginService(
 /**
  * 绑定到一个插件Service
  * @param cls 插件Service的Class
+ * @param instanceId 可选的字符串，用于标识插件Service的实例。
  * @param connection ServiceConnection回调
  * @param flags 绑定标志
  * @param block 一个可选的 Lambda 表达式，用于对 Intent 进行额外配置。
  */
 fun Context.bindPluginService(
     cls: Class<out IPluginService>,
+    instanceId: String? = null,
     connection: ServiceConnection,
     flags: Int,
     block: (Intent.() -> Unit)? = null
 ): Boolean {
-    val hostServiceClass = PluginManager.proxyManager.acquireServiceProxy(cls.name)
+    val instanceIdentifier = generateInstanceId(cls.name, instanceId)
+    val hostServiceClass = PluginManager.proxyManager.acquireServiceProxy(instanceIdentifier)
     if (hostServiceClass == null) {
         Timber.e("绑定失败 [${cls.name}]：Service服务繁忙或未找到类。")
         return false
     }
     val intent = Intent(this, hostServiceClass).apply {
         putExtra(PLUGIN_SERVICE_CLASS_NAME, cls.name)
+        putExtra(PLUGIN_SERVICE_INSTANCE_ID, instanceIdentifier)
         block?.invoke(this)
     }
     return bindService(intent, connection, flags)
@@ -127,19 +140,23 @@ fun Context.bindPluginService(
 /**
  * 停止一个插件Service
  * @param cls 插件Service的Class
+ * @param instanceId 可选的字符串，用于标识插件Service的实例。
  * @param block 一个可选的 Lambda 表达式，用于对 Intent 进行额外配置。
  */
 fun Context.stopPluginService(
     cls: Class<out IPluginService>,
+    instanceId: String? = null,
     block: (Intent.() -> Unit)? = null
 ): Boolean {
-    val hostServiceClass = PluginManager.proxyManager.getServiceProxyFor(cls.name)
+    val instanceIdentifier = generateInstanceId(cls.name, instanceId)
+    val hostServiceClass = PluginManager.proxyManager.getServiceProxyFor(instanceIdentifier)
     if (hostServiceClass == null) {
         Timber.w("插件服务未在运行: ${cls.name}")
         return false
     }
     val intent = Intent(this, hostServiceClass).apply {
         putExtra(PLUGIN_SERVICE_CLASS_NAME, cls.name)
+        putExtra(PLUGIN_SERVICE_INSTANCE_ID, instanceIdentifier)
         block?.invoke(this)
     }
     return stopService(intent)

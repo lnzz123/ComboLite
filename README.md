@@ -613,15 +613,24 @@ val homePlugin: IPluginEntryClass? = PluginManager.getPluginInstance("com.exampl
 
 ### 3. 访问插件资源
 
-如果需要，你也可以直接访问某个特定插件的 `Resources` 对象。
+`ComboLite` 采用**合并式资源管理**。当插件被加载时，它的所有资源（layouts, drawables, strings 等）会被动态地合并到宿主应用的全局 `Resources` 对象中。这意味着你无需关心资源来自哪个插件，可以像访问宿主自身资源一样，透明地访问所有已加载插件的资源。
+
+由于框架重写了 `Context` 的 `getResources()` 方法，所以在任何 `Context` 环境下（包括 Activity、Service、Compose 的 `LocalContext`）都能直接访问到合并后的完整资源。
 
 ```kotlin
-// 获取 "com.example.home" 插件的资源管理器
-val pluginResources: Resources? = PluginManager.resourcesManager.getResources("com.example.home")
+// 1. 在 Activity 或 Service 中，直接使用 context 即可
+val stringFromPlugin = context.getString(R.string.plugin_string_id)
+val drawableFromPlugin = ContextCompat.getDrawable(context, R.drawable.plugin_drawable_id)
 
-// 使用插件的资源 ID 来加载资源
-val icon = pluginResources?.getDrawable(R.drawable.plugin_icon)
-val title = pluginResources?.getString(R.string.plugin_title)
+// 2. 在 Jetpack Compose 中，也是完全透明的
+// @Composable
+// fun MyPluginComponent() {
+//     Text(text = stringResource(id = R.string.plugin_string_id))
+//     Image(
+//         painter = painterResource(id = R.drawable.plugin_drawable_id),
+//         contentDescription = null
+//     )
+// }
 ```
 
 更多用法请参考sample项目插件示例模块
@@ -662,6 +671,26 @@ class MusicService : BasePluginService() { /* ... */ }
 context.startPluginService(MusicService::class.java)
 context.bindPluginService(MusicService::class.java, serviceConnection, Context.BIND_AUTO_CREATE)
 context.stopPluginService(MusicService::class.java)
+```
+
+#### 多实例服务 (Multi-instance Services)
+
+`ComboLite` 的一个强大特性是支持**服务实例池**。通过在调用时提供一个唯一的 `instanceId` 字符串，你可以将同一个插件 `Service` 类启动为多个相互隔离、独立运行的实例。这对于需要同时处理多个独立任务（如下载管理、计时器、网络连接等）的场景非常有用。
+
+```kotlin
+val downloadTask1Id = "task-001"
+val downloadTask2Id = "task-002"
+
+// 启动两个独立的文件下载服务实例
+context.startPluginService(DownloadService::class.java, instanceId = downloadTask1Id) {
+    putExtra("URL", "[http://example.com/file1.zip](http://example.com/file1.zip)")
+}
+context.startPluginService(DownloadService::class.java, instanceId = downloadTask2Id) {
+    putExtra("URL", "[http://example.com/file2.zip](http://example.com/file2.zip)")
+}
+
+// 独立地停止其中一个实例
+context.stopPluginService(DownloadService::class.java, instanceId = downloadTask1Id)
 ```
 
 ### BroadcastReceiver 用法
