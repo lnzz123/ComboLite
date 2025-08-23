@@ -15,7 +15,6 @@
   ~  * limitations under the License.
   ~  */
   -->
-
 <resources>
-    <string name="app_name">ComposePluginSample</string>
+    <string name="app_name">ComboLiteSample</string>
 </resources>

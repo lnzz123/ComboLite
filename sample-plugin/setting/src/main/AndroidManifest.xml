@@ -28,7 +28,7 @@
             android:value="1.0.0" />
         <meta-data
             android:name="plugin.description"
-            android:value="APP设置模块，负责管理所有插件相关设置" />
+            android:value="设置模块插件，加载所有已安装的插件列表，负责管理所有插件相关设置，可以设置插件启用状态、手动开启/关闭插件、卸载插件" />
         <meta-data
             android:name="plugin.entryClass"
             android:value="com.combo.plugin.sample.setting.PluginEntryClass" />

@@ -25,10 +25,10 @@
             android:value="common" />
         <meta-data
             android:name="plugin.version"
-            android:value="1.0.1" />
+            android:value="1.0.0" />
         <meta-data
             android:name="plugin.description"
-            android:value="这是一个示例插件，支持中文。" />
+            android:value="公共模块插件，提供各个插件的公共功能、资源，如BaseViewModel、ComposeNavigator导航、各种utils工具类等等" />
         <meta-data
             android:name="plugin.entryClass"
             android:value="com.combo.plugin.sample.common.PluginEntryClass" />

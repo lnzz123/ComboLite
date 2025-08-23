@@ -19,7 +19,6 @@
 package com.combo.plugin.sample.example
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import com.combo.core.interfaces.IPluginEntryClass
 import com.combo.core.model.PluginContext
 import com.combo.plugin.sample.example.di.diModule

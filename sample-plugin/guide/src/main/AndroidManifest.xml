@@ -28,7 +28,7 @@
             android:value="1.0.0" />
         <meta-data
             android:name="plugin.description"
-            android:value="ComboLite插件使用向导" />
+            android:value="ComboLite插件使用向导，提供插件化框架基础介绍" />
         <meta-data
             android:name="plugin.entryClass"
             android:value="com.combo.plugin.sample.guide.PluginEntryClass" />

@@ -19,29 +19,18 @@
 package com.combo.plugin.sample.setting.screen
 
 import android.widget.Toast
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -53,8 +42,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
+import com.combo.core.manager.PluginManager
+import com.combo.plugin.sample.setting.component.InfoCard
 import com.combo.plugin.sample.setting.component.PluginCard
 import com.combo.plugin.sample.setting.viewmodel.SettingViewModel
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 /**
@@ -68,6 +61,10 @@ fun SettingMainScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+
+    // 从 PluginManager 收集已加载插件的 Flow，以实时获取运行状态
+    val loadedPlugins by PluginManager.loadedPluginsFlow.collectAsState()
+
     val pullRefreshState = rememberPullRefreshState(
         refreshing = state.isLoading,
         onRefresh = { viewModel.refreshPlugins() }
@@ -76,12 +73,7 @@ fun SettingMainScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "插件管理",
-                        fontWeight = FontWeight.Bold,
-                    )
-                },
+                title = { Text("插件管理", fontWeight = FontWeight.Bold) },
             )
         },
     ) { paddingValues ->
@@ -98,48 +90,30 @@ fun SettingMainScreen(
             ) {
                 // 顶部信息卡片
                 item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(
-                                onClick = {
-                                    viewModel.refreshPlugins()
-                                    Toast.makeText(
-                                        context,
-                                        "刷新插件列表:${state.installedPlugins}",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            ),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Info,
-                                contentDescription = "信息",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "当前共安装了 ${state.installedPlugins.size} 个插件。",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                    InfoCard(pluginCount = state.installedPlugins.size) {
+                        viewModel.refreshPlugins()
+                        Toast.makeText(context, "刷新插件列表", Toast.LENGTH_SHORT).show()
                     }
                 }
 
                 // 插件列表
-                items(state.installedPlugins) { plugin ->
+                items(state.installedPlugins, key = { it.pluginId }) { plugin ->
+                    val isRunning = loadedPlugins.containsKey(plugin.pluginId)
                     PluginCard(
                         plugin = plugin,
-                        onEnableChange = {
-                            viewModel.setPluginEnabled(plugin.pluginId, it)
+                        isRunning = isRunning,
+                        onEnableChange = { isEnabled ->
+                            viewModel.setPluginEnabled(plugin.pluginId, isEnabled)
+                        },
+                        onLaunch = {
+                            viewModel.viewModelScope.launch {
+                                PluginManager.launchPlugin(plugin.pluginId)
+                            }
+                        },
+                        onClose = {
+                            viewModel.viewModelScope.launch {
+                                PluginManager.unloadPlugin(plugin.pluginId)
+                            }
                         },
                         onUninstall = {
                             viewModel.uninstallPlugin(plugin.pluginId)
