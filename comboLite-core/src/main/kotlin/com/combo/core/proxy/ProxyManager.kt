@@ -226,6 +226,7 @@ class ProxyManager(
      */
     fun findReceiversForIntent(intent: Intent): List<Pair<String, StaticReceiverInfo>> {
         val matchedReceivers = mutableListOf<Pair<String, StaticReceiverInfo>>()
+        Timber.d("查找静态广播接收器: ${intent.action}, staticReceiverRegistry:$staticReceiverRegistry")
         val action = intent.action ?: return emptyList()
 
         // 如果 intent 的 package 与宿主包名相同，我们视其为内部广播。

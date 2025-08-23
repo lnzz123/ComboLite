@@ -36,4 +36,6 @@ sealed interface AppScreen {
     @Serializable
     data object PluginActivity : AppScreen
 
+    @Serializable
+    data object BroadcastReceiver : AppScreen
 }

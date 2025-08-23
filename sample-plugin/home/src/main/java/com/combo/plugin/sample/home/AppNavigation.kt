@@ -24,6 +24,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.combo.plugin.sample.common.navigation.AppScreen
 import com.combo.plugin.sample.example.screen.ActivityScreen
+import com.combo.plugin.sample.example.screen.BroadcastReceiverScreen
 import com.combo.plugin.sample.example.screen.ServiceScreen
 import com.combo.plugin.sample.home.screen.HomeScreen
 
@@ -47,6 +48,10 @@ fun NavGraphBuilder.appNavigation(sharedTransitionScope: SharedTransitionScope) 
 
         composable<AppScreen.PluginService> {
             ServiceScreen()
+        }
+
+        composable<AppScreen.BroadcastReceiver> {
+            BroadcastReceiverScreen()
         }
     }
 }

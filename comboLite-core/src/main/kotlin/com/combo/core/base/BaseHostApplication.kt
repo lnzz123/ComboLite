@@ -39,9 +39,7 @@ open class BaseHostApplication : Application() {
         super.onCreate()
         PluginCrashHandler.initialize(this)
         PluginManager.initialize(this) {
-            CoroutineScope(Dispatchers.Default).launch {
-                PluginManager.loadEnabledPlugins()
-            }
+            PluginManager.loadEnabledPlugins()
         }
     }
 

@@ -19,8 +19,10 @@
 package com.combo.plugin.sample.example
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import com.combo.core.interfaces.IPluginEntryClass
 import com.combo.plugin.sample.example.di.diModule
+import com.combo.plugin.sample.example.receiver.NotificationUtil
 import com.combo.plugin.sample.example.screen.ExampleMainScreen
 import org.koin.core.module.Module
 
@@ -32,6 +34,8 @@ class PluginEntryClass : IPluginEntryClass {
 
     @Composable
     override fun Content() {
+        val context = LocalContext.current
+        NotificationUtil.createChannels(context)
         ExampleMainScreen()
     }
 }

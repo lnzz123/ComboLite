@@ -65,9 +65,7 @@ open class BaseHostProvider : ContentProvider() {
             }
             val application = appContext as Application
             PluginManager.initialize(application) {
-                CoroutineScope(Dispatchers.Default).launch {
-                    PluginManager.loadEnabledPlugins()
-                }
+                PluginManager.loadEnabledPlugins()
             }
         }
 
