@@ -26,6 +26,7 @@ import com.combo.core.interfaces.IPluginEntryClass
 import com.combo.core.loader.DependencyManager
 import com.combo.core.loader.IPluginStateProvider
 import com.combo.core.loader.PluginClassLoader
+import com.combo.core.model.PluginContext
 import com.combo.core.model.PluginInfo
 import com.combo.core.proxy.ProxyManager
 import com.combo.core.resources.PluginResourcesManager
@@ -191,7 +192,7 @@ object PluginManager : IPluginStateProvider {
     data class LoadedPluginInfo(
         val pluginInfo: PluginInfo,
         val classLoader: PluginClassLoader,
-        val runtimeCacheFile: File? = null, // 运行时缓存文件路径
+        val runtimeCacheFile: File? = null,
     )
 
     /**
@@ -574,8 +575,8 @@ object PluginManager : IPluginStateProvider {
     /**
      * 实例化单个插件的入口类
      */
-    private fun instantiatePlugin(loadedPlugin: LoadedPluginInfo): IPluginEntryClass? =
-        try {
+    private fun instantiatePlugin(loadedPlugin: LoadedPluginInfo): IPluginEntryClass? {
+        return try {
             val plugin = loadedPlugin.pluginInfo
             val classLoader = loadedPlugin.classLoader
 
@@ -586,6 +587,17 @@ object PluginManager : IPluginStateProvider {
                 Timber
                     .tag(TAG)
                     .d("插件入口类实例化成功: ${plugin.pluginId} -> ${plugin.entryClass}")
+                try {
+                    val pluginContext = PluginContext(
+                        application = this.context,
+                        pluginInfo = plugin
+                    )
+                    instance.onLoad(pluginContext)
+                    Timber.tag(TAG).d("插件 [${plugin.pluginId}] onLoad() Success。")
+                } catch (e: Exception) {
+                    Timber.tag(TAG).e(e, "插件 [${plugin.pluginId}] onLoad() Failed。")
+                    return null
+                }
                 instance
             } else {
                 Timber
@@ -599,6 +611,7 @@ object PluginManager : IPluginStateProvider {
                 .e(e, "实例化插件 ${loadedPlugin.pluginInfo.pluginId} 入口类失败: ${e.message}")
             null
         }
+    }
 
     /**
      * 加载插件的Koin模块
@@ -655,6 +668,17 @@ object PluginManager : IPluginStateProvider {
         }
 
         Timber.tag(TAG).i("开始卸载插件: $pluginId")
+
+        val instanceToUnload = _pluginInstances.value[pluginId]
+
+        if (instanceToUnload != null) {
+            try {
+                instanceToUnload.onUnload()
+                Timber.tag(TAG).d("插件 [$pluginId] onUnload() Success。")
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "插件 [$pluginId] onUnload() Failed。")
+            }
+        }
 
         // 1. 卸载Koin模块
         _pluginInstances.value[pluginId]?.let { unloadKoinModules(pluginId, it) }

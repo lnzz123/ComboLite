@@ -16,29 +16,16 @@
  *
  */
 
-package com.combo.plugin.sample.setting
+package com.combo.core.model
 
-import androidx.compose.runtime.Composable
-import com.combo.core.interfaces.IPluginEntryClass
-import com.combo.core.model.PluginContext
-import com.combo.plugin.sample.setting.di.diModule
-import com.combo.plugin.sample.setting.screen.SettingMainScreen
-import org.koin.core.module.Module
+import android.app.Application
 
-class PluginEntryClass : IPluginEntryClass {
-    override val pluginModule: List<Module>
-        get() = listOf(
-            diModule
-        )
-
-    @Composable
-    override fun Content() {
-        SettingMainScreen()
-    }
-
-    override fun onLoad(context: PluginContext) {
-    }
-
-    override fun onUnload() {
-    }
-}
+/**
+ * 插件上下文环境
+ * @property application 宿主Application实例
+ * @property pluginInfo 当前插件的元数据信息
+ */
+data class PluginContext(
+    val application: Application,
+    val pluginInfo: PluginInfo
+)

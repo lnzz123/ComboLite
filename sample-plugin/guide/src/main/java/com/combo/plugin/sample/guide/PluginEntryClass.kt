@@ -20,6 +20,7 @@ package com.combo.plugin.sample.guide
 
 import androidx.compose.runtime.Composable
 import com.combo.core.interfaces.IPluginEntryClass
+import com.combo.core.model.PluginContext
 import org.koin.core.module.Module
 
 class PluginEntryClass : IPluginEntryClass {
@@ -29,5 +30,11 @@ class PluginEntryClass : IPluginEntryClass {
     @Composable
     override fun Content() {
         GuideMainScreen()
+    }
+
+    override fun onLoad(context: PluginContext) {
+    }
+
+    override fun onUnload() {
     }
 }

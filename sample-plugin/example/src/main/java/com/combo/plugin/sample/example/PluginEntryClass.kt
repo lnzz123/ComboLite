@@ -21,6 +21,7 @@ package com.combo.plugin.sample.example
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import com.combo.core.interfaces.IPluginEntryClass
+import com.combo.core.model.PluginContext
 import com.combo.plugin.sample.example.di.diModule
 import com.combo.plugin.sample.example.receiver.NotificationUtil
 import com.combo.plugin.sample.example.screen.ExampleMainScreen
@@ -34,8 +35,13 @@ class PluginEntryClass : IPluginEntryClass {
 
     @Composable
     override fun Content() {
-        val context = LocalContext.current
-        NotificationUtil.createChannels(context)
         ExampleMainScreen()
+    }
+
+    override fun onLoad(context: PluginContext) {
+        NotificationUtil.createChannels(context.application)
+    }
+
+    override fun onUnload() {
     }
 }

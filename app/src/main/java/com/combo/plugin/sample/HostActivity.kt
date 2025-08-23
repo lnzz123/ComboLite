@@ -36,7 +36,6 @@ class HostActivity : BaseHostActivity() {
                 val resources by PluginManager.resourcesManager.mResourcesFlow.collectAsState()
                 key(resources) {
                     LoadingScreen()
-                    //GuideMainScreen()
                 }
             }
         }

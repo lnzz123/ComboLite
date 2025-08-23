@@ -21,6 +21,7 @@ package com.combo.plugin.sample.home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import com.combo.core.interfaces.IPluginEntryClass
+import com.combo.core.model.PluginContext
 import com.combo.plugin.sample.common.navigation.IHubComposeNavigator
 import com.combo.plugin.sample.common.navigation.LocalComposeNavigator
 import com.combo.plugin.sample.home.di.diModule
@@ -45,19 +46,20 @@ class PluginEntryClass : IPluginEntryClass {
 
     @Composable
     override fun Content() {
-        ComposeContent()
+        val composeNavigator: IHubComposeNavigator by inject(
+            clazz = IHubComposeNavigator::class.java,
+        )
+
+        CompositionLocalProvider(
+            LocalComposeNavigator provides composeNavigator,
+        ) {
+            AppMain(composeNavigator = composeNavigator)
+        }
     }
-}
 
-@Composable
-fun ComposeContent() {
-    val composeNavigator: IHubComposeNavigator by inject(
-        clazz = IHubComposeNavigator::class.java,
-    )
+    override fun onLoad(context: PluginContext) {
+    }
 
-    CompositionLocalProvider(
-        LocalComposeNavigator provides composeNavigator,
-    ) {
-        AppMain(composeNavigator = composeNavigator)
+    override fun onUnload() {
     }
 }

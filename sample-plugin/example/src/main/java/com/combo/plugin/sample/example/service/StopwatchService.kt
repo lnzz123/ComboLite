@@ -24,7 +24,6 @@ import android.app.NotificationManager
 import android.app.Service.START_NOT_STICKY
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -189,12 +188,6 @@ class StopwatchService : BasePluginService() {
         val iconResId = R.drawable.ic_timer
 
         val builder = NotificationCompat.Builder(proxyService!!, CHANNEL_ID)
-            .setLargeIcon(
-                BitmapFactory.decodeResource(
-                    proxyService?.resources,
-                    com.combo.plugin.sample.common.R.drawable.ic_icon
-                )
-            )
             .setContentTitle("插件秒表服务 [#$instanceId]")
             .setContentText(contentText)
             .setWhen(creationTime)

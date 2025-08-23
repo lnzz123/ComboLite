@@ -266,30 +266,51 @@ class MainApplication : Application() {
 
 ## 🔌 Creating Your First Plugin
 
-A plugin can be a standalone `com.android.library` or `com.android.application` module.
+A plugin can be an independent `com.android.library` or `com.android.application` module.
 
 #### a. Implement the Plugin Entry
 
-Create a class and implement the `IPluginEntryClass` interface.
+Create a class and implement the `IPluginEntryClass` interface. This is the core of the interaction between the plugin and the framework.
 
 ```kotlin
 class HomePluginEntry : IPluginEntryClass {
 
-    // (Optional) Define this plugin's Koin dependency injection modules
+    // 1. (Optional) Declare the Koin dependency injection modules provided by this plugin
     override val pluginModule: List<Module>
         get() = listOf(
             module {
-                viewModel { HomeViewModel() }
-                single<IUserService> { UserServiceImpl() }
+                // viewModel { HomeViewModel() }
+                // single<IUserService> { UserServiceImpl() }
             }
         )
+    
+    /**
+     * 2. Implement the onLoad lifecycle callback
+     * This method is called after the plugin is loaded by the framework.
+     * It is the best place to perform all initialization logic.
+     */
+    override fun onLoad(context: PluginContext) {
+        println("Plugin [${context.pluginInfo.pluginId}] loaded, performing initialization...")
+        // Initialize database, network, global listeners, etc., here.
+    }
 
-    // Define the plugin's main UI or place some plugin initialization work,
-    // even if this screen is not displayed, the method will still be called,
-    // similar to Application's onCreate
+    /**
+     * 3. Implement the onUnload lifecycle callback
+     * This method is called before the plugin is unloaded by the framework.
+     * It is the best place to perform all resource cleanup tasks.
+     */
+    override fun onUnload() {
+        println("Plugin unloaded, performing resource cleanup...")
+        // Close database connections, unregister listeners, etc., here.
+    }
+
+    /**
+     * 4. Implement the Content method to provide the plugin's UI entry point
+     * This method is specifically for defining and returning the plugin's Jetpack Compose UI.
+     */
     @Composable
     override fun Content() {
-        // Your Jetpack Compose screen
+        // Your Jetpack Compose UI
         HomeScreen()
     }
 }
@@ -297,11 +318,9 @@ class HomePluginEntry : IPluginEntryClass {
 
 #### b. Declare the Plugin in `AndroidManifest.xml`
 
-In the plugin module's `AndroidManifest.xml`, declare the plugin information using `<meta-data>`
-tags.
+In your plugin module's `AndroidManifest.xml`, declare the plugin information using `<meta-data>` tags.
 
 ```xml
-
 <manifest>
     <application>
         <meta-data android:name="plugin.id" android:value="com.example.home" />
@@ -313,8 +332,7 @@ tags.
 </manifest>
 ```
 
-You're done! Now just package the plugin into an APK, and you can install and launch it via the
-`PluginManager`.
+You're all set\! Now you just need to package the plugin into an APK, and it can be installed and launched via the `PluginManager`.
 
 -----
 
@@ -775,20 +793,114 @@ context.startPluginService(DownloadService::class.java, instanceId = downloadTas
 context.stopPluginService(DownloadService::class.java, instanceId = downloadTask1Id)
 ```
 
+Of course, here is the English translation of the `BroadcastReceiver` usage documentation.
+
+-----
+
 ### BroadcastReceiver Usage
 
-Define a Receiver in your plugin by implementing the `IPluginReceiver` interface.
+`ComboLite` provides full support for both **dynamic and static broadcasts** through a proxy model, allowing plugins to respond to system and application events just like a native app.
+
+#### 1\. Dynamic BroadcastReceiver
+
+Dynamic broadcasts in plugins are identical to the native development experience, suitable for handling events related to the UI lifecycle.
+
+**a. Create the Receiver in the plugin**
 
 ```kotlin
-class DownloadReceiver : IPluginReceiver { /* ... */ }
+// MyDynamicReceiver.kt in plugin
+class MyDynamicReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        // Handle the broadcast...
+    }
+}
 ```
 
-Send a broadcast via `sendInternalBroadcast`, and the framework will automatically route it to
-registered plugin receivers.
+**b. Register and Unregister Dynamically in the UI**
+It is recommended to use `DisposableEffect` within a Composable for lifecycle-safe registration and unregistration.
 
 ```kotlin
-context.sendInternalBroadcast("com.example.DOWNLOAD_COMPLETE") {
-    putExtra("FILE_PATH", "/path/to/file")
+// Inside a Composable function
+val context = LocalContext.current
+DisposableEffect(context) {
+    val receiver = MyDynamicReceiver()
+    val filter = IntentFilter("MY_CUSTOM_DYNAMIC_ACTION")
+    // For modern Android, specify RECEIVER_NOT_EXPORTED for security
+    ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+
+    // onDispose will be called when the Composable leaves the composition
+    onDispose {
+        context.unregisterReceiver(receiver)
+    }
+}
+```
+
+#### 2\. Static BroadcastReceiver - Core Feature
+
+This is one of the framework's core capabilities, allowing plugins to respond to system-level broadcasts (like boot completion, network changes), even when the app is in the background. This is achieved through a "Plugin Declaration + Host Proxy" model.
+
+**Step 1: Implement `IPluginReceiver` in the plugin**
+The plugin's static broadcast receiver needs to implement the `IPluginReceiver` interface provided by the framework.
+
+```kotlin
+// MyStaticReceiver.kt in plugin
+class MyStaticReceiver : IPluginReceiver {
+    override fun onReceive(context: Context, intent: Intent) {
+        // Handle BOOT_COMPLETED broadcast...
+    }
+}
+```
+
+**Step 2: Declare in the plugin's `AndroidManifest.xml`**
+Just like a native app, declare your receiver and its `intent-filter` in the plugin's `AndroidManifest.xml`. The framework will automatically parse and register them when the plugin is loaded.
+
+```xml
+<application>
+    <receiver
+        android:name=".receiver.MyStaticReceiver"
+        android:enabled="true"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.BOOT_COMPLETED" />
+        </intent-filter>
+    </receiver>
+</application>
+```
+
+**Step 3: Configure the Proxy `Receiver` in the Host**
+The host needs a "master switchboard" to receive all broadcasts that might be intended for plugins.
+
+a. Create an empty class that inherits from `BaseHostReceiver`:
+
+```kotlin
+// HostReceiver.kt in host app
+class HostReceiver : BaseHostReceiver() {
+    // No additional logic is needed here.
+}
+```
+
+b. Register this proxy in the **host's `AndroidManifest.xml`** and configure it with a broad `intent-filter` to catch all broadcasts that your plugins might be interested in.
+
+```xml
+<application>
+    <receiver
+        android:name=".HostReceiver"
+        android:enabled="true"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+    </receiver>
+</application>
+```
+
+#### Sending Broadcasts
+
+For security and efficiency, the framework provides the `sendInternalBroadcast` extension function to send in-app broadcasts, which can be received by both dynamic and static receivers.
+
+```kotlin
+context.sendInternalBroadcast("com.example.MY_CUSTOM_STATIC_ACTION") {
+    putExtra("data", "Some data")
 }
 ```
 

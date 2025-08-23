@@ -21,6 +21,7 @@ package com.combo.plugin.sample.common
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import com.combo.core.interfaces.IPluginEntryClass
+import com.combo.core.model.PluginContext
 import com.combo.plugin.sample.common.di.navigationModule
 import org.koin.core.module.Module
 
@@ -33,5 +34,11 @@ class PluginEntryClass : IPluginEntryClass {
 
     @Composable
     override fun Content() {
+    }
+
+    override fun onLoad(context: PluginContext) {
+    }
+
+    override fun onUnload() {
     }
 }

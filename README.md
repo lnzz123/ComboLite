@@ -234,26 +234,47 @@ class MainApplication : Application() {
 
 #### a. 实现插件入口
 
-创建一个类并实现 `IPluginEntryClass` 接口。
+创建一个类并实现 `IPluginEntryClass` 接口。这是插件与框架交互的核心。
 
 ```kotlin
 class HomePluginEntry : IPluginEntryClass {
 
-    // (可选) 定义此插件的 Koin 依赖注入模块
+    // 1. (可选) 声明此插件提供的 Koin 依赖注入模块
     override val pluginModule: List<Module>
         get() = listOf(
             module {
-                viewModel { HomeViewModel() }
-                single<IUserService> { UserServiceImpl() }
+                // viewModel { HomeViewModel() }
+                // single<IUserService> { UserServiceImpl() }
             }
         )
+    
+    /**
+     * 2. 实现 onLoad 生命周期回调
+     * 当插件被框架加载后，此方法会被调用。
+     * 这是执行所有初始化逻辑的最佳位置。
+     */
+    override fun onLoad(context: PluginContext) {
+        println("插件 [${context.pluginInfo.pluginId}] 已加载，执行初始化...")
+        // 在这里进行数据库、网络、全局监听器等的初始化
+    }
 
-    // 定义插件的主界面或者放一些插件的初始化工作,
-    // 即使该页面没有显示,也会调用该方法,
-    // 类似Application的onCreate
+    /**
+     * 3. 实现 onUnload 生命周期回调
+     * 当插件被框架卸载前，此方法会被调用。
+     * 这是执行所有资源清理工作的最佳位置。
+     */
+    override fun onUnload() {
+        println("插件被卸载，执行资源清理...")
+        // 在这里关闭数据库连接、注销监听器等
+    }
+
+    /**
+     * 4. 实现 Content 方法，提供插件的 UI 入口
+     * 这个方法专门用于定义和返回插件的 Jetpack Compose 界面。
+     */
     @Composable
     override fun Content() {
-        // 你的 Jetpack Compose 屏幕
+        // 你的 Jetpack Compose 界面
         HomeScreen()
     }
 }
@@ -264,16 +285,14 @@ class HomePluginEntry : IPluginEntryClass {
 在插件模块的 `AndroidManifest.xml` 中，通过 `<meta-data>` 标签声明插件信息。
 
 ```xml
-
 <manifest>
-    <application>
-        <meta-data android:name="plugin.id" android:value="com.example.home" />
-        <meta-data android:name="plugin.version" android:value="1.0.0" />
-        <meta-data android:name="plugin.entryClass"
+  <application>
+    <meta-data android:name="plugin.id" android:value="com.example.home" />
+    <meta-data android:name="plugin.version" android:value="1.0.0" />
+    <meta-data android:name="plugin.entryClass"
             android:value="com.example.home.HomePluginEntry" />
-        <meta-data android:name="plugin.description" android:value="Home screen plugin" />
-
-    </application>
+    <meta-data android:name="plugin.description" android:value="Home screen plugin" />
+  </application>
 </manifest>
 ```
 
@@ -699,19 +718,111 @@ context.stopPluginService(DownloadService::class.java, instanceId = downloadTask
 
 ### BroadcastReceiver 用法
 
-在插件中定义 Receiver，实现 `IPluginReceiver` 接口。
+`ComboLite` 通过代理模型，完美支持**动态广播**和**静态广播**，让插件可以像原生应用一样响应系统和应用事件。
+
+#### 1\. 动态广播接收器 (Dynamic BroadcastReceiver)
+
+插件中的动态广播与原生开发体验完全一致，适用于处理与UI生命周期相关的事件。
+
+**a. 在插件中创建 Receiver**
 
 ```kotlin
-class DownloadReceiver : IPluginReceiver { /* ... */ }
-```
-
-通过 `sendInternalBroadcast` 发送广播，框架会自动将其路由到已注册的插件接收器。
-
-```kotlin
-context.sendInternalBroadcast("com.example.DOWNLOAD_COMPLETE") {
-    putExtra("FILE_PATH", "/path/to/file")
+// MyDynamicReceiver.kt in plugin
+class MyDynamicReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        // Handle the broadcast...
+    }
 }
 ```
+
+**b. 在 UI 中动态注册与注销**
+推荐在 Composable 中使用 `DisposableEffect` 来实现生命周期安全的注册和注销。
+
+```kotlin
+// Inside a Composable function
+val context = LocalContext.current
+DisposableEffect(context) {
+    val receiver = MyDynamicReceiver()
+    val filter = IntentFilter("MY_CUSTOM_DYNAMIC_ACTION")
+    // For modern Android, specify RECEIVER_NOT_EXPORTED for security
+    ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+
+    // onDispose will be called when the Composable leaves the composition
+    onDispose {
+        context.unregisterReceiver(receiver)
+    }
+}
+```
+
+#### 2\. 静态广播接收器 (Static BroadcastReceiver) - 核心功能
+
+这是框架的核心能力之一，它允许插件响应系统级的广播（如开机、网络变化），即使应用处于后台。这通过“插件声明 + 宿主代理”的模式实现。
+
+**步骤 1：在插件中实现 `IPluginReceiver`**
+插件的静态广播接收器需要实现框架提供的 `IPluginReceiver` 接口。
+
+```kotlin
+// MyStaticReceiver.kt in plugin
+class MyStaticReceiver : IPluginReceiver {
+    override fun onReceive(context: Context, intent: Intent) {
+        // Handle BOOT_COMPLETED broadcast...
+    }
+}
+```
+
+**步骤 2：在插件的 `AndroidManifest.xml` 中声明**
+和原生应用一样，在插件的 `AndroidManifest.xml` 中声明你的 Receiver 和它感兴趣的 `intent-filter`。框架会在插件加载时自动解析并注册它们。
+
+```xml
+<application>
+    <receiver
+        android:name=".receiver.MyStaticReceiver"
+        android:enabled="true"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.BOOT_COMPLETED" />
+        </intent-filter>
+    </receiver>
+</application>
+```
+
+**步骤 3：在宿主中配置代理 `Receiver`**
+宿主需要一个“总接线员”来接收所有可能发往插件的广播。
+
+a. 创建一个继承自 `BaseHostReceiver` 的空类：
+
+```kotlin
+// HostReceiver.kt in host app
+class HostReceiver : BaseHostReceiver() {
+    // No additional logic is needed here.
+}
+```
+
+b. 在**宿主的 `AndroidManifest.xml`** 中注册这个代理，并为其配置一个广泛的 `intent-filter`，捕获所有插件可能感兴趣的广播。
+
+```xml
+<application>
+    <receiver
+        android:name=".HostReceiver"
+        android:enabled="true"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+    </receiver>
+</application>
+```
+
+#### 发送广播 (Sending Broadcasts)
+
+为了安全和高效，框架提供了 `sendInternalBroadcast` 扩展函数来发送应用内广播，它可以被动态和静态接收器同时接收。
+
+```kotlin
+context.sendInternalBroadcast("com.example.MY_CUSTOM_STATIC_ACTION") {
+    putExtra("data", "Some data")
+}
+```
+
 
 ### ContentProvider 用法
 
