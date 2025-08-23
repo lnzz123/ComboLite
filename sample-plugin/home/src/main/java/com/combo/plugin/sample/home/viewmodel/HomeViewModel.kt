@@ -70,7 +70,7 @@ class HomeViewModel : BaseViewModel<HomeState>(
         // 检查插件是否已安装
         val isInstalled = uiState.value.installedPlugins.any { it.pluginId == pluginId }
 
-        if (! isInstalled) {
+        if (!isInstalled) {
             return PluginStatus.NOT_INSTALLED
         }
 

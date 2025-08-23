@@ -89,8 +89,8 @@ open class BaseHostService : Service() {
                         this.instanceIdentifier =
                             intent.getStringExtra(ExtConstant.PLUGIN_SERVICE_INSTANCE_ID)
 
-                        pluginService !!.onAttach(this@BaseHostService)
-                        pluginService !!.onCreate()
+                        pluginService!!.onAttach(this@BaseHostService)
+                        pluginService!!.onCreate()
                     } catch (e: Exception) {
                         Timber.e(e, "初始化插件服务 [${this.instanceIdentifier}] 失败。")
                         pluginService = null

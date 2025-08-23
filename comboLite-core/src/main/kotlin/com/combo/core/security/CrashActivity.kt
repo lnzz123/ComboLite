@@ -62,7 +62,7 @@ class CrashActivity : BasePluginActivity() {
                         proxyActivity?.let { activity ->
                             val intent =
                                 activity.packageManager.getLaunchIntentForPackage(activity.packageName)
-                            val restartIntent = Intent.makeRestartActivityTask(intent !!.component)
+                            val restartIntent = Intent.makeRestartActivityTask(intent!!.component)
                             activity.startActivity(restartIntent)
 
                             Process.killProcess(Process.myPid())

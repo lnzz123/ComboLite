@@ -23,9 +23,6 @@ import android.content.res.AssetManager
 import android.content.res.Resources
 import com.combo.core.manager.PluginManager
 import com.combo.core.security.PluginCrashHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 /**
  * 宿主端的插件框架Application基类
@@ -39,9 +36,7 @@ open class BaseHostApplication : Application() {
         super.onCreate()
         PluginCrashHandler.initialize(this)
         PluginManager.initialize(this) {
-            CoroutineScope(Dispatchers.Default).launch {
-                PluginManager.loadEnabledPlugins()
-            }
+            PluginManager.loadEnabledPlugins()
         }
     }
 

@@ -29,14 +29,18 @@ import com.combo.core.loader.PluginClassLoader
 import com.combo.core.model.PluginInfo
 import com.combo.core.proxy.ProxyManager
 import com.combo.core.resources.PluginResourcesManager
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jf.dexlib2.DexFileFactory
 import org.jf.dexlib2.Opcodes
@@ -74,15 +78,24 @@ object PluginManager : IPluginStateProvider {
     lateinit var proxyManager: ProxyManager
         private set
 
-    // 初始化状态标识
-    @Volatile
-    var isInitialized = false
-        private set
+    enum class InitState {
+        NOT_INITIALIZED,
+        INITIALIZING,
+        INITIALIZED
+    }
+
+    // 初始化状态
+    private val _initState = MutableStateFlow(InitState.NOT_INITIALIZED)
+    val initStateFlow: StateFlow<InitState> = _initState.asStateFlow()
+    val isInitialized: Boolean
+        get() = _initState.value == InitState.INITIALIZED
+
+    private val managerScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     // 运行时缓存目录
     private val runtimeCacheDir: File by lazy {
         File(context.cacheDir, RUNTIME_CACHE_DIR_NAME).apply {
-            if (! exists()) {
+            if (!exists()) {
                 mkdirs()
                 Timber.tag(TAG).d("创建运行时插件缓存目录: $absolutePath")
             }
@@ -101,63 +114,74 @@ object PluginManager : IPluginStateProvider {
     // 插件类名索引
     private val classIndex = ConcurrentHashMap<String, String>()
 
-    // 初始化完成的锁对象
-    private val initializationLock = Any()
-
     override fun getClassIndex(): Map<String, String> = this.classIndex
     override fun getLoadedPlugins(): Map<String, LoadedPluginInfo> = this._loadedPlugins.value
+
+    /**
+     * 等待插件管理器初始化完成
+     */
+    suspend fun awaitInitialization() {
+        if (_initState.value == InitState.INITIALIZED) {
+            return
+        }
+        _initState.first { it == InitState.INITIALIZED }
+    }
 
     /**
      * 初始化插件管理器
      *
      * @param context 应用上下文
-     * @param callback 初始化完成回调
+     * @param
      */
     fun initialize(
         context: Application,
-        callback: () -> Unit = {},
+        pluginLoader: (suspend () -> Unit)? = null
     ) {
-        if (isInitialized) {
-            Timber.tag(TAG).w("PluginManager已经初始化，跳过重复初始化")
-            callback()
+        if (_initState.value != InitState.NOT_INITIALIZED) {
+            Timber.tag(TAG).w("PluginManager 正在初始化或已完成，跳过重复操作")
             return
         }
 
-        synchronized(initializationLock) {
-            if (isInitialized) {
-                return
-            }
-
-            try {
-                Timber.tag(TAG).i("开始初始化PluginManager")
-
-                startKoin {
-                    androidContext(context)
-                }
-
-                this.context = context
-                this.xmlManager = XmlManager(this.context)
-                this.installerManager = InstallerManager(this.context, xmlManager)
-                this.resourcesManager = PluginResourcesManager(this.context)
-                this.proxyManager = ProxyManager(this.context)
-                this.dependencyManager = DependencyManager(this)
-
-                clearRuntimeCache()
-
-                isInitialized = true
-
-                Timber.tag(TAG).i("PluginManager初始化完成")
-            } catch (e: Exception) {
-                Timber.tag(TAG).e(e, "PluginManager初始化失败: ${e.message}")
-                // 失败时重置状态
-                isInitialized = false
-                throw e // 仍然抛出异常，让上层知道初始化失败
-            }
+        synchronized(this) {
+            if (_initState.value != InitState.NOT_INITIALIZED) return
+            _initState.value = InitState.INITIALIZING
         }
 
-        // 将回调移出同步块
-        if (isInitialized) {
-            callback()
+        try {
+            Timber.tag(TAG).i("开始初始化 PluginManager 核心组件...")
+
+            startKoin { androidContext(context) }
+            this.context = context
+            this.xmlManager = XmlManager(this.context)
+            this.installerManager = InstallerManager(this.context, xmlManager)
+            this.resourcesManager = PluginResourcesManager(this.context)
+            this.proxyManager = ProxyManager(this.context)
+            this.dependencyManager = DependencyManager(this)
+            clearRuntimeCache()
+
+            Timber.tag(TAG).i("核心组件初始化完成。")
+
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "PluginManager 初始化失败: ${e.message}")
+            _initState.value = InitState.NOT_INITIALIZED
+            throw e
+        }
+
+        managerScope.launch {
+            try {
+                if (pluginLoader != null) {
+                    Timber.tag(TAG).i("开始执行加载任务...")
+                    pluginLoader.invoke()
+                    Timber.tag(TAG).i("插件加载任务执行完毕。")
+                } else {
+                    Timber.tag(TAG).i("未提供加载任务，初始化完成。")
+                }
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "插件加载代码块执行失败")
+            } finally {
+                _initState.value = InitState.INITIALIZED
+                Timber.tag(TAG).i("PluginManager 已就绪。")
+            }
         }
     }
 
@@ -189,7 +213,7 @@ object PluginManager : IPluginStateProvider {
             try {
                 Timber.tag(TAG).i("开始异步初始化所有已启用的插件")
 
-                val enabledPlugins = getEnabledPlugins().filter { ! isPluginLoaded(it.pluginId) }
+                val enabledPlugins = getEnabledPlugins().filter { !isPluginLoaded(it.pluginId) }
                 if (enabledPlugins.isEmpty()) {
                     return@withContext 0
                 }
@@ -449,14 +473,14 @@ object PluginManager : IPluginStateProvider {
      *
      * @return 插件ID列表
      */
-    fun getPluginIds(): List<String> = _loadedPlugins.value.keys.toList()
+    fun getAllPluginIds(): List<String> = _loadedPlugins.value.keys.toList()
 
     /**
      * 获取所有插件实例
      *
      * @return 插件实例映射表
      */
-    fun getPluginInstances(): Map<String, IPluginEntryClass> = _pluginInstances.value.toMap()
+    fun getAllPluginInstances(): Map<String, IPluginEntryClass> = _pluginInstances.value.toMap()
 
     /**
      * 获取所有已安装的插件信息
@@ -625,7 +649,7 @@ object PluginManager : IPluginStateProvider {
      * @param pluginId 插件ID
      */
     suspend fun unloadPlugin(pluginId: String) = withContext(Dispatchers.IO) {
-        if (! isPluginLoaded(pluginId)) {
+        if (!isPluginLoaded(pluginId)) {
             Timber.tag(TAG).w("尝试卸载一个未加载的插件: $pluginId")
             return@withContext
         }
@@ -695,7 +719,7 @@ object PluginManager : IPluginStateProvider {
                 }
 
                 val sourceFile = File(pluginInfo.path)
-                if (! sourceFile.exists()) {
+                if (!sourceFile.exists()) {
                     Timber.tag(TAG).e("插件源文件不存在: ${pluginInfo.path}")
                     return@withContext null
                 }
@@ -714,14 +738,14 @@ object PluginManager : IPluginStateProvider {
                 }
 
                 // 验证复制结果
-                if (! cacheFile.exists() || cacheFile.length() != sourceFile.length()) {
+                if (!cacheFile.exists() || cacheFile.length() != sourceFile.length()) {
                     Timber.tag(TAG).e("运行时缓存文件创建验证失败: $pluginId")
                     cacheFile.delete()
                     return@withContext null
                 }
 
                 // 设置文件为只读权限，防止Android系统报"Writable dex file"错误
-                if (! cacheFile.setReadOnly()) {
+                if (!cacheFile.setReadOnly()) {
                     Timber.tag(TAG).w("设置运行时缓存文件为只读失败: ${cacheFile.absolutePath}")
                 } else {
                     Timber.tag(TAG).d("运行时缓存文件已设置为只读: ${cacheFile.absolutePath}")
@@ -753,7 +777,7 @@ object PluginManager : IPluginStateProvider {
                 cacheFiles.forEach { cacheFile ->
                     try {
                         if (cacheFile.delete()) {
-                            deletedCount ++
+                            deletedCount++
                             Timber.tag(TAG).d("清理缓存文件: ${cacheFile.name}")
                         } else {
                             Timber.tag(TAG).w("清理缓存文件失败: ${cacheFile.name}")
@@ -886,7 +910,7 @@ object PluginManager : IPluginStateProvider {
                 Timber.tag(CLASS_INDEX_TAG).d("为类 [$className] 建立索引...")
                 val existingPluginId = classIndex.putIfAbsent(className, pluginId)
                 if (existingPluginId == null) {
-                    totalIndexedClasses ++
+                    totalIndexedClasses++
                 }
             }
         } catch (e: Exception) {
@@ -920,7 +944,7 @@ object PluginManager : IPluginStateProvider {
             val entry = iterator.next()
             if (entry.value == pluginId) {
                 iterator.remove()
-                removedCount ++
+                removedCount++
             }
         }
         Timber.tag(CLASS_INDEX_TAG).d("从索引中移除了插件 [$pluginId] 的 $removedCount 个类。")

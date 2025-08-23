@@ -76,7 +76,7 @@ fun PluginCard(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = { expanded = ! expanded }
+                    onClick = { expanded = !expanded }
                 )
                 .padding(16.dp)
         ) {

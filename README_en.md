@@ -253,10 +253,8 @@ class MainApplication : Application() {
         PluginCrashHandler.initialize(this)
 
         // 2. Initialize the plugin manager
-        PluginManager.initialize(this)
-
-        // 3. Asynchronously load enabled plugins
-        lifecycleScope.launch {
+        PluginManager.initialize(this) {
+            // 3. Asynchronously load enabled plugins
             val loadedCount = PluginManager.loadEnabledPlugins()
             Log.d("MyApp", "Successfully loaded $loadedCount plugins.")
         }
@@ -286,7 +284,9 @@ class HomePluginEntry : IPluginEntryClass {
             }
         )
 
-    // Define the plugin's main UI
+    // Define the plugin's main UI or place some plugin initialization work,
+    // even if this screen is not displayed, the method will still be called,
+    // similar to Application's onCreate
     @Composable
     override fun Content() {
         // Your Jetpack Compose screen

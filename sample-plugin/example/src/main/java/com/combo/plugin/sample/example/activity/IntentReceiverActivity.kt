@@ -42,7 +42,7 @@ class IntentReceiverActivity : BasePluginActivity() {
 
         // 从 Intent 中提取数据
         val receivedString = proxyActivity?.intent?.getStringExtra("EXTRA_STRING") ?: "未收到字符串"
-        val receivedInt = proxyActivity?.intent?.getIntExtra("EXTRA_INT", - 1) ?: - 1
+        val receivedInt = proxyActivity?.intent?.getIntExtra("EXTRA_INT", -1) ?: -1
         val receivedBoolean =
             proxyActivity?.intent?.getBooleanExtra("EXTRA_BOOLEAN", false) ?: false
 

@@ -51,7 +51,7 @@ internal object SdkLocator {
 
     fun findLatestBuildTools(sdkPath: String): String {
         val buildToolsDir = File(sdkPath, "build-tools")
-        if (! buildToolsDir.exists()) throw GradleException("Android Build-Tools 目录不存在: ${buildToolsDir.absolutePath}")
+        if (!buildToolsDir.exists()) throw GradleException("Android Build-Tools 目录不存在: ${buildToolsDir.absolutePath}")
         return buildToolsDir.listFiles { file -> file.isDirectory }
             ?.mapNotNull { it.name }
             ?.maxOrNull()
@@ -60,7 +60,7 @@ internal object SdkLocator {
 
     fun findLatestPlatform(sdkPath: String): String {
         val platformsDir = File(sdkPath, "platforms")
-        if (! platformsDir.exists()) throw GradleException("Android Platforms 目录不存在: ${platformsDir.absolutePath}")
+        if (!platformsDir.exists()) throw GradleException("Android Platforms 目录不存在: ${platformsDir.absolutePath}")
         return platformsDir.listFiles { file -> file.isDirectory && file.name.startsWith("android-") }
             ?.map { it.name }
             ?.maxByOrNull { it.substringAfter("android-").toIntOrNull() ?: 0 }

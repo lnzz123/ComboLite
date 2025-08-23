@@ -216,12 +216,11 @@ class MainApplication : Application() {
         PluginCrashHandler.initialize(this)
 
         // 2. 初始化插件管理器
-        PluginManager.initialize(this)
-
-        // 3. 异步加载已启用的插件
-        lifecycleScope.launch {
+        PluginManager.initialize(this) {
+            // 3. 异步加载已启用的插件
             val loadedCount = PluginManager.loadEnabledPlugins()
             Log.d("MyApp", "Successfully loaded $loadedCount plugins.")
+            // 代码块内容执行完毕PluginManager的状态才更新为初始化成功
         }
     }
 }
@@ -249,7 +248,9 @@ class HomePluginEntry : IPluginEntryClass {
             }
         )
 
-    // 定义插件的主界面
+    // 定义插件的主界面或者放一些插件的初始化工作,
+    // 即使该页面没有显示,也会调用该方法,
+    // 类似Application的onCreate
     @Composable
     override fun Content() {
         // 你的 Jetpack Compose 屏幕

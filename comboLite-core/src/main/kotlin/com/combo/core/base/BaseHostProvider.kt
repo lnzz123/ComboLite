@@ -26,9 +26,6 @@ import android.net.Uri
 import android.os.Binder
 import android.os.Process
 import com.combo.core.manager.PluginManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.net.URLDecoder
 import java.util.concurrent.ConcurrentHashMap
@@ -57,7 +54,7 @@ open class BaseHostProvider : ContentProvider() {
      * 我们在这里执行插件框架的初始化，以确保 PluginManager 在被使用前已准备就绪。
      */
     override fun onCreate(): Boolean {
-        if (! PluginManager.isInitialized) {
+        if (!PluginManager.isInitialized) {
             val appContext = context?.applicationContext
             if (appContext == null) {
                 Timber.e("无法获取 Application Context，插件框架初始化失败！")
@@ -65,9 +62,7 @@ open class BaseHostProvider : ContentProvider() {
             }
             val application = appContext as Application
             PluginManager.initialize(application) {
-                CoroutineScope(Dispatchers.Default).launch {
-                    PluginManager.loadEnabledPlugins()
-                }
+                PluginManager.loadEnabledPlugins()
             }
         }
 
@@ -165,7 +160,7 @@ open class BaseHostProvider : ContentProvider() {
         }
 
         // 3. 核心安全检查：检查 exported 属性
-        if (! providerInfo.exported) {
+        if (!providerInfo.exported) {
             val callingUid = Binder.getCallingUid()
             val myUid = Process.myUid()
             if (callingUid != myUid) {

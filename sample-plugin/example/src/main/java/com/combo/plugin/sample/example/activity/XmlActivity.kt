@@ -30,7 +30,7 @@ class XmlActivity : BasePluginActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityXmlBinding.inflate(proxyActivity !!.layoutInflater)
+        binding = ActivityXmlBinding.inflate(proxyActivity!!.layoutInflater)
         proxyActivity?.setContentView(binding.root)
 
         setupTitleBar()

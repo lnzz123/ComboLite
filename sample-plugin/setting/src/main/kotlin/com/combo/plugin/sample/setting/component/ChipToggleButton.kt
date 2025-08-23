@@ -45,7 +45,7 @@ fun ChipToggleButton(
     FilterChip(
         modifier = modifier.heightIn(max = 28.dp),
         selected = isSelected,
-        onClick = { onSelectedChange(! isSelected) },
+        onClick = { onSelectedChange(!isSelected) },
         label = {
             Text(
                 text = text,
