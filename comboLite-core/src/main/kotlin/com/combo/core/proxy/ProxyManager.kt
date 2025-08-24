@@ -81,6 +81,11 @@ class ProxyManager(
     private val authorityToProviderMap = ConcurrentHashMap<String, String>()
 
     /**
+     * 用于存储 ContentProvider 的 Authority。
+     */
+    private var hostProviderAuthority: String? = null
+
+    /**
      * 设置 Activity 组件的代理宿主。
      *
      * @param hostActivity 用于代理所有插件 Activity 的宿主 Activity 的 Class 对象。
@@ -309,9 +314,33 @@ class ProxyManager(
     }
 
     /**
-     * 根据插件 Provider 的类名查找其注册信息。
-     * @return 返回纯粹的 ProviderInfo 对象，对调用者隐藏内部的 Pair 结构。
+     * 根据插件 Provider 的 Authority 查找其注册信息。
+     * 这是新 URI 方案的核心查询方法。
+     *
+     * @param authority 插件 ContentProvider 声明的 Authority。
+     * @return 匹配的 ProviderInfo 对象，如果未注册则返回 null。
      */
-    fun findProviderInfoByClassName(className: String): ProviderInfo? =
-        providerRegistry[className]?.second
+    fun findProviderInfoByAuthority(authority: String): ProviderInfo? {
+        val className = authorityToProviderMap[authority] ?: return null
+        return providerRegistry[className]?.second
+    }
+
+    /**
+     * 设置 ContentProvider 组件的代理 Authority。
+     * @param authority 在宿主 Manifest 中为 BaseHostProvider 注册的 Authority。
+     */
+    fun setHostProviderAuthority(authority: String) {
+        this.hostProviderAuthority = authority
+        Timber.i("ContentProvider 代理 Authority 已配置: $authority")
+    }
+
+    /**
+     * 获取已配置的 Provider 代理 Authority。
+     */
+    fun getHostProviderAuthority(): String? {
+        if (hostProviderAuthority == null) {
+            Timber.e("严重错误：尝试获取 Provider 代理 Authority，但尚未配置！")
+        }
+        return hostProviderAuthority
+    }
 }

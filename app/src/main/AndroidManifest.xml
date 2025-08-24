@@ -15,24 +15,22 @@
   ~  * limitations under the License.
   ~  */
   -->
+
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-
     <application
-        android:name="com.combo.plugin.sample.HostApp"
+        android:name=".HostApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -41,29 +39,30 @@
         android:roundIcon="@mipmap/ic_icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.ComposePluginSample">
+        <provider
+            android:name=".HostProvider"
+            android:authorities="com.combo.plugin.sample.provider"
+            android:enabled="true"
+            android:exported="true"
+            tools:ignore="ExportedContentProvider" />
 
         <receiver
-            android:name="com.combo.plugin.sample.HostReceiver"
+            android:name=".HostReceiver"
             android:enabled="true"
             android:exported="true"
             tools:ignore="ExportedReceiver">
-
             <intent-filter>
                 <action android:name="com.combo.plugin.example.action.STATIC_BROADCAST" />
-
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.USER_PRESENT" />
-
                 <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
                 <action android:name="android.intent.action.AIRPLANE_MODE" />
                 <action android:name="android.intent.action.HEADSET_PLUG" />
-
                 <action android:name="android.intent.action.LOCALE_CHANGED" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.DATE_CHANGED" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
                 <action android:name="android.intent.action.PACKAGE_REPLACED" />
@@ -71,7 +70,6 @@
 
                 <data android:scheme="package" />
             </intent-filter>
-
         </receiver>
 
         <service
@@ -106,7 +104,7 @@
             android:foregroundServiceType="dataSync|mediaPlayback|shortService" />
 
         <activity
-            android:name="com.combo.plugin.sample.HostActivity"
+            android:name=".HostActivity"
             android:exported="true"
             android:networkSecurityConfig="@xml/network_security_config"
             android:theme="@style/Theme.ComposePluginSample">

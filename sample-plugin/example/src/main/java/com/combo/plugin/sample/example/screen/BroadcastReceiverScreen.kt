@@ -95,7 +95,7 @@ fun BroadcastReceiverScreen() {
     DisposableEffect(context) {
         val dynamicReceiver = object : BroadcastReceiver() {
             override fun onReceive(
-                context: Context, // Context can be nullable in some cases, good practice to make it nullable here.
+                context: Context,
                 intent: Intent
             ) {
                 BroadcastLog.add("动态接收器", intent.action, intent.getStringExtra("data"))

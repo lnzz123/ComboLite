@@ -228,6 +228,7 @@ fun PluginCard(
         }
     }
 }
+
 /**
  * 关闭插件风险警告对话框
  * @param dependents 依赖于当前插件的其他插件列表
@@ -244,7 +245,11 @@ private fun ClosePluginWarningDialog(
     val message = if (dependents.isEmpty()) {
         "您确定要立即关闭此插件吗？这会立即停止其所有活动。"
     } else {
-        "关闭此插件可能会影响以下 ${dependents.size} 个插件的正常运行，甚至导致它们崩溃：\n\n${dependents.joinToString("\n")}\n\n您确定要继续吗？"
+        "关闭此插件可能会影响以下 ${dependents.size} 个插件的正常运行，甚至导致它们崩溃：\n\n${
+            dependents.joinToString(
+                "\n"
+            )
+        }\n\n您确定要继续吗？"
     }
 
     AlertDialog(

@@ -18,10 +18,16 @@
 
 package com.combo.core.ext
 
+import android.content.ContentResolver
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.database.ContentObserver
+import android.database.Cursor
+import android.net.Uri
 import android.os.Bundle
+import com.combo.core.base.BaseHostProvider.Companion.KEY_TARGET_URI
 import com.combo.core.ext.ExtConstant.PLUGIN_ACTIVITY_CLASS_NAME
 import com.combo.core.ext.ExtConstant.PLUGIN_SERVICE_CLASS_NAME
 import com.combo.core.ext.ExtConstant.PLUGIN_SERVICE_INSTANCE_ID
@@ -29,6 +35,7 @@ import com.combo.core.interfaces.IPluginActivity
 import com.combo.core.interfaces.IPluginService
 import com.combo.core.manager.PluginManager
 import timber.log.Timber
+import java.net.URLEncoder
 
 internal object ExtConstant {
     const val PLUGIN_ACTIVITY_CLASS_NAME = "plugin_activity_class_name"
@@ -190,4 +197,145 @@ fun Context.sendInternalBroadcast(
         block?.invoke(this)
     }
     sendInternalBroadcast(intent)
+}
+
+/**
+ * 构建插件 Provider 的代理 URI。
+ * @param pluginUri 插件的原始 Uri，例如 `BookProvider.CONTENT_URI`。
+ * @return 可以在宿主 ContentResolver 中使用的代理 Uri。
+ */
+fun buildProxyUri(pluginUri: Uri): Uri {
+    val hostAuthority = PluginManager.proxyManager.getHostProviderAuthority()
+        ?: throw IllegalStateException("HostProvider authority has not been configured in PluginManager.")
+
+    val pluginAuthority = pluginUri.authority
+        ?: throw IllegalArgumentException("输入的 URI 没有 Authority: $pluginUri")
+
+    PluginManager.proxyManager.findProviderInfoByAuthority(pluginAuthority)
+        ?: throw IllegalArgumentException("Authority [$pluginAuthority] 未被注册为插件 Provider。")
+
+    val encodedPluginAuthority = URLEncoder.encode(pluginAuthority, "UTF-8")
+
+    val path = pluginUri.path
+    val proxyPath =
+        if (path.isNullOrEmpty() || path == "/") encodedPluginAuthority else "$encodedPluginAuthority$path"
+
+    return pluginUri.buildUpon()
+        .authority(hostAuthority)
+        .encodedPath(proxyPath)
+        .build()
+}
+
+/**
+ * 查询一个插件 ContentProvider。
+ * @param uri 插件的原始 Uri，例如 `BookProvider.CONTENT_URI`。
+ * @param projection 要返回的列。
+ * @param selection 筛选条件。
+ * @param selectionArgs 筛选条件的参数。
+ * @param sortOrder 排序顺序。
+ * @return 一个 Cursor 对象，包含查询结果。
+ */
+fun ContentResolver.queryPlugin(
+    uri: Uri,
+    projection: Array<String>?,
+    selection: String?,
+    selectionArgs: Array<String>?,
+    sortOrder: String?
+): Cursor? {
+    val proxyUri = buildProxyUri(uri)
+    return this.query(proxyUri, projection, selection, selectionArgs, sortOrder)
+}
+
+/**
+ * 向一个插件 ContentProvider 插入数据。
+ * @param uri 插件的原始 Uri，例如 `BookProvider.CONTENT_URI`。
+ * @param values 要插入的键值对。
+ * @return 新插入数据的 Uri。
+ */
+fun ContentResolver.insertPlugin(
+    uri: Uri,
+    values: ContentValues?
+): Uri? {
+    val proxyUri = buildProxyUri(uri)
+    return this.insert(proxyUri, values)
+}
+
+/**
+ * 从一个插件 ContentProvider 删除数据。
+ * @param uri 插件的原始 Uri，例如 `BookProvider.CONTENT_URI`。
+ * @param selection 筛选条件。
+ * @param selectionArgs 筛选条件的参数。
+ * @return 删除的行数。
+ */
+fun ContentResolver.deletePlugin(
+    uri: Uri,
+    selection: String?,
+    selectionArgs: Array<String>?
+): Int {
+    val proxyUri = buildProxyUri(uri)
+    return this.delete(proxyUri, selection, selectionArgs)
+}
+
+/**
+ * 更新一个插件 ContentProvider 中的数据。
+ * @param uri 插件的原始 Uri，例如 `BookProvider.CONTENT_URI`。
+ * @param values 要更新的键值对。
+ * @param selection 筛选条件。
+ * @param selectionArgs 筛选条件的参数。
+ * @return 更新的行数。
+ */
+fun ContentResolver.updatePlugin(
+    uri: Uri,
+    values: ContentValues?,
+    selection: String?,
+    selectionArgs: Array<String>?
+): Int {
+    val proxyUri = buildProxyUri(uri)
+    return this.update(proxyUri, values, selection, selectionArgs)
+}
+
+/**
+ * 调用一个插件 ContentProvider 的方法。
+ * @param uri 插件的原始 Uri，例如 `BookProvider.CONTENT_URI`。
+ * @param method 要调用的方法名。
+ * @param arg 方法的参数。
+ * @param extras 额外的参数。
+ * @return 方法调用的结果。
+ */
+fun ContentResolver.callPlugin(
+    uri: Uri,
+    method: String,
+    arg: String? = null,
+    extras: Bundle? = null
+): Bundle? {
+    val proxyUri = buildProxyUri(uri)
+
+    val finalExtras = (extras ?: Bundle()).apply {
+        putParcelable(KEY_TARGET_URI, uri)
+    }
+
+    return this.call(proxyUri, method, arg, finalExtras)
+}
+
+/**
+ * 为一个插件 ContentProvider 安全地注册一个内容观察者。
+ * @param uri 插件的原始 Uri，例如 `BookProvider.CONTENT_URI`。
+ * @param notifyForDescendants 是否通知后代 Uri。
+ * @param observer 要注册的内容观察者。
+ */
+fun ContentResolver.registerPluginObserver(
+    uri: Uri,
+    notifyForDescendants: Boolean,
+    observer: ContentObserver
+) {
+    val proxyUri = buildProxyUri(uri)
+    this.registerContentObserver(proxyUri, notifyForDescendants, observer)
+}
+
+/**
+ * 注销内容观察者。
+ * @param observer 要注销的内容观察者。
+ */
+fun ContentResolver.unregisterPluginObserver(observer: ContentObserver) {
+    this.unregisterContentObserver(observer)
 }

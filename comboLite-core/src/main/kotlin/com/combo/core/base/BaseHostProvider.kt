@@ -24,6 +24,8 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
 import android.os.Binder
+import android.os.Build
+import android.os.Bundle
 import android.os.Process
 import com.combo.core.manager.PluginManager
 import timber.log.Timber
@@ -38,15 +40,19 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * ### URI 转发约定：
  * 为了让 HostProvider 知道要将请求转发给哪个插件 Provider，客户端需要使用一个特殊的 URI 格式：
- * `content://[HOST_AUTHORITY]/[插件Provider的完整类名]/[原始路径]`
+ * `content://[HOST_AUTHORITY]/[PLUGIN_AUTHORITY]/[原始路径]`
  *
- * 例如，如果宿主 Authority 是 `com.jctech.plugin.sample.proxy.provider`，
- * 插件 Provider 类名是 `com.example.plugin.MyPluginProvider`，
+ * 例如，如果宿主 Authority 是 `com.plugin.sample.proxy.provider`，
+ * 插件 Provider Authority 是 `com.example.plugin.provider`，
  * 原始 URI 是 `content://com.example.plugin.provider/items/1`，
  * 那么客户端应该构建并使用的 URI 是：
- * `content://com.jctech.plugin.sample.proxy.provider/com.example.plugin.MyPluginProvider/items/1`
+ * `content://com.plugin.sample.proxy.provider/com.example.plugin.provider/items/1`
  */
 open class BaseHostProvider : ContentProvider() {
+    companion object {
+        const val KEY_TARGET_URI = "com.combo.core.base.BaseHostProvider.TARGET_URI"
+    }
+
     private val providerCache = ConcurrentHashMap<String, ContentProvider>()
 
     /**
@@ -69,154 +75,137 @@ open class BaseHostProvider : ContentProvider() {
         return true
     }
 
-    /**
-     * 核心辅助方法：根据代理 URI 获取目标插件 Provider 的实例。
-     */
-    private fun getTargetProvider(uri: Uri): ContentProvider? {
-        // 从 URI 的第一个路径段中解析出目标 Provider 的类名
-        val className =
-            uri.pathSegments.getOrNull(0) ?: run {
-                Timber.e("无法从URI中解析出插件Provider类名: $uri")
-                return null
-            }
-        val decodedClassName = URLDecoder.decode(className, "UTF-8")
-
-        providerCache[decodedClassName]?.let { return it }
+    private fun getTargetProvider(className: String): ContentProvider? {
+        providerCache[className]?.let { return it }
 
         return try {
-            val instance = PluginManager.getInterface(ContentProvider::class.java, decodedClassName)
+            val instance = PluginManager.getInterface(ContentProvider::class.java, className)
             if (instance != null) {
                 instance.attachInfo(context, null)
-                instance.onCreate()
-                providerCache[decodedClassName] = instance
-                Timber.d("已创建并缓存插件 Provider 实例: $decodedClassName")
+                providerCache[className] = instance
+                Timber.d("已创建并缓存插件 Provider 实例: $className")
             } else {
-                Timber.e("无法创建插件 Provider 实例: $decodedClassName")
+                Timber.e("无法创建插件 Provider 实例: $className")
             }
             instance
         } catch (e: Exception) {
-            Timber.e(e, "创建插件 Provider 实例时发生严重错误: $decodedClassName")
+            Timber.e(e, "创建插件 Provider 实例时发生严重错误: $className")
             null
         }
     }
 
     /**
-     * 核心辅助方法：将代理 URI 重写为插件 Provider 能识别的原始 URI。
+     * 将代理 URI "还原" 回插件的原生 URI
      */
-    private fun rewriteUri(proxyUri: Uri): Uri? {
-        val className = proxyUri.pathSegments.getOrNull(0) ?: return null
-        val decodedClassName = URLDecoder.decode(className, "UTF-8")
+    private fun rewriteUri(proxyUri: Uri, providerInfo: com.combo.core.model.ProviderInfo): Uri {
+        val pathSegments = proxyUri.pathSegments
+        val originalAuthority = providerInfo.authorities.first()
 
-        // 从 ProxyManager 中查找该 Provider 的注册信息，以获取其原始 Authority
-        val providerInfo = PluginManager.proxyManager.findProviderInfoByClassName(decodedClassName)
-        if (providerInfo == null || providerInfo.authorities.isEmpty()) {
-            Timber.e("无法找到 $decodedClassName 的注册信息或 Authority。")
-            return null
-        }
-        // 默认使用第一个 Authority
-        val originalAuthority = providerInfo.authorities[0]
+        val originalPath = pathSegments.drop(1).joinToString("/")
 
-        // 开始重构 URI
-        val builder =
-            Uri
-                .Builder()
-                .scheme(proxyUri.scheme)
-                .authority(originalAuthority)
-
-        // 拼接 URI 路径
-        for (i in 1 until proxyUri.pathSegments.size) {
-            builder.appendPath(proxyUri.pathSegments[i])
-        }
-
-        // 复制查询参数和片段
-        if (proxyUri.query != null) {
-            builder.encodedQuery(proxyUri.encodedQuery)
-        }
-        if (proxyUri.fragment != null) {
-            builder.encodedFragment(proxyUri.encodedFragment)
-        }
-
-        return builder.build()
+        return proxyUri.buildUpon()
+            .authority(originalAuthority)
+            .path(originalPath)
+            .clearQuery()
+            .fragment(null)
+            .build()
     }
 
     /**
-     * 高阶函数，封装请求转发的重复逻辑，并增加安全检查。
+     * 高阶函数，封装请求转发的重复逻辑
      */
     private inline fun <T> withForwardedRequest(
         uri: Uri,
         block: (provider: ContentProvider, rewrittenUri: Uri) -> T?,
     ): T? {
-        // 1. 解析出目标 Provider 的类名
-        val className = uri.pathSegments.getOrNull(0)?.let { URLDecoder.decode(it, "UTF-8") }
-        if (className == null) {
-            Timber.e("无法从URI中解析出插件Provider类名: $uri")
-            return null
+        val pluginAuthority = uri.pathSegments.getOrNull(0)?.let { URLDecoder.decode(it, "UTF-8") }
+            ?: throw IllegalArgumentException("无法从 URI 中解析出插件 Authority: $uri")
+
+        val providerInfo = PluginManager.proxyManager.findProviderInfoByAuthority(pluginAuthority)
+            ?: throw SecurityException("拦截：目标 Provider Authority [$pluginAuthority] 未在 PluginManager 中注册。")
+
+        val className = providerInfo.className
+
+        if (!providerInfo.exported && Binder.getCallingUid() != Process.myUid()) {
+            throw SecurityException("权限拒绝：Provider ${providerInfo.className} 未导出。")
         }
 
-        // 2. 从ProxyManager获取其完整的注册信息
-        val providerInfo = PluginManager.proxyManager.findProviderInfoByClassName(className)
-        if (providerInfo == null) {
-            throw SecurityException("拦截：目标 Provider [$className] 未注册。")
-        }
+        val targetProvider = getTargetProvider(className)
+            ?: throw IllegalStateException("无法创建或获取 Provider 实例: $className")
 
-        // 3. 核心安全检查：检查 exported 属性
-        if (!providerInfo.exported) {
-            val callingUid = Binder.getCallingUid()
-            val myUid = Process.myUid()
-            if (callingUid != myUid) {
-                throw SecurityException("权限拒绝：Provider ${providerInfo.className} 未导出，无法被外部应用访问。")
-            }
-        }
+        val rewrittenUri = rewriteUri(uri, providerInfo)
 
-        // --- 安全检查结束，后续流程不变 ---
-
-        val targetProvider = getTargetProvider(uri) ?: return null
-        val rewrittenUri = rewriteUri(uri) ?: return null
         return block(targetProvider, rewrittenUri)
     }
 
-    // --- 将所有 ContentProvider 的方法转发给目标 Provider ---
+    // --- CRUD 方法保持不变，因为它们都依赖 withForwardedRequest ---
 
     override fun query(
         uri: Uri,
-        projection: Array<String>?,
-        selection: String?,
-        selectionArgs: Array<String>?,
-        sortOrder: String?,
+        p: Array<String>?,
+        s: String?,
+        sa: Array<String>?,
+        so: String?
     ): Cursor? =
-        withForwardedRequest(uri) { provider, rewritten ->
-            provider.query(rewritten, projection, selection, selectionArgs, sortOrder)
-        }
+        withForwardedRequest(uri) { provider, rewritten -> provider.query(rewritten, p, s, sa, so) }
 
     override fun getType(uri: Uri): String? =
-        withForwardedRequest(uri) { provider, rewritten ->
-            provider.getType(rewritten)
-        }
+        withForwardedRequest(uri) { provider, rewritten -> provider.getType(rewritten) }
 
-    override fun insert(
-        uri: Uri,
-        values: ContentValues?,
-    ): Uri? =
+    // [推荐修改] 优化 insert 的返回值处理，使其更健壮
+    override fun insert(uri: Uri, values: ContentValues?): Uri? {
+        var result: Uri? = null
         withForwardedRequest(uri) { provider, rewritten ->
-            provider.insert(rewritten, values)
-        }
+            provider.insert(rewritten, values)?.also { originalResultUri ->
+                // 使用原始代理 URI 通知观察者
+                context?.contentResolver?.notifyChange(uri, null)
 
-    override fun delete(
-        uri: Uri,
-        selection: String?,
-        selectionArgs: Array<String>?,
-    ): Int =
+                // [修改] 采用更健壮的方式将插件返回的原始 URI 转换回代理 URI
+                // originalResultUri: content://plugin.authority/path/id
+                // 我们需要构建: content://host.authority/plugin.authority/path/id
+                val pluginAuthority = originalResultUri.authority
+                val hostAuthority = PluginManager.proxyManager.getHostProviderAuthority()
+
+                result = originalResultUri.buildUpon()
+                    .authority(hostAuthority)
+                    .path("/$pluginAuthority${originalResultUri.path}")
+                    .build()
+            }
+        }
+        return result
+    }
+
+    override fun delete(uri: Uri, selection: String?, selectionArgs: Array<String>?): Int =
         withForwardedRequest(uri) { provider, rewritten ->
-            provider.delete(rewritten, selection, selectionArgs)
+            provider.delete(rewritten, selection, selectionArgs).also { deletedCount ->
+                if (deletedCount > 0) {
+                    context?.contentResolver?.notifyChange(uri, null)
+                }
+            }
         } ?: 0
 
-    override fun update(
-        uri: Uri,
-        values: ContentValues?,
-        selection: String?,
-        selectionArgs: Array<String>?,
-    ): Int =
+    override fun update(uri: Uri, v: ContentValues?, s: String?, sa: Array<String>?): Int =
         withForwardedRequest(uri) { provider, rewritten ->
-            provider.update(rewritten, values, selection, selectionArgs)
+            provider.update(rewritten, v, s, sa).also { updatedCount ->
+                if (updatedCount > 0) {
+                    context?.contentResolver?.notifyChange(uri, null)
+                }
+            }
         } ?: 0
+
+    @Suppress("DEPRECATION")
+    override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
+        val targetUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            extras?.getParcelable(KEY_TARGET_URI, Uri::class.java)
+        } else {
+            extras?.getParcelable(KEY_TARGET_URI)
+        }
+            ?: throw IllegalArgumentException("无法处理 call 请求：extras 中缺少目标 Uri (KEY_TARGET_URI)")
+
+        extras?.remove(KEY_TARGET_URI)
+
+        return withForwardedRequest(targetUri) { provider, _ ->
+            provider.call(method, arg, extras)
+        }
+    }
 }

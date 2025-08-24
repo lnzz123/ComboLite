@@ -33,8 +33,9 @@ import timber.log.Timber
 class HostApp : BaseHostApplication() {
     override fun onCreate() {
         super.onCreate()
-        // 配置代理
+        // 配置Activity代理
         PluginManager.proxyManager.setHostActivity(HostActivity::class.java)
+        // 配置Service代理池
         PluginManager.proxyManager.setServicePool(
             listOf(
                 HostService1::class.java,
@@ -49,6 +50,8 @@ class HostApp : BaseHostApplication() {
                 HostService10::class.java,
             ),
         )
+        // 配置ContentProvider代理
+        PluginManager.proxyManager.setHostProviderAuthority("com.combo.plugin.sample.provider")
 
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())

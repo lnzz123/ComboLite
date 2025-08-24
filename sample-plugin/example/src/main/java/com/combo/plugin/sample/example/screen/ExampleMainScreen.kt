@@ -76,7 +76,9 @@ fun ExampleMainScreen() {
         ExampleItem("广播接收器", "系统广播、自定义广播的发送与接收") {
             navigator.navigate(AppScreen.BroadcastReceiver)
         },
-        ExampleItem("内容提供者", "数据共享、权限控制、CRUD 操作"),
+        ExampleItem("内容提供者", "数据共享、权限控制、CRUD 操作") {
+            navigator.navigate(AppScreen.ContentProvider)
+        },
         ExampleItem("SO 库加载", "JNI 调用、动态库加载、native 方法"),
         ExampleItem("皮肤资源替换", "动态换肤、资源替换、主题切换"),
         ExampleItem("权限申请", "运行时权限申请、权限检查、权限说明"),

@@ -38,4 +38,7 @@ sealed interface AppScreen {
 
     @Serializable
     data object BroadcastReceiver : AppScreen
+
+    @Serializable
+    data object ContentProvider : AppScreen
 }
