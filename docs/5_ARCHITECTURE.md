@@ -19,48 +19,48 @@
 
 ```mermaid
 graph TD
-    subgraph "Host App & System"
-        HostApp[Host App Code] -- invokes API --> PM(PluginManager)
-        AndroidSystem[Android System] -- interacts with --> HostProxies["Host Proxy Components<br>(HostActivity, HostService...)"]
+    subgraph "宿主应用 & 系统"
+        HostApp[宿主应用代码] -- 调用 API --> PM(插件管理器)
+        AndroidSystem[Android 系统] -- 与...交互 --> HostProxies["宿主代理组件<br>(HostActivity, HostService...)"]
     end
 
-    subgraph "ComboLite Core Managers"
-        PM -- orchestrates --> IM(InstallerManager)
-        PM -- orchestrates --> RM(ResourceManager)
-        PM -- orchestrates --> ProxyM(ProxyManager)
-        PM -- orchestrates --> DM(DependencyManager)
+    subgraph "ComboLite 核心管理器"
+        PM -- 协调 --> IM(安装器)
+        PM -- 协调 --> RM(资源管理器)
+        PM -- 协调 --> ProxyM(调度器)
+        PM -- 协调 --> DM(依赖管理器)
     end
     
-    subgraph "Data & State"
-        OnDiskState["On-Disk State<br>plugins.xml, APKs"]
-        InMemoryState["In-Memory State<br>LoadedPlugins, ClassLoaders, Instances"]
-        ClassIndex["Global Class Index<br>Map<Class, PluginId>"]
-        DepGraph["Dependency Graphs<br>(Forward & Reverse)"]
-        MergedRes["Merged Resources"]
+    subgraph "数据 & 状态"
+        OnDiskState["磁盘状态<br>plugins.xml, APKs"]
+        InMemoryState["内存状态<br>已加载插件, 类加载器, 实例"]
+        ClassIndex["全局类索引<br>Map<类, 插件ID>"]
+        DepGraph["依赖图<br>(正向 & 反向)"]
+        MergedRes["合并后的资源"]
     end
     
-    %% --- Manager Responsibilities ---
-    IM -- "Manages" --> OnDiskState
-    PM -- "Manages" --> InMemoryState
-    PM -- "Builds & Owns" --> ClassIndex
-    DM -- "Builds & Owns" --> DepGraph
-    RM -- "Creates & Owns" --> MergedRes
-    ProxyM -- "Manages" --> HostProxies
+    %% --- 管理器职责 ---
+    IM -- "管理" --> OnDiskState
+    PM -- "管理" --> InMemoryState
+    PM -- "构建 & 持有" --> ClassIndex
+    DM -- "构建 & 持有" --> DepGraph
+    RM -- "创建 & 持有" --> MergedRes
+    ProxyM -- "管理" --> HostProxies
     
-    %% --- Key Interactions ---
-    subgraph "Key Interaction: ClassLoader Delegation"
+    %% --- 关键交互 ---
+    subgraph "关键交互: 类加载器委托"
         direction LR
         style RequesterPCL fill:#f9f,stroke:#333,stroke-width:2px
         style TargetPCL fill:#ccf,stroke:#333,stroke-width:2px
         
-        RequesterPCL["Requester<br>PluginClassLoader"] -- "findClass() on miss" --> DM
-        DM -- "1. lookup" --> ClassIndex
-        DM -- "2. record dependency" --> DepGraph
-        DM -- "3. load from" --> TargetPCL["Target<br>PluginClassLoader"]
+        RequesterPCL["请求方<br>插件类加载器"] -- "findClass()查找失败时" --> DM
+        DM -- "1. 查找" --> ClassIndex
+        DM -- "2. 记录依赖" --> DepGraph
+        DM -- "3. 从...加载" --> TargetPCL["目标<br>插件类加载器"]
     end
     
-    InMemoryState -- contains --> RequesterPCL
-    InMemoryState -- contains --> TargetPCL
+    InMemoryState -- 包含 --> RequesterPCL
+    InMemoryState -- 包含 --> TargetPCL
 ```
 
 * **`PluginManager` (总控制器)**: 框架的最高指挥官和唯一的单例入口。它负责协调其他所有管理器，并掌管所有插件的
@@ -112,8 +112,8 @@ graph TD
 
 1. **实例化入口类**: `PluginManager` 使用刚刚创建的 `PluginClassLoader` 来加载并实例化插件
    `AndroidManifest.xml` 中声明的入口类 (`IPluginEntryClass`)。
-2. **生命周期回调**: 调用入口类实例的 `onLoad()` 方法，并传入 `PluginContext`。
-3. **依赖注入**: 如果插件提供了 Koin 模块，框架会自动加载它们到全局 Koin 容器中。
+2. **依赖注入**: 如果插件提供了 Koin 模块，框架会自动加载它们到全局 Koin 容器中。
+3. **生命周期回调**: 调用入口类实例的 `onLoad()` 方法，并传入 `PluginContext`。
 4. **保存实例**: 插件实例被存入 `pluginInstancesFlow` 状态中，此时插件已完全就绪，可以对外提供服务。
 
 #### 4\. 卸载 (Unloading)

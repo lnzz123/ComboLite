@@ -16,6 +16,8 @@
  *
  */
 
+@file:Suppress("KDocUnresolvedReference")
+
 package com.combo.core.base
 
 import android.app.Application

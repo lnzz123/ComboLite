@@ -132,10 +132,10 @@ When you call `PluginManager.launchPlugin("com.example.myplugin")`:
 1. **Instantiate Entry Class**: `PluginManager` uses the newly created `PluginClassLoader` to load
    and instantiate the entry class (`IPluginEntryClass`) declared in the plugin's
    `AndroidManifest.xml`.
-2. **Lifecycle Callback**: The `onLoad()` method of the entry class instance is called, with a
+2. **Dependency Injection**: If the plugin provides Koin modules, the framework automatically loads
+      them into the global Koin container.
+3. **Lifecycle Callback**: The `onLoad()` method of the entry class instance is called, with a
    `PluginContext` passed in.
-3. **Dependency Injection**: If the plugin provides Koin modules, the framework automatically loads
-   them into the global Koin container.
 4. **Save Instance**: The plugin instance is stored in the `pluginInstancesFlow` state. At this
    point, the plugin is fully ready and can provide its services.
 

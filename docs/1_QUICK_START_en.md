@@ -40,7 +40,6 @@ graph LR
     end
     
     linkStyle 2 stroke-dasharray: 5 5;
-    click C "./2_PACKAGING_GUIDE.md" "Go to Packaging Guide"
 ```
 
 -----

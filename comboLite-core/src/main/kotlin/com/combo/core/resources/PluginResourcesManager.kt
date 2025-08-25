@@ -16,6 +16,8 @@
  *
  */
 
+@file:Suppress("unused")
+
 package com.combo.core.resources
 
 import android.annotation.SuppressLint

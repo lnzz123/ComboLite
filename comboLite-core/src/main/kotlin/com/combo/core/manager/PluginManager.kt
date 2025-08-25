@@ -16,6 +16,8 @@
  *
  */
 
+@file:Suppress("unused")
+
 package com.combo.core.manager
 
 import android.app.Application
@@ -253,11 +255,6 @@ object PluginManager : IPluginStateProvider {
 
                 _pluginInstances.update { it + successfulInstances }
 
-                // Koin 模块加载
-                successfulInstances.forEach { (pluginId, instance) ->
-                    loadKoinModules(pluginId, instance)
-                }
-
                 val successCount = successfulInstances.size
                 Timber.tag(TAG).i("插件异步实例化完成，成功实例化 $successCount 个插件")
                 successCount
@@ -336,9 +333,6 @@ object PluginManager : IPluginStateProvider {
         // 4. 注册插件实例
         _pluginInstances.update { it + (pluginId to instance) }
 
-        // 5. 加载Koin模块
-        loadKoinModules(pluginId, instance)
-
         Timber.tag(TAG).i("插件 [$pluginId] 首次启动成功。")
         return true
     }
@@ -405,11 +399,6 @@ object PluginManager : IPluginStateProvider {
                 return@coroutineScope false
             }
             _pluginInstances.update { it + successfulInstances }
-
-            // --- Koin模块加载 ---
-            successfulInstances.forEach { (id, instance) ->
-                loadKoinModules(id, instance)
-            }
 
             Timber.tag(TAG).i("链式重启成功完成，共重启 ${pluginsToReload.size} 个插件。")
             return@coroutineScope true
@@ -587,17 +576,8 @@ object PluginManager : IPluginStateProvider {
                 Timber
                     .tag(TAG)
                     .d("插件入口类实例化成功: ${plugin.pluginId} -> ${plugin.entryClass}")
-                try {
-                    val pluginContext = PluginContext(
-                        application = this.context,
-                        pluginInfo = plugin
-                    )
-                    instance.onLoad(pluginContext)
-                    Timber.tag(TAG).d("插件 [${plugin.pluginId}] onLoad() Success。")
-                } catch (e: Exception) {
-                    Timber.tag(TAG).e(e, "插件 [${plugin.pluginId}] onLoad() Failed。")
-                    return null
-                }
+                loadKoinModules(plugin.pluginId, instance)
+                executeOnLoad(plugin, instance)
                 instance
             } else {
                 Timber
@@ -657,6 +637,40 @@ object PluginManager : IPluginStateProvider {
     }
 
     /**
+     * 执行插件的 onLoad 方法
+     *
+     * @param plugin 插件信息
+     * @param instance 插件实例
+     */
+    private fun executeOnLoad(plugin: PluginInfo, instance: IPluginEntryClass) {
+        try {
+            val pluginContext = PluginContext(
+                application = this.context,
+                pluginInfo = plugin
+            )
+            instance.onLoad(pluginContext)
+            Timber.tag(TAG).d("插件 [${plugin.pluginId}] onLoad() Success。")
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "插件 [${plugin.pluginId}] onLoad() Failed。")
+        }
+    }
+
+    /**
+     * 执行插件的 onUnload 方法
+     *
+     * @param pluginId 插件ID
+     * @param instance 插件实例
+     */
+    private fun executeOnUnload(pluginId: String, instance: IPluginEntryClass) {
+        try {
+            instance.onUnload()
+            Timber.tag(TAG).d("插件 [${pluginId}] onUnload() Success。")
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "插件 [${pluginId}] onUnload() Failed。")
+        }
+    }
+
+    /**
      * 卸载指定插件，并清理其所有相关资源和依赖记录。
      *
      * @param pluginId 插件ID
@@ -669,19 +683,13 @@ object PluginManager : IPluginStateProvider {
 
         Timber.tag(TAG).i("开始卸载插件: $pluginId")
 
-        val instanceToUnload = _pluginInstances.value[pluginId]
+        val instance = _pluginInstances.value[pluginId]
 
-        if (instanceToUnload != null) {
-            try {
-                instanceToUnload.onUnload()
-                Timber.tag(TAG).d("插件 [$pluginId] onUnload() Success。")
-            } catch (e: Exception) {
-                Timber.tag(TAG).e(e, "插件 [$pluginId] onUnload() Failed。")
-            }
+        // 1. 执行插件的 onUnload 方法与卸载koin模块
+        if (instance != null) {
+            executeOnUnload(pluginId, instance)
+            unloadKoinModules(pluginId, instance)
         }
-
-        // 1. 卸载Koin模块
-        _pluginInstances.value[pluginId]?.let { unloadKoinModules(pluginId, it) }
 
         // 2. 注销静态广播等代理组件
         proxyManager.unregisterStaticReceivers(pluginId)
@@ -1018,7 +1026,6 @@ object PluginManager : IPluginStateProvider {
             return null
         }
     }
-
 
     private fun <T : Any> getInterfaceFromHost(
         interfaceClass: Class<T>,

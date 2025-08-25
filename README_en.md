@@ -19,10 +19,8 @@
 <a href="https://gradle.org/"><img alt="Gradle" src="https://img.shields.io/badge/Gradle-8.13-6C757D.svg"/></a>
 <a href="https://github.com/lnzz123/ComboLite/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"/></a>
 <a href="https://github.com/lnzz123"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-lnzz123-181717.svg"/></a>
-</p>
-
-<p align="center">
-<a href="https://star-history.com/#lnzz123/ComboLite&Date">
+  
+<a>
 <img src="https://api.star-history.com/svg?repos=lnzz123/ComboLite&type=Date" alt="Star History Chart">
 </a>
 </p>

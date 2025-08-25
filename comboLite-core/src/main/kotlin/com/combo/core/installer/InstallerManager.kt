@@ -538,6 +538,7 @@ class InstallerManager(
      * @param apkPath 插件 APK 的文件路径。
      * @return 解析出的 Provider 信息列表。
      */
+    @Suppress("DEPRECATION")
     private fun parseProviders(apkPath: String): List<ProviderInfo> {
         Timber.tag(TAG).d("开始解析 ContentProvider : $apkPath")
         val pm = context.packageManager
