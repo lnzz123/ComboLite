@@ -41,4 +41,7 @@ sealed interface AppScreen {
 
     @Serializable
     data object ContentProvider : AppScreen
+
+    @Serializable
+    data object SoLibrary : AppScreen
 }

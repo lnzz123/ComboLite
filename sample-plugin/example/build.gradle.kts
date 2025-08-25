@@ -57,6 +57,11 @@ android {
         compose = true
         viewBinding = true
     }
+    externalNativeBuild {
+        cmake {
+            path("src/main/cpp/CMakeLists.txt")
+        }
+    }
 }
 
 dependencies {

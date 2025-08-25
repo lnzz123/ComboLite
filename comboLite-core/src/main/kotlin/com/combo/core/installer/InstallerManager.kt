@@ -22,6 +22,9 @@ import android.app.Application
 import android.content.pm.PackageManager
 import android.content.res.AssetManager
 import android.content.res.XmlResourceParser
+import android.os.Build
+import com.combo.core.loader.PluginClassLoader
+import com.combo.core.manager.PluginManager
 import com.combo.core.model.IntentFilterInfo
 import com.combo.core.model.MetaDataInfo
 import com.combo.core.model.PluginInfo
@@ -34,8 +37,8 @@ import kotlinx.serialization.Serializable
 import org.xmlpull.v1.XmlPullParser
 import timber.log.Timber
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import java.io.IOException
+import java.util.zip.ZipFile
 
 /**
  * 插件安装器
@@ -53,7 +56,9 @@ class InstallerManager(
 ) {
     companion object {
         private const val TAG = "PluginInstaller"
-        private const val PLUGINS_DIR = "plugins"
+        const val PLUGINS_DIR = "plugins"
+        const val PLUGIN_BASE_APK_NAME = "base.apk"
+        const val NATIVE_LIBS_DIR_NAME = "lib"
 
         // 插件元数据的键名
         private const val META_PLUGIN_ID = "plugin.id"
@@ -65,12 +70,7 @@ class InstallerManager(
 
     private val signatureValidator = SignatureValidator(context)
     private val pluginsDir: File by lazy {
-        File(context.filesDir, PLUGINS_DIR).apply {
-            if (!exists()) {
-                mkdirs()
-                Timber.tag(TAG).d("创建插件目录: $absolutePath")
-            }
-        }
+        File(context.filesDir, PLUGINS_DIR).apply { mkdirs() }
     }
 
     /**
@@ -108,127 +108,98 @@ class InstallerManager(
     suspend fun installPlugin(
         pluginApkFile: File,
         forceOverwrite: Boolean = false,
-    ): InstallResult =
-        withContext(Dispatchers.IO) {
-            Timber
-                .tag(TAG)
-                .i("开始异步安装插件: ${pluginApkFile.name}, forceOverwrite: $forceOverwrite")
+    ): InstallResult = withContext(Dispatchers.IO) {
+        Timber.tag(TAG).i("开始安装插件: ${pluginApkFile.name}, forceOverwrite: $forceOverwrite")
 
+        // 步骤 1 & 2: 验证文件和元数据
+        if (!pluginApkFile.exists()) return@withContext InstallResult.Failure("插件文件不存在")
+        val pluginConfig = validateAndParseConfig(pluginApkFile)
+            ?: return@withContext InstallResult.Failure("插件配置元数据验证失败")
+
+        // 步骤 3: 签名验证
+        if (!validateSignature(pluginApkFile)) {
+            return@withContext InstallResult.Failure("插件签名验证失败")
+        }
+
+        val pluginId = pluginConfig.pluginId
+        val pluginDir = getPluginDirectory(pluginId)
+
+        // 步骤 4: 版本检查
+        val existingPlugin = xmlManager.getPluginById(pluginId)
+        if (existingPlugin != null && !forceOverwrite) {
+            val versionComparison = compareVersions(pluginConfig.pluginVersion, existingPlugin.version)
+            if (versionComparison <= 0) {
+                return@withContext InstallResult.Failure(
+                    "已安装更高或相同版本 (${existingPlugin.version})，新版本 (${pluginConfig.pluginVersion}) 不能覆盖"
+                )
+            }
+            Timber.tag(TAG).i("插件版本升级: $pluginId (${existingPlugin.version} -> ${pluginConfig.pluginVersion})")
+        }
+
+        // 步骤 5: 备份旧插件目录 (如果是更新)
+        val backupDir = File(pluginsDir, "$pluginId.backup")
+        if (pluginDir.exists()) {
             try {
-                // 1. 检查文件是否存在
-                if (!pluginApkFile.exists()) {
-                    val reason = "插件文件不存在: ${pluginApkFile.absolutePath}"
-                    Timber.tag(TAG).e(reason)
-                    return@withContext InstallResult.Failure(reason)
-                }
-
-                // 2. 检查并解析AndroidManifest.xml中的插件元数据（优先进行轻量级检查）
-                val pluginConfig =
-                    validateAndParseConfig(pluginApkFile)
-                        ?: return@withContext InstallResult.Failure("插件配置元数据验证失败")
-
-                // 3. 验证插件APK签名（较重的验证操作）
-                if (!validateSignature(pluginApkFile)) {
-                    val reason = "插件签名验证失败: ${pluginApkFile.name}"
-                    Timber.tag(TAG).e(reason)
-                    return@withContext InstallResult.Failure(reason)
-                }
-
-                // 4. 检查插件是否已安装并进行版本比较
-                val existingPlugin = xmlManager.getPluginById(pluginConfig.pluginId)
-                if (existingPlugin != null && !forceOverwrite) {
-                    val newVersion = pluginConfig.pluginVersion
-                    val currentVersion = existingPlugin.version
-
-                    val versionComparison = compareVersions(newVersion, currentVersion)
-                    if (versionComparison <= 0) {
-                        val reason =
-                            "插件 ${pluginConfig.pluginId} 已安装更高或相同版本 ($currentVersion)，新版本 ($newVersion) 不能覆盖安装"
-                        Timber.tag(TAG).w(reason)
-                        return@withContext InstallResult.Failure(reason)
-                    }
-
-                    Timber
-                        .tag(TAG)
-                        .i("检测到插件版本升级: ${pluginConfig.pluginId} ($currentVersion -> $newVersion)")
-                }
-
-                // 5. 解析静态广播接收器和ContentProvider
-                val staticReceivers = parseStaticReceivers(pluginApkFile.absolutePath)
-                val providers = parseProviders(pluginApkFile.absolutePath)
-
-                // 6. 如果是更新安装，备份当前插件文件
-                var backupFile: File? = null
-                if (existingPlugin != null) {
-                    val currentPluginFile = File(existingPlugin.path)
-                    if (currentPluginFile.exists()) {
-                        backupFile = File("${existingPlugin.path}.backup")
-                        try {
-                            currentPluginFile.copyTo(backupFile, overwrite = true)
-                            Timber.tag(TAG).d("当前插件文件已备份: ${backupFile.absolutePath}")
-                        } catch (e: Exception) {
-                            Timber.tag(TAG).w(e, "备份当前插件文件失败，继续安装")
-                            backupFile = null
-                        }
-                    }
-                }
-
-                // 7. 异步复制插件文件到目标目录
-                val targetFile = copyPluginFile(pluginApkFile, pluginConfig.pluginId)
-                if (targetFile == null) {
-                    // 恢复备份文件
-                    if (backupFile?.exists() == true && existingPlugin != null) {
-                        try {
-                            val currentPluginFile = File(existingPlugin.path)
-                            backupFile.copyTo(currentPluginFile, overwrite = true)
-                            backupFile.delete()
-                            Timber.tag(TAG).i("已恢复备份文件")
-                        } catch (e: Exception) {
-                            Timber.tag(TAG).e(e, "恢复备份文件失败")
-                        }
-                    }
-                    return@withContext InstallResult.Failure("插件文件复制失败")
-                }
-
-                // 8. 记录或更新插件信息到plugins.xml
-                val pluginInfo =
-                    PluginInfo(
-                        pluginId = pluginConfig.pluginId,
-                        version = pluginConfig.pluginVersion,
-                        path = targetFile.absolutePath,
-                        entryClass = pluginConfig.entryClass,
-                        description = pluginConfig.pluginDescription,
-                        enabled = existingPlugin?.enabled ?: true,
-                        installTime = existingPlugin?.installTime ?: System.currentTimeMillis(),
-                        staticReceivers = staticReceivers,
-                        providers = providers,
-                    )
-
-                if (existingPlugin != null) {
-                    xmlManager.updatePlugin(pluginInfo)
-                    Timber
-                        .tag(TAG)
-                        .i("插件异步更新成功: ${pluginConfig.pluginId} (${existingPlugin.version} -> ${pluginConfig.pluginVersion})")
-                } else {
-                    xmlManager.addPlugin(pluginInfo)
-                    Timber.tag(TAG).i("插件异步安装成功: ${pluginConfig.pluginId}")
-                }
-
-                xmlManager.flushToDisk() // 立即保存到磁盘
-
-                // 9. 清理备份文件
-                if (backupFile?.exists() == true) {
-                    backupFile.delete()
-                    Timber.tag(TAG).d("备份文件已清理")
-                }
-
-                InstallResult.Success(pluginInfo)
+                pluginDir.copyRecursively(backupDir, overwrite = true)
+                pluginDir.deleteRecursively() // 删除旧目录为新安装做准备
+                Timber.tag(TAG).d("旧插件目录已备份至: ${backupDir.absolutePath}")
             } catch (e: Exception) {
-                val reason = "插件安装过程中发生异常: ${e.message}"
-                Timber.tag(TAG).e(e, reason)
-                InstallResult.Failure(reason, e)
+                Timber.tag(TAG).w(e, "备份旧插件目录失败，继续安装")
             }
         }
+
+        pluginDir.mkdirs()
+
+        try {
+            // 步骤 6: 复制 APK 到插件目录并解压 so 库
+            val targetApkFile = copyPluginApk(pluginApkFile, pluginDir)
+            extractNativeLibs(pluginApkFile, pluginDir)
+
+            // 步骤 7: 解析四大组件信息
+            val staticReceivers = parseStaticReceivers(targetApkFile.absolutePath)
+            val providers = parseProviders(targetApkFile.absolutePath)
+
+            // 步骤 8: 更新 plugins.xml
+            val pluginInfo = PluginInfo(
+                pluginId = pluginConfig.pluginId,
+                version = pluginConfig.pluginVersion,
+                path = targetApkFile.absolutePath,
+                entryClass = pluginConfig.entryClass,
+                description = pluginConfig.pluginDescription,
+                enabled = existingPlugin?.enabled ?: true,
+                installTime = existingPlugin?.installTime ?: System.currentTimeMillis(),
+                staticReceivers = staticReceivers,
+                providers = providers,
+            )
+
+            if (existingPlugin != null) {
+                xmlManager.updatePlugin(pluginInfo)
+            } else {
+                xmlManager.addPlugin(pluginInfo)
+            }
+            xmlManager.flushToDisk()
+
+            // 步骤 9: 清理备份
+            backupDir.deleteRecursively()
+
+            Timber.tag(TAG).i("插件 [$pluginId] 安装成功。")
+            InstallResult.Success(pluginInfo)
+        } catch (e: Exception) {
+            // 如果安装过程中出错，尝试从备份恢复
+            pluginDir.deleteRecursively()
+            if (backupDir.exists()) {
+                try {
+                    backupDir.renameTo(pluginDir)
+                    Timber.tag(TAG).i("从备份恢复插件目录: $pluginId")
+                } catch (ex: Exception) {
+                    Timber.tag(TAG).e(ex, "从备份恢复失败")
+                }
+            }
+            val reason = "插件安装过程中发生异常: ${e.message}"
+            Timber.tag(TAG).e(e, reason)
+            InstallResult.Failure(reason, e)
+        }
+    }
 
     /**
      * 卸载插件
@@ -237,45 +208,45 @@ class InstallerManager(
      * @return 卸载是否成功
      */
     fun uninstallPlugin(pluginId: String): Boolean {
-        Timber.tag(TAG).i("开始卸载插件: $pluginId")
+        Timber.tag(TAG).i("开始事务性卸载插件: $pluginId")
 
-        try {
-            // 1. 从XML管理器中获取插件信息
-            val pluginInfo = xmlManager.getPluginById(pluginId)
-            if (pluginInfo == null) {
-                Timber.tag(TAG).w("插件不存在: $pluginId")
-                return false
+        val pluginDir = getPluginDirectory(pluginId)
+
+        if (!pluginDir.exists()) {
+            Timber.tag(TAG).w("插件目录不存在: ${pluginDir.absolutePath}, 将仅清理XML记录。")
+            if (xmlManager.getPluginById(pluginId) != null) {
+                xmlManager.removePlugin(pluginId)
+                xmlManager.flushToDisk()
             }
+            return true
+        }
 
-            // 2. 删除插件文件
-            val pluginFile = File(pluginInfo.path)
-            if (pluginFile.exists()) {
-                val deleted = pluginFile.delete()
-                if (deleted) {
-                    Timber.tag(TAG).d("插件文件删除成功: ${pluginFile.absolutePath}")
-                } else {
-                    Timber.tag(TAG).w("插件文件删除失败: ${pluginFile.absolutePath}")
-                }
+        val deletingDir = File(pluginDir.parentFile, "${pluginDir.name}.deleting_${System.currentTimeMillis()}")
+        if (!pluginDir.renameTo(deletingDir)) {
+            Timber.tag(TAG).e("卸载失败：无法重命名插件目录以进行安全删除。请检查文件权限或占用情况。")
+            return false
+        }
+
+        Timber.tag(TAG).d("插件目录已移动至临时位置: ${deletingDir.absolutePath}")
+
+        if (deletingDir.deleteRecursively()) {
+            Timber.tag(TAG).d("临时目录已成功删除。")
+            if (xmlManager.removePlugin(pluginId)) {
+                xmlManager.flushToDisk()
+            }
+            PluginManager.getOptimizedDirectory(context, pluginId).deleteRecursively()
+            Timber.tag(TAG).i("插件 [$pluginId] 已完全卸载。")
+            return true
+        } else {
+            Timber.tag(TAG).e("关键错误：在删除临时目录 ${deletingDir.name} 时失败。")
+            if (deletingDir.renameTo(pluginDir)) {
+                Timber.tag(TAG).i("回滚成功：插件目录已从临时位置恢复。")
             } else {
-                Timber.tag(TAG).w("插件文件不存在: ${pluginFile.absolutePath}")
+                Timber.tag(TAG).e("回滚失败！插件处于不一致状态，目录位于: ${deletingDir.absolutePath}")
             }
-
-            // 3. 从XML管理器中移除插件记录
-            val removed = xmlManager.removePlugin(pluginId)
-            if (removed) {
-                xmlManager.flushToDisk() // 立即保存到磁盘
-                Timber.tag(TAG).i("插件卸载成功: $pluginId")
-                return true
-            } else {
-                Timber.tag(TAG).e("从XML管理器中移除插件记录失败: $pluginId")
-                return false
-            }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "卸载插件时发生异常: ${e.message}")
             return false
         }
     }
-
     /**
      * 比较两个版本号
      *
@@ -601,64 +572,55 @@ class InstallerManager(
     }
 
     /**
-     * 异步复制插件文件到目标目录
-     *
-     * @param sourceFile 源插件文件
-     * @param pluginId 插件ID
-     * @return 复制后的目标文件，复制失败返回null
+     * 获取指定插件的安装目录
      */
-    private suspend fun copyPluginFile(
-        sourceFile: File,
-        pluginId: String,
-    ): File? =
-        withContext(Dispatchers.IO) {
-            val targetFileName = "$pluginId.plugin"
-            val targetFile = File(pluginsDir, targetFileName)
+    fun getPluginDirectory(pluginId: String): File {
+        return File(pluginsDir, pluginId)
+    }
 
-            Timber
-                .tag(TAG)
-                .d("开始异步复制插件文件: ${sourceFile.name} -> ${targetFile.absolutePath}")
+    /**
+     * 复制 APK 文件到指定的插件目录
+     */
+    private fun copyPluginApk(sourceFile: File, pluginDir: File): File {
+        val targetFile = File(pluginDir, PLUGIN_BASE_APK_NAME)
+        Timber.tag(TAG).d("复制 APK: ${sourceFile.name} -> ${targetFile.absolutePath}")
 
-            try {
-                // 如果目标文件已存在，先删除
-                if (targetFile.exists()) {
-                    targetFile.delete()
-                    Timber.tag(TAG).d("删除已存在的目标文件: ${targetFile.absolutePath}")
-                }
+        sourceFile.inputStream().use { input ->
+            targetFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
 
-                // 异步复制文件，使用缓冲区提高效率
-                val buffer = ByteArray(8192) // 8KB缓冲区
-                FileInputStream(sourceFile).use { input ->
-                    FileOutputStream(targetFile).use { output ->
-                        var bytesRead: Int
-                        while (input.read(buffer).also { bytesRead = it } != -1) {
-                            output.write(buffer, 0, bytesRead)
+        if (!targetFile.exists() || targetFile.length() != sourceFile.length()) {
+            throw IOException("APK 文件复制验证失败")
+        }
+        targetFile.setReadOnly()
+        return targetFile
+    }
+
+    /**
+     * 解压插件 APK 中的 so 库到插件目录
+     */
+    private fun extractNativeLibs(pluginApk: File, pluginDir: File) {
+        val libDir = File(pluginDir, NATIVE_LIBS_DIR_NAME)
+        libDir.mkdirs()
+
+        ZipFile(pluginApk).use { zip ->
+            for (entry in zip.entries()) {
+                if (entry.name.startsWith("lib/") && !entry.isDirectory) {
+                    val abi = entry.name.substringAfter("lib/").substringBefore('/')
+                    if (Build.SUPPORTED_ABIS.contains(abi)) {
+                        val abiDir = File(libDir, abi).apply { mkdirs() }
+                        val outputFile = File(abiDir, entry.name.substringAfterLast('/'))
+                        zip.getInputStream(entry).use { input ->
+                            outputFile.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
                         }
                     }
                 }
-
-                // 验证复制结果
-                if (!targetFile.exists() || targetFile.length() != sourceFile.length()) {
-                    Timber.tag(TAG).e("文件复制验证失败")
-                    return@withContext null
-                }
-
-                // 设置文件为只读权限，防止Android系统报"Writable dex file"错误
-                if (!targetFile.setReadOnly()) {
-                    Timber.tag(TAG).w("设置插件文件为只读失败: ${targetFile.absolutePath}")
-                } else {
-                    Timber.tag(TAG).d("插件文件已设置为只读: ${targetFile.absolutePath}")
-                }
-
-                Timber.tag(TAG).d("插件文件异步复制成功: ${targetFile.absolutePath}")
-                targetFile
-            } catch (e: Exception) {
-                Timber.tag(TAG).e(e, "异步复制插件文件失败: ${e.message}")
-                // 清理可能的不完整文件
-                if (targetFile.exists()) {
-                    targetFile.delete()
-                }
-                null
             }
         }
+        Timber.tag(TAG).d("插件 .so 库已解压至: ${libDir.absolutePath}")
+    }
 }

@@ -2,13 +2,9 @@
    <b>简体中文</b> | <a href="./README_en.md">English</a> 
 </p> 
 
-[//]: # (<p align="center">)
-
-[//]: # (  <img src="image/logo.jpg" width="512" alt="ComboLite Logo">)
-
-[//]: # (</p>)
-
-<h1 align="center">ComboLite</h1>
+<p align="center">
+  <img src="image/banner.png" width="1280" alt="ComboLite Logo">
+</p>
 
 <p align="center">
   <strong>专为 Jetpack Compose 而生，100% 官方 API，0 Hook & 0 反射 的下一代 Android 插件化框架。</strong>
@@ -25,10 +21,6 @@
   <a href="https://gradle.org/"><img alt="Gradle" src="https://img.shields.io/badge/Gradle-8.13-6C757D.svg"/></a>
   <a href="https://github.com/lnzz123/ComboLite/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"/></a>
   <a href="https://github.com/lnzz123"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-lnzz123-181717.svg"/></a>
-
-  <a>
-    <img src="https://api.star-history.com/svg?repos=lnzz123/ComboLite&type=Date" alt="Star History Chart">
-  </a>
 </p>
 
 ---
@@ -343,3 +335,7 @@ Compose、且将长期稳定性和可维护性放在首位的项目，`ComboLite
 
 `ComboLite` 遵循 [Apache-2.0 license](https://github.com/lnzz123/ComboLite/blob/main/LICENSE)
 开源许可协议。
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=lnzz123/ComboLite&type=Date)](https://www.star-history.com/#lnzz123/ComboLite&Date)

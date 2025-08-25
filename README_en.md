@@ -2,7 +2,9 @@
 <a href="./README.md">简体中文</a> | <b>English</b>
 </p>
 
-<h1 align="center">ComboLite</h1>
+<p align="center">
+  <img src="image/banner.png" width="1280" alt="ComboLite Logo">
+</p>
 
 <p align="center">
 <strong>The next-generation Android plugin framework, born for Jetpack Compose, using 100% official APIs with 0 Hooks & 0 Reflection.</strong>
@@ -19,10 +21,6 @@
 <a href="https://gradle.org/"><img alt="Gradle" src="https://img.shields.io/badge/Gradle-8.13-6C757D.svg"/></a>
 <a href="https://github.com/lnzz123/ComboLite/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"/></a>
 <a href="https://github.com/lnzz123"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-lnzz123-181717.svg"/></a>
-  
-<a>
-<img src="https://api.star-history.com/svg?repos=lnzz123/ComboLite&type=Date" alt="Star History Chart">
-</a>
 </p>
 
 -----
@@ -287,10 +285,8 @@ plugin development journey:
   deep into the `aar2apk` plugin and master both packaging strategies.
 * **[[Advanced] Core API Usage](https://www.google.com/search?q=./docs/3_CORE_APIS.md)**: Master all
   the core functions of `PluginManager`.
-* **[[Advanced] Four Components Guide](https://www.google.com/search?q=./docs/4_COMPONENTS_GUIDE.md)
-  **: Learn how to use Activity, Service, BroadcastReceiver, and ContentProvider within plugins.
-* **[[Principles] Architecture & Design](https://www.google.com/search?q=./docs/5_ARCHITECTURE.md)
-  **: Explore the internal workings of ComboLite.
+* **[[Advanced] Four Components Guide](https://www.google.com/search?q=./docs/4_COMPONENTS_GUIDE.md)**: Learn how to use Activity, Service, BroadcastReceiver, and ContentProvider within plugins.
+* **[[Principles] Architecture & Design](https://www.google.com/search?q=./docs/5_ARCHITECTURE.md)**: Explore the internal workings of ComboLite.
 
 -----
 
@@ -398,3 +394,7 @@ project is helpful to you, your support will be the greatest motivation for my c
 
 `ComboLite` is licensed under
 the [Apache-2.0 license](https://github.com/lnzz123/ComboLite/blob/main/LICENSE).
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=lnzz123/ComboLite&type=Date)](https://www.star-history.com/#lnzz123/ComboLite&Date)

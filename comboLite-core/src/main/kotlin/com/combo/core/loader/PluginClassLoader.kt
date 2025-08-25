@@ -43,20 +43,20 @@ open class PluginClassLoader(
     parent: ClassLoader?,
     private val pluginFinder: IPluginFinder?,
 ) : DexClassLoader(dexPath, optimizedDirectory, librarySearchPath, parent) {
+
     constructor(
         pluginId: String,
         pluginFile: File,
         parent: ClassLoader,
-        pluginFinder: IPluginFinder?,
+        optimizedDirectory: String,
+        librarySearchPath: String?,
+        pluginFinder: IPluginFinder?
     ) : this(
         pluginId = pluginId,
         dexPath = pluginFile.absolutePath,
-        optimizedDirectory =
-            File(pluginFile.parent, "dex_opt").absolutePath.also {
-                File(it).mkdirs()
-            },
-        librarySearchPath = null,
         parent = parent,
+        optimizedDirectory = optimizedDirectory,
+        librarySearchPath = librarySearchPath,
         pluginFinder = pluginFinder,
     )
 

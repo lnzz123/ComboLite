@@ -21,6 +21,7 @@
 package com.combo.core.manager
 
 import android.app.Application
+import android.content.Context
 import android.os.Build
 import com.combo.core.installer.InstallerManager
 import com.combo.core.installer.XmlManager
@@ -52,8 +53,6 @@ import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import timber.log.Timber
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -62,18 +61,19 @@ import java.util.concurrent.ConcurrentHashMap
  * 负责插件的安装、运行和更新管理
  * 支持插件的动态加载、资源管理和依赖注入
  * 整合了原PluginLauncher的功能，提供统一的插件生命周期管理
- *
- * 注意：此类已改造为全局单例模式，不再依赖Koin
  */
 object PluginManager : IPluginStateProvider {
+
     private const val TAG = "PluginManager"
     private const val CLASS_INDEX_TAG = "ClassIndex"
-    private const val RUNTIME_CACHE_DIR_NAME = "plugins_runtime"
+    private const val DEX_OPTIMIZED_DIR_NAME = "dex_opt"
     private const val PLUGIN_FILE_EXTENSION = ".apk"
 
     private lateinit var context: Application
     private lateinit var xmlManager: XmlManager
     private lateinit var dependencyManager: DependencyManager
+
+    // 子管理器实例，对外部只读
     lateinit var installerManager: InstallerManager
         private set
     lateinit var resourcesManager: PluginResourcesManager
@@ -81,40 +81,27 @@ object PluginManager : IPluginStateProvider {
     lateinit var proxyManager: ProxyManager
         private set
 
-    enum class InitState {
-        NOT_INITIALIZED,
-        INITIALIZING,
-        INITIALIZED
-    }
-
-    // 初始化状态
-    private val _initState = MutableStateFlow(InitState.NOT_INITIALIZED)
-    val initStateFlow: StateFlow<InitState> = _initState.asStateFlow()
-    val isInitialized: Boolean
-        get() = _initState.value == InitState.INITIALIZED
-
     private val managerScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    // 运行时缓存目录
-    private val runtimeCacheDir: File by lazy {
-        File(context.cacheDir, RUNTIME_CACHE_DIR_NAME).apply {
-            if (!exists()) {
-                mkdirs()
-                Timber.tag(TAG).d("创建运行时插件缓存目录: $absolutePath")
-            }
-        }
-    }
+    /** 插件初始化状态 */
+    enum class InitState { NOT_INITIALIZED, INITIALIZING, INITIALIZED }
+    private val _initState = MutableStateFlow(InitState.NOT_INITIALIZED)
+    val initStateFlow: StateFlow<InitState> = _initState.asStateFlow()
+    val isInitialized: Boolean get() = _initState.value == InitState.INITIALIZED
 
-    // 存储已加载的插件信息 - 使用StateFlow
+    /** 已加载插件的运行时信息 */
+    data class LoadedPluginInfo(
+        val pluginInfo: PluginInfo,
+        val classLoader: PluginClassLoader,
+    )
     private val _loadedPlugins = MutableStateFlow<Map<String, LoadedPluginInfo>>(emptyMap())
     val loadedPluginsFlow: StateFlow<Map<String, LoadedPluginInfo>> = _loadedPlugins.asStateFlow()
 
-    // 存储插件实例的缓存 - 使用StateFlow
+    /** 已加载并实例化的插件入口类实例 */
     private val _pluginInstances = MutableStateFlow<Map<String, IPluginEntryClass>>(emptyMap())
-    val pluginInstancesFlow: StateFlow<Map<String, IPluginEntryClass>> =
-        _pluginInstances.asStateFlow()
+    val pluginInstancesFlow: StateFlow<Map<String, IPluginEntryClass>> = _pluginInstances.asStateFlow()
 
-    // 插件类名索引
+    /** 全局类索引，用于 O(1) 复杂度的跨插件类查找 */
     private val classIndex = ConcurrentHashMap<String, String>()
 
     override fun getClassIndex(): Map<String, String> = this.classIndex
@@ -160,7 +147,7 @@ object PluginManager : IPluginStateProvider {
             this.resourcesManager = PluginResourcesManager(this.context)
             this.proxyManager = ProxyManager(this.context)
             this.dependencyManager = DependencyManager(this)
-            clearRuntimeCache()
+            clearDexOptCache()
 
             Timber.tag(TAG).i("核心组件初始化完成。")
 
@@ -187,15 +174,6 @@ object PluginManager : IPluginStateProvider {
             }
         }
     }
-
-    /**
-     * 已加载插件信息数据类
-     */
-    data class LoadedPluginInfo(
-        val pluginInfo: PluginInfo,
-        val classLoader: PluginClassLoader,
-        val runtimeCacheFile: File? = null,
-    )
 
     /**
      * 异步加载所有已启用的插件
@@ -506,14 +484,14 @@ object PluginManager : IPluginStateProvider {
         withContext(Dispatchers.IO) {
             try {
                 // 创建运行时缓存文件（内部会检查原文件存在性）
-                val runtimeCacheFile = createCacheFile(plugin.pluginId)
-                if (runtimeCacheFile == null) {
-                    Timber.tag(TAG).e("创建运行时缓存文件失败: ${plugin.pluginId}")
+                val pluginApkFile = File(plugin.path)
+                if (!pluginApkFile.exists()) {
+                    Timber.tag(TAG).e("插件 APK 文件不存在: ${plugin.path}")
                     return@withContext null
                 }
 
                 // 索引插件类（使用缓存文件）
-                indexPluginClasses(plugin.pluginId, runtimeCacheFile)
+                indexPluginClasses(plugin.pluginId, pluginApkFile)
 
                 // 过滤出所有 enabled 的静态广播和内容提供者
                 val enabledReceivers = plugin.staticReceivers.filter { it.enabled }
@@ -523,20 +501,27 @@ object PluginManager : IPluginStateProvider {
                 proxyManager.registerStaticReceivers(plugin.pluginId, enabledReceivers)
                 proxyManager.registerProviders(plugin.pluginId, enabledProviders)
 
-                // 使用缓存文件创建类加载器
-                val classLoader =
-                    PluginClassLoader(
-                        pluginId = plugin.pluginId,
-                        pluginFile = runtimeCacheFile,
-                        parent = context.classLoader,
-                        pluginFinder = this@PluginManager.dependencyManager,
-                    )
+                // 构建 so 库的搜索路径
+                val pluginInstallDir = installerManager.getPluginDirectory(plugin.pluginId)
+                val abi = Build.SUPPORTED_ABIS[0]
+                val nativeLibDir = File(pluginInstallDir, "${InstallerManager.NATIVE_LIBS_DIR_NAME}/$abi")
+                val nativeLibraryPath = if (nativeLibDir.exists()) nativeLibDir.absolutePath else null
+
+                // 创建配置完备的 PluginClassLoader
+                val classLoader = PluginClassLoader(
+                    pluginId = plugin.pluginId,
+                    pluginFile = pluginApkFile,
+                    parent = context.classLoader,
+                    optimizedDirectory = getOptimizedDirectory(context, plugin.pluginId).absolutePath,
+                    librarySearchPath = nativeLibraryPath,
+                    pluginFinder = this@PluginManager.dependencyManager,
+                )
 
                 // 加载插件资源
                 try {
                     // 使用 PluginResourcesManager 加载资源（支持所有Android版本）
                     val success =
-                        resourcesManager.loadPluginResources(plugin.pluginId, runtimeCacheFile)
+                        resourcesManager.loadPluginResources(plugin.pluginId, pluginApkFile)
 
                     if (success) {
                         Timber.tag(TAG).d("插件 ${plugin.pluginId} 资源已加载到资源管理器")
@@ -552,8 +537,7 @@ object PluginManager : IPluginStateProvider {
 
                 LoadedPluginInfo(
                     pluginInfo = plugin,
-                    classLoader = classLoader,
-                    runtimeCacheFile = runtimeCacheFile,
+                    classLoader = classLoader
                 )
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "加载插件 ${plugin.pluginId} 失败: ${e.message}")
@@ -708,123 +692,31 @@ object PluginManager : IPluginStateProvider {
         // 6. 从全局类索引中移除
         removePluginFromIndex(pluginId)
 
-        // 7. 清理运行时缓存文件
-        cleanupCacheFile(pluginId)
-
         Timber.tag(TAG).i("插件 [$pluginId] 卸载完成。")
     }
 
     /**
      * 清理运行时缓存目录
      */
-    private fun clearRuntimeCache() {
+    private fun clearDexOptCache() {
         try {
-            if (runtimeCacheDir.exists()) {
-                val deleted = runtimeCacheDir.deleteRecursively()
-                if (deleted) {
-                    Timber.tag(TAG).d("运行时缓存目录清理成功")
-                    // 重新创建目录
-                    runtimeCacheDir.mkdirs()
-                } else {
-                    Timber.tag(TAG).w("运行时缓存目录清理失败")
-                }
+            val result = File(context.cacheDir, DEX_OPTIMIZED_DIR_NAME).deleteRecursively()
+            if (result) {
+                Timber.tag(TAG).i("清理DexOpt缓存成功")
+            } else {
+                Timber.tag(TAG).w("清理DexOpt缓存失败，目录可能不存在")
             }
         } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "清理运行时缓存目录时发生错误: ${e.message}")
+            Timber.tag(TAG).e(e, "清理DexOpt缓存失败: ${e.message}")
         }
     }
 
     /**
-     * 为插件创建运行时缓存文件
-     *
-     * @param pluginId 插件ID
-     * @return 缓存文件，失败返回null
+     * 获取插件的优化目录
      */
-    private suspend fun createCacheFile(pluginId: String): File? =
-        withContext(Dispatchers.IO) {
-            try {
-                // 通过插件ID获取原文件路径
-                val pluginInfo = xmlManager.getPluginById(pluginId)
-                if (pluginInfo == null) {
-                    Timber.tag(TAG).e("未找到插件信息: $pluginId")
-                    return@withContext null
-                }
-
-                val sourceFile = File(pluginInfo.path)
-                if (!sourceFile.exists()) {
-                    Timber.tag(TAG).e("插件源文件不存在: ${pluginInfo.path}")
-                    return@withContext null
-                }
-
-                // 生成缓存文件名
-                val cacheFile =
-                    File(
-                        runtimeCacheDir,
-                        "${pluginId}_${System.currentTimeMillis()}$PLUGIN_FILE_EXTENSION",
-                    )
-                Timber.tag(TAG).d("创建运行时缓存文件: $pluginId -> ${cacheFile.absolutePath}")
-                FileInputStream(sourceFile).channel.use { sourceChannel ->
-                    FileOutputStream(cacheFile).channel.use { destinationChannel ->
-                        sourceChannel.transferTo(0, sourceChannel.size(), destinationChannel)
-                    }
-                }
-
-                // 验证复制结果
-                if (!cacheFile.exists() || cacheFile.length() != sourceFile.length()) {
-                    Timber.tag(TAG).e("运行时缓存文件创建验证失败: $pluginId")
-                    cacheFile.delete()
-                    return@withContext null
-                }
-
-                // 设置文件为只读权限，防止Android系统报"Writable dex file"错误
-                if (!cacheFile.setReadOnly()) {
-                    Timber.tag(TAG).w("设置运行时缓存文件为只读失败: ${cacheFile.absolutePath}")
-                } else {
-                    Timber.tag(TAG).d("运行时缓存文件已设置为只读: ${cacheFile.absolutePath}")
-                }
-
-                Timber.tag(TAG).d("运行时缓存文件创建成功: $pluginId")
-                cacheFile
-            } catch (e: Exception) {
-                Timber.tag(TAG).e(e, "创建运行时缓存文件失败: $pluginId - ${e.message}")
-                null
-            }
-        }
-
-    /**
-     * 清理单个插件的运行时缓存文件
-     *
-     * @param pluginId 插件ID
-     */
-    private fun cleanupCacheFile(pluginId: String) {
-        try {
-            // 查找所有匹配的缓存文件（可能有多个历史缓存）
-            val cacheFiles =
-                runtimeCacheDir.listFiles { _, fileName ->
-                    fileName.startsWith("${pluginId}_") && fileName.endsWith(PLUGIN_FILE_EXTENSION)
-                }
-
-            if (cacheFiles != null && cacheFiles.isNotEmpty()) {
-                var deletedCount = 0
-                cacheFiles.forEach { cacheFile ->
-                    try {
-                        if (cacheFile.delete()) {
-                            deletedCount++
-                            Timber.tag(TAG).d("清理缓存文件: ${cacheFile.name}")
-                        } else {
-                            Timber.tag(TAG).w("清理缓存文件失败: ${cacheFile.name}")
-                        }
-                    } catch (e: Exception) {
-                        Timber.tag(TAG).w(e, "删除缓存文件异常: ${cacheFile.name}")
-                    }
-                }
-                Timber.tag(TAG).d("插件 $pluginId 运行时缓存清理完成，共清理 $deletedCount 个文件")
-            } else {
-                Timber.tag(TAG).d("插件 $pluginId 无运行时缓存文件需要清理")
-            }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "清理插件 $pluginId 运行时缓存时发生错误: ${e.message}")
-        }
+    fun getOptimizedDirectory(context: Context, pluginId: String): File {
+        val cacheDir = File(context.cacheDir, DEX_OPTIMIZED_DIR_NAME)
+        return File(cacheDir, pluginId).apply { mkdirs() }
     }
 
     /**
