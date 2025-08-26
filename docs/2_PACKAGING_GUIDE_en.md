@@ -139,7 +139,7 @@ aar2apk {
         // Suitable for plugins that depend on a completely private library that neither the host nor other plugins have.
         module(":plugin-private") {
             includeAllDependencies() // Convenience method, equivalent to setting the four below to true
-            
+
             // Or use fine-grained control
             // includeDependenciesDex.set(true)    // Package dependency code
             // includeDependenciesRes.set(true)    // Package dependency resources
@@ -228,7 +228,7 @@ android {
     // ...
     aaptOptions {
         // This hexadecimal value must be unique among all Application plugins
-        additionalParameters("--package-id", "0x80") 
+        additionalParameters("--package-id", "0x80")
     }
 }
 ```

@@ -74,13 +74,12 @@ class HostActivity : BaseHostActivity()
 Register this `HostActivity` in the **host's** `AndroidManifest.xml` file.
 
 ```xml
+
 <application>
-    
-    <activity
-        android:name=".HostActivity"
-        android:exported="false"
+
+    <activity android:name=".HostActivity" android:exported="false"
         android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-        
+
 </application>
 ```
 
@@ -122,13 +121,13 @@ class PluginHomeActivity : BasePluginActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         // [Correct Usage] Access the intent via proxyActivity
         val userId = proxyActivity?.intent?.getStringExtra("userId")
 
         proxyActivity?.setContent {
             Text("Hello from Plugin Activity! User ID: $userId")
-            
+
             Button(onClick = {
                 // [Correct Usage] Call finish() via proxyActivity
                 proxyActivity?.finish()
@@ -250,10 +249,13 @@ class HostService2 : BaseHostService()
 Register all proxy `Service` classes in the **host's** `AndroidManifest.xml`.
 
 ```xml
+
 <application>
-    
-    <service android:name=".services.HostService1" android:enabled="true" android:exported="false" />
-    <service android:name=".services.HostService2" android:enabled="true" android:exported="false" />
+
+    <service android:name=".services.HostService1" android:enabled="true"
+        android:exported="false" />
+    <service android:name=".services.HostService2" android:enabled="true"
+        android:exported="false" />
 </application>
 ```
 
@@ -266,7 +268,7 @@ a "pool".
 class MainApplication : BaseHostApplication() {
     override fun onCreate() {
         super.onCreate()
-        
+
         // Configure the Service proxy pool
         val servicePool = listOf(
             HostService1::class.java,
@@ -298,13 +300,13 @@ class MusicPlayerService : BasePluginService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val songUrl = intent?.getStringExtra("SONG_URL")
-        
+
         // Assume a notification is created here
         val notification: Notification = createMusicNotification()
 
         // [Correct Usage] Call startForeground() via proxyService
         proxyService?.startForeground(1, notification)
-        
+
         // ... start playing music ...
 
         // If the task is done, you can call stopSelf()
@@ -352,7 +354,8 @@ configuration needed.
 ```kotlin
 // MyDynamicReceiver.kt in plugin
 class MyDynamicReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) { /* ... */ }
+    override fun onReceive(context: Context, intent: Intent) { /* ... */
+    }
 }
 ```
 
@@ -391,19 +394,18 @@ Register this master proxy in the **host's** `AndroidManifest.xml` and configure
 `<intent-filter>` for it that **includes all Actions that any plugin might be interested in**.
 
 ```xml
+
 <application>
-    
-    <receiver
-        android:name=".HostReceiver"
-        android:enabled="true"
-        android:exported="true">  <intent-filter>
+
+    <receiver android:name=".HostReceiver" android:enabled="true" android:exported="true">
+        <intent-filter>
             <action android:name="android.intent.action.BOOT_COMPLETED" />
             <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
-            
+
             <action android:name="com.yourhost.app.CUSTOM_ACTION" />
         </intent-filter>
     </receiver>
-        
+
 </application>
 ```
 
@@ -501,7 +503,7 @@ In your `Application` class's `onCreate` method, configure this `Authority`.
 class MainApplication : BaseHostApplication() {
     override fun onCreate() {
         super.onCreate()
-        
+
         // Configure the ContentProvider proxy's Authority
         PluginManager.proxyManager.setHostProviderAuthority("com.your.host.app.provider.proxy")
     }

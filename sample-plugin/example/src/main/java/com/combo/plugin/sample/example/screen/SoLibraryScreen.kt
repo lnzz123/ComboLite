@@ -1,32 +1,54 @@
 /*
+ * Copyright (c) 2025, 贵州君城网络科技有限公司
  *
- *  * Copyright (c) 2025, 贵州君城网络科技有限公司
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  * http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.combo.plugin.sample.example.screen
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -48,12 +70,12 @@ fun SoLibraryScreen() {
     var arrayResult by remember { mutableStateOf("") }
     var systemInfo by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-    
+
     // 数学计算输入
     var numberA by remember { mutableStateOf("10") }
     var numberB by remember { mutableStateOf("20") }
     var sqrtNumber by remember { mutableStateOf("16.0") }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -73,10 +95,10 @@ fun SoLibraryScreen() {
             InfoCard(
                 icon = Icons.Default.Info
             )
-            
+
             // 库状态卡片
             StatusCard()
-            
+
             // 基础JNI调用演示
             DemoCard(
                 title = "基础 JNI 调用",
@@ -95,7 +117,7 @@ fun SoLibraryScreen() {
                     }
                 }
             )
-            
+
             // 数学计算演示
             MathDemoCard(
                 numberA = numberA,
@@ -110,17 +132,17 @@ fun SoLibraryScreen() {
                         val a = numberA.toIntOrNull() ?: 0
                         val b = numberB.toIntOrNull() ?: 0
                         val sqrt = sqrtNumber.toDoubleOrNull() ?: 0.0
-                        
+
                         val sum = nativeLib.addNumbers(a, b)
                         val sqrtResult = nativeLib.calculateSquareRoot(sqrt)
-                        
+
                         mathResult = "加法: $a + $b = $sum\n平方根: √$sqrt = $sqrtResult"
                     } catch (e: Exception) {
                         mathResult = "计算失败: ${e.message}"
                     }
                 }
             )
-            
+
             // 字符串数组处理演示
             DemoCard(
                 title = "字符串数组处理",
@@ -137,7 +159,7 @@ fun SoLibraryScreen() {
                     }
                 }
             )
-            
+
             // 系统信息获取
             DemoCard(
                 title = "系统信息获取",
@@ -272,7 +294,7 @@ private fun MathDemoCard(
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // 加法输入
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -293,9 +315,9 @@ private fun MathDemoCard(
                     modifier = Modifier.weight(1f)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // 平方根输入
             OutlinedTextField(
                 value = sqrtNumber,
@@ -304,9 +326,9 @@ private fun MathDemoCard(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Button(
                 onClick = onCalculate,
                 modifier = Modifier.fillMaxWidth()
@@ -319,7 +341,7 @@ private fun MathDemoCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("执行计算")
             }
-            
+
             if (result.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Surface(
@@ -371,7 +393,7 @@ private fun DemoCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Button(
                 onClick = onButtonClick,
                 enabled = !isLoading,
@@ -394,7 +416,7 @@ private fun DemoCard(
                     Text(buttonText)
                 }
             }
-            
+
             if (result.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Surface(

@@ -285,8 +285,10 @@ plugin development journey:
   deep into the `aar2apk` plugin and master both packaging strategies.
 * **[[Advanced] Core API Usage](https://www.google.com/search?q=./docs/3_CORE_APIS.md)**: Master all
   the core functions of `PluginManager`.
-* **[[Advanced] Four Components Guide](https://www.google.com/search?q=./docs/4_COMPONENTS_GUIDE.md)**: Learn how to use Activity, Service, BroadcastReceiver, and ContentProvider within plugins.
-* **[[Principles] Architecture & Design](https://www.google.com/search?q=./docs/5_ARCHITECTURE.md)**: Explore the internal workings of ComboLite.
+* **[[Advanced] Four Components Guide](https://www.google.com/search?q=./docs/4_COMPONENTS_GUIDE.md)
+  **: Learn how to use Activity, Service, BroadcastReceiver, and ContentProvider within plugins.
+* **[[Principles] Architecture & Design](https://www.google.com/search?q=./docs/5_ARCHITECTURE.md)
+  **: Explore the internal workings of ComboLite.
 
 -----
 

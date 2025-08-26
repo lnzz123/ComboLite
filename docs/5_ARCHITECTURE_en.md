@@ -133,7 +133,7 @@ When you call `PluginManager.launchPlugin("com.example.myplugin")`:
    and instantiate the entry class (`IPluginEntryClass`) declared in the plugin's
    `AndroidManifest.xml`.
 2. **Dependency Injection**: If the plugin provides Koin modules, the framework automatically loads
-      them into the global Koin container.
+   them into the global Koin container.
 3. **Lifecycle Callback**: The `onLoad()` method of the entry class instance is called, with a
    `PluginContext` passed in.
 4. **Save Instance**: The plugin instance is stored in the `pluginInstancesFlow` state. At this

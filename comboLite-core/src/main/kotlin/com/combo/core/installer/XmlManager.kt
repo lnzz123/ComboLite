@@ -1,19 +1,17 @@
 /*
+ * Copyright (c) 2025, 贵州君城网络科技有限公司
  *
- *  * Copyright (c) 2025, 贵州君城网络科技有限公司
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  * http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.combo.core.installer
@@ -49,8 +47,6 @@ import kotlin.concurrent.withLock
  * 3. 批量操作支持，适合连续安装多个插件的场景
  * 4. 延迟写入机制，减少磁盘写入次数
  * 5. 文件完整性校验，防止数据损坏
- *
- * 注意：此类已改造为支持Koin依赖注入
  */
 class XmlManager(
     private val context: Application,

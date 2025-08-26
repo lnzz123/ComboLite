@@ -287,10 +287,14 @@ return its instance.
 
 ```kotlin
 // Define an interface in a common module
-interface IUserService { fun getInfo(): String }
+interface IUserService {
+    fun getInfo(): String
+}
 
 // Implement the interface in a user plugin
-class UserServiceImpl : IUserService { override fun getInfo() = "UserInfo" }
+class UserServiceImpl : IUserService {
+    override fun getInfo() = "UserInfo"
+}
 
 // Call from the host or any other plugin
 val userService = PluginManager.getInterface(
