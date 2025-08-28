@@ -103,6 +103,10 @@ android {
 
 dependencies {
 
-    implementation(projects.comboLiteCore)
+    // 插件核心库 远程依赖方式
+    implementation(libs.combolite.core)
+
+    // 插件核心库 本地依赖方式
+    // implementation(projects.comboLiteCore)
     implementation(projects.dependencies)
 }

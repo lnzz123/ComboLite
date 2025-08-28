@@ -41,4 +41,5 @@ dependencyResolutionManagement {
         }
     }
 }
+rootProject.name = "build-logic"
 include(":aar2apk")

@@ -23,6 +23,7 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.spotless)
+    alias(libs.plugins.maven.publish.vanniktech)
 }
 
 android {
@@ -58,21 +59,7 @@ android {
     }
 
     buildFeatures {
-        buildConfig = true
         compose = true
-    }
-}
-
-// Spotless 配置
-spotless {
-    kotlin {
-        target("**/*.kt")
-        targetExclude("**/build/**/*.kt")
-        ktlint("0.50.0")
-    }
-    kotlinGradle {
-        target("*.gradle.kts")
-        ktlint("0.50.0")
     }
 }
 
@@ -100,4 +87,39 @@ dependencies {
 
     // Dex lib2 库
     implementation(libs.dexlib2)
+}
+
+mavenPublishing {
+    publishToMavenCentral(automaticRelease = true)
+    signAllPublications()
+    val groupId = "io.github.lnzz123"
+    val artifactId = "combolite-core"
+    val version = "1.0.0"
+    coordinates(groupId, artifactId, version)
+    pom {
+        name.set("ComboLite Core")
+        description.set("The next-generation Android plugin framework, born for Jetpack Compose, using 100% official APIs with 0 Hooks & 0 Reflection.")
+        url.set("https://github.com/lnzz123/combolite")
+
+        licenses {
+            license {
+                name.set("The Apache License, Version 2.0")
+                url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+            }
+        }
+        developers {
+            developer {
+                id.set("lnzz123")
+                name.set("贵州君城网络科技有限公司")
+                email.set("1755858138@qq.com")
+                organization.set("贵州君城网络科技有限公司")
+                organizationUrl.set("http://www.97network.com")
+            }
+        }
+        scm {
+            connection.set("scm:git:github.com/lnzz123/combolite.git")
+            developerConnection.set("scm:git:ssh://github.com/lnzz123/combolite.git")
+            url.set("https://github.com/lnzz123/combolite/tree/main")
+        }
+    }
 }

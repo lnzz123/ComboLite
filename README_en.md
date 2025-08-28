@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="image/banner.png" width="1280" alt="ComboLite Logo">
+  <img src="image/banner.png" width="1280" alt="ComboLite Logo" style="pointer-events: none;">
 </p>
 
 <p align="center">
@@ -205,74 +205,93 @@ graph TD
 
 ### 🚀 Getting Started
 
-> The project is currently in its final polishing stage and will be released to Maven Central soon.
-> Before then, you can easily integrate it via a local dependency. While this method requires a
-> manual
-> clone, it also provides great convenience for in-depth understanding and even customization of the
-> framework's source code.
+`ComboLite` is now officially released to Maven Central and the Gradle Plugin Portal. You can now
+easily integrate `ComboLite` into your project via remote dependencies, just like any standard
+library.
 
-#### Step 1: Clone This Project
+#### Step 1: Define Dependencies in `libs.versions.toml`
 
-Clone the `ComboLite` repository to your local machine. It is recommended to place it in the same
-parent directory as your own project.
+We highly recommend using a Version Catalog (`libs.versions.toml`) to centrally manage all your
+project's dependencies. This modern approach makes your dependency management cleaner and more
+maintainable.
 
-```bash
-git clone https://github.com/lnzz123/ComboLite.git
+In your `gradle/libs.versions.toml` file, add the following version, library, and plugin
+definitions:
+
+```toml
+# in gradle/libs.versions.toml
+
+[versions]
+# ... other version definitions
+combolite = "1.0.0"  # We recommend using the latest stable version
+aar2apk = "1.0.0"    # We recommend using the latest stable version
+
+[libraries]
+# ... other library definitions
+combolite-core = { group = "io.github.lnzz123", name = "combolite-core", version.ref = "combolite" }
+
+[plugins]
+# ... other plugin definitions
+combolite-aar2apk = { id = "io.github.lnzz123.combolite-aar2apk", version.ref = "aar2apk" }
 ```
 
-#### Step 2: Include the Local Dependency in `settings.gradle.kts`
+#### Step 2: Configure Gradle Build Scripts
 
-In your project's root `settings.gradle.kts` file, add the following configuration to allow your
-project to find `ComboLite`'s source modules.
+Now, apply these dependencies in your Gradle scripts.
 
-```kotlin
-// in your project's /settings.gradle.kts
-includeBuild("../ComboLite") {
-    dependencySubstitution {
-        // When you depend on the aar2apk plugin in your project, Gradle will automatically
-        // replace it with the local build-logic module.
-        substitute(module("com.combo.aar2apk")).using(project(":build-logic"))
-    }
-}
-```
+**① Apply the packaging plugin in your root `build.gradle.kts`**:
 
-#### Step 3: Add the Plugin and Core Library
-
-Next, configure the dependencies in your project.
-
-① **Apply the `aar2apk` plugin in the root `build.gradle.kts`** (for packaging plugins):
+This plugin only needs to be applied once in the project's root directory. It will handle the
+packaging tasks for all declared plugin modules.
 
 ```kotlin
 // in your project's root /build.gradle.kts
 plugins {
     // ... other plugins
-    id("com.combo.aar2apk")
+    alias(libs.plugins.combolite.aar2apk)
+}
+
+// You can configure the packaging strategy for aar2apk here.
+// For details, please refer to the [Plugin Packaging Guide]
+aar2apk {
+    // signing { ... }
+    // modules { module(":your-plugin-module") }
 }
 ```
 
-② **Add the core library to your host app module's `build.gradle.kts`**:
+**② Add the core library to your host App module's `build.gradle.kts`**:
 
 ```kotlin
 // in your :app/build.gradle.kts
+plugins {
+    // ...
+}
+
 dependencies {
     // ... other dependencies
-    implementation(project(":comboLite-core"))
+    implementation(libs.combolite.core)
 }
 ```
 
-#### Step 4: Initialize the Framework
+**③ Add the core library to your plugin module (Library) `build.gradle.kts`**:
 
-Finally, have your `Application` class inherit from `BaseHostApplication` to automatically handle
-all initialization work.
+Plugin modules should depend on the core library using `compileOnly`, which indicates that the
+library will be provided by the host at runtime.
 
 ```kotlin
-// Just inherit from BaseHostApplication
-class MainApplication : BaseHostApplication()
+// in your :your-plugin-module/build.gradle.kts
+plugins {
+    // ...
+}
+
+dependencies {
+    // ... other dependencies
+    compileOnly(libs.combolite.core)
+}
 ```
 
-**Integration complete!** Your project now has the capabilities of the `ComboLite` plugin framework.
-
------
+**Congratulations, you're all set\!** Your project is now equipped with the full capabilities of the
+`ComboLite` plugin framework.
 
 ### 📚 What to do Next?
 

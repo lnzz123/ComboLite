@@ -45,3 +45,16 @@ aar2apk {
         keyPassword.set("he1755858138")
     }
 }
+//
+//nmcpAggregation {
+//    centralPortal {
+//        username = System.getenv("SONATYPE_USERNAME")
+//        password = System.getenv("SONATYPE_PASSWORD")
+//
+//        publishingType = "AUTOMATIC"
+//    }
+//}
+//
+//dependencies {
+//    nmcpAggregation(project(":comboLite-core"))
+//}

@@ -1,5 +1,6 @@
 [versions]
-aarToApkPlugin = "unspecified"
+aarToApkPlugin = "1.0.0"
+combolite = "1.0.0"
 agp = "8.12.0"
 kotlin = "2.2.0"
 ksp = "2.2.0-2.0.2"
@@ -35,11 +36,13 @@ coil = "3.2.0"
 constraintlayout = "2.2.1"
 navigationFragmentKtx = "2.9.2"
 navigationUiKtx = "2.9.2"
-junit = "4.13.2"
-junitVersion = "1.2.1"
-espressoCore = "3.6.1"
+mavenPublish = "0.34.0"
+
 
 [libraries]
+# combolite 核心库
+combolite-core = { group = "io.github.lnzz123", name = "combolite-core", version.ref = "combolite" }
+
 # Dexlib2 库
 dexlib2 = { group = "org.smali", name = "dexlib2", version.ref = "dexlib2" }
 # Timber 日志库
@@ -109,9 +112,6 @@ androidx-material3-adaptive-navigation-suite = { group = "androidx.compose.mater
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
-androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
-androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 
 #
 [plugins]
@@ -125,4 +125,5 @@ kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref =
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprofile" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-aar2apk = { id = "com.combo.aar2apk", version.ref = "aarToApkPlugin" }
+aar2apk = { id = "io.github.lnzz123.combolite-aar2apk", version.ref = "aarToApkPlugin" }
+maven-publish-vanniktech = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }

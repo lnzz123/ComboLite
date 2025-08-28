@@ -3,7 +3,7 @@
 </p> 
 
 <p align="center">
-  <img src="image/banner.png" width="1280" alt="ComboLite Logo">
+  <img src="image/banner.png" width="1280" alt="ComboLite Logo" style="pointer-events: none;">
 </p>
 
 <p align="center">
@@ -172,67 +172,89 @@ graph TD
 
 -----
 
+
 ### 🚀 开始集成 (Getting Started)
 
-> 目前项目正处于最终打磨阶段，我们即将发布到 Maven
-> Central。在此之前，您可以通过本地依赖的方式轻松集成。这种方式虽然需要手动克隆，但也为您深入了解、甚至定制框架源码提供了极大的便利。
+`ComboLite` 现已正式发布至 Maven Central 及 Gradle 插件门户。现在，您可以像集成任何标准库一样，通过远程依赖将
+`ComboLite` 轻松地集成到您的项目中。
 
-#### 第 1 步：克隆本项目
+#### 第 1 步: 在 `libs.versions.toml` 中定义依赖项
 
-将 `ComboLite` 仓库克隆到您的本地，建议放在您自己项目的同级目录中。
+我们强烈建议使用 Version Catalog (`libs.versions.toml`) 来集中管理您项目的所有依赖。这种现代化的方式能让您的依赖管理更加清晰和可维护。
 
-```bash
-git clone [https://github.com/lnzz123/ComboLite.git](https://github.com/lnzz123/ComboLite.git)
+在您的 `gradle/libs.versions.toml` 文件中，添加以下版本、库和插件定义：
+
+```toml
+# in gradle/libs.versions.toml
+
+[versions]
+# ... 其他版本定义
+combolite = "1.0.0"  # 建议替换为最新的稳定版
+aar2apk = "1.0.0" # 建议替换为最新的稳定版
+
+[libraries]
+# ... 其他库定义
+combolite-core = { group = "io.github.lnzz123", name = "combolite-core", version.ref = "combolite" }
+
+[plugins]
+# ... 其他插件定义
+combolite-aar2apk = { id = "io.github.lnzz123.combolite-aar2apk", version.ref = "aar2apk" }
+
 ```
 
-#### 第 2 步：在 `settings.gradle.kts` 中引入本地依赖
+#### 第 2 步: 配置 Gradle 构建脚本
 
-在您的项目根目录下的 `settings.gradle.kts` 文件中，添加以下配置，让您的项目能够找到 `ComboLite` 的源码模块。
+现在，在您的 Gradle 脚本中应用这些依赖。
 
-```kotlin
-// in your project's /settings.gradle.kts
-includeBuild("../ComboLite") {
-    dependencySubstitution {
-        // 当您在项目中依赖 aar2apk 插件时，Gradle 会自动将其替换为本地的 build-logic 模块
-        substitute(module("com.combo.aar2apk")).using(project(":build-logic"))
-    }
-}
-```
+**① 在项目根 `build.gradle.kts` 中应用打包插件**:
 
-#### 第 3 步：添加插件与核心库
-
-接下来，在您的项目中配置依赖。
-
-① **在根 `build.gradle.kts` 中应用 `aar2apk` 插件** (用于打包插件):
+此插件仅需在项目根目录应用一次，它将负责所有已声明插件模块的打包任务。
 
 ```kotlin
 // in your project's root /build.gradle.kts
 plugins {
     // ... 其他插件
-    id("com.combo.aar2apk")
+    alias(libs.plugins.combolite.aar2apk)
+}
+
+// 您可以在此配置 aar2apk 的打包策略，详情请参阅 [插件打包指南]
+aar2apk {
+    // signing { ... }
+    // modules { module(":your-plugin-module") }
 }
 ```
 
-② **在宿主 App 模块的 `build.gradle.kts` 中添加核心库**:
+**② 在宿主 App 模块的 `build.gradle.kts` 中添加核心库**:
 
 ```kotlin
 // in your :app/build.gradle.kts
+plugins {
+    // ...
+}
+
 dependencies {
     // ... 其他依赖
-    implementation(project(":comboLite-core"))
+    implementation(libs.combolite.core)
 }
 ```
 
-#### 第 4 步：初始化框架
+**③ 在您的插件模块 (Library) 的 `build.gradle.kts` 中添加核心库**:
 
-最后，让你的 `Application` 类继承自 `BaseHostApplication`，即可自动完成所有初始化工作。
+插件模块应使用 `compileOnly` 依赖核心库，表示该库在运行时由宿主提供。
 
 ```kotlin
-// 只需继承 BaseHostApplication 即可
-class MainApplication : BaseHostApplication()
+// in your :your-plugin-module/build.gradle.kts
+plugins {
+    // ...
+}
+
+dependencies {
+    // ... 其他依赖
+    compileOnly(libs.combolite.core)
+}
 ```
 
-**集成完毕！** 您的项目现在已经具备了 `ComboLite` 插件化框架的能力。
+**恭喜您，集成完毕！** 您的项目现在已经具备了 `ComboLite` 插件化框架的全部能力。
 
 -----
 
