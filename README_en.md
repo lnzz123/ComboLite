@@ -62,7 +62,7 @@ long-term compatibility.
 | ![示例图](image/figure4.jpg) | ![示例图](image/figure5.jpg) | ![示例图](image/figure6.jpg) |
 
 > 🔗 **Download Sample App
-**: [https://github.com/lnzz123/ComboLite/releases](https://github.com/lnzz123/ComboLite/releases)
+**: [https://github.com/lnzz123/ComboLite/tree/master/app/release/app-release.apk](https://raw.githubusercontent.com/lnzz123/ComboLite/refs/heads/master/app/release/app-release.apk)
 
 -----
 
