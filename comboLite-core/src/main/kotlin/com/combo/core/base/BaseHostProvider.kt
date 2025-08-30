@@ -30,7 +30,6 @@ import android.os.Process
 import com.combo.core.manager.PluginManager
 import timber.log.Timber
 import java.net.URLDecoder
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 宿主端的 ContentProvider 统一代理。
@@ -53,8 +52,6 @@ open class BaseHostProvider : ContentProvider() {
         const val KEY_TARGET_URI = "com.combo.core.base.BaseHostProvider.TARGET_URI"
     }
 
-    private val providerCache = ConcurrentHashMap<String, ContentProvider>()
-
     /**
      * 此方法在应用启动的早期被调用。
      * 我们在这里执行插件框架的初始化，以确保 PluginManager 在被使用前已准备就绪。
@@ -76,22 +73,7 @@ open class BaseHostProvider : ContentProvider() {
     }
 
     private fun getTargetProvider(className: String): ContentProvider? {
-        providerCache[className]?.let { return it }
-
-        return try {
-            val instance = PluginManager.getInterface(ContentProvider::class.java, className)
-            if (instance != null) {
-                instance.attachInfo(context, null)
-                providerCache[className] = instance
-                Timber.d("已创建并缓存插件 Provider 实例: $className")
-            } else {
-                Timber.e("无法创建插件 Provider 实例: $className")
-            }
-            instance
-        } catch (e: Exception) {
-            Timber.e(e, "创建插件 Provider 实例时发生严重错误: $className")
-            null
-        }
+        return PluginManager.proxyManager.getOrInstantiateProvider(className)
     }
 
     /**

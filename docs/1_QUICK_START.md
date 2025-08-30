@@ -250,19 +250,19 @@ class MyPluginEntry : IPluginEntryClass {
 
 **在本指南中，我们假设你已经通过打包插件得到了一个名为 `my-plugin-release.apk` 的文件。**
 
-为了快速验证，我们将这个 APK 文件预置在宿主的 `assets` 目录中进行加载（实际业务场景中，它通常从网络下载）。
+为了快速验证，我们将这个 APK 文件预置在宿主的 `assets/plugins` 目录中进行加载（实际业务场景中，它通常从网络下载）。
 
-1. 在宿主 `:app` 模块的 `src/main` 目录下创建一个 `assets` 文件夹。
+1. 在宿主 `:app` 模块的 `src/main` 目录下创建一个 `assets/plugins` 文件夹。
 2. 将 `my-plugin-release.apk` 复制进去。
 
 > ⚠️ **请务必注意**
 >
->   * **文件名完全匹配**: 确保你放入 `assets` 目录的 APK 文件名 (`my-plugin-release.apk`) 与后续
+>   * **文件名完全匹配**: 确保你放入 `assets/plugins` 目录的 APK 文件名 (`my-plugin-release.apk`) 与后续
       `MainActivity.kt` 代码中定义的 `pluginApkName` 变量的值**完全一致**。
 >   * **插件ID完全匹配**: 确保你的插件 `AndroidManifest.xml` 中声明的 `plugin.id` (
       `com.example.myplugin`) 与后续 `MainActivity.kt` 代码中定义的 `pluginId` 变量的值**完全一致**。
->   * **目录位置正确**: `assets` 文件夹应位于 `:app` 模块的 `src/main/` 目录下，最终路径为
-      `app/src/main/assets/`。
+>   * **目录位置正确**: `assets/plugins` 文件夹应位于 `:app` 模块的 `src/main/` 目录下，最终路径为
+      `app/src/main/assets/plugins/`。
 
 ### 3.2 编写交互代码（从 Assets 加载）
 
@@ -272,124 +272,275 @@ class MyPluginEntry : IPluginEntryClass {
 <summary>👉 点击展开完整的 `MainActivity.kt` 示例代码</summary>
 
 ```kotlin
-// in :app/src/main/java/your/package/name/MainActivity.kt
+package com.combo.plugin.sample
+
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import com.combo.core.PluginManager
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import com.combo.core.base.BaseHostActivity
-import com.combo.core.data.InstallResult
-import com.combo.core.ext.copyFileFromAssets
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
+import com.combo.core.manager.PluginManager
 
-class MainActivity : BaseHostActivity() {
-
-    // 插件的唯一ID，需要和插件AndroidManifest中声明的保持一致
-    private val pluginId = "com.example.myplugin"
-    // 放入assets的插件文件名
-    private val pluginApkName = "my-plugin-release.apk"
-
+class HostActivity : BaseHostActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            var pluginUi by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
-            val coroutineScope = rememberCoroutineScope()
-            val context = LocalContext.current
-
-            MaterialTheme {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text("宿主应用", style = MaterialTheme.typography.headlineMedium)
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // 插件UI的显示区域
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().height(200.dp),
-                        tonalElevation = 2.dp,
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            if (pluginUi != null) {
-                                pluginUi?.invoke()
-                            } else {
-                                Text("插件UI将显示在这里")
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // 1. 安装插件按钮
-                    Button(onClick = {
-                        // 使用IO调度器处理文件操作，避免阻塞主线程
-                        coroutineScope.launch(Dispatchers.IO) {
-                            try {
-                                // 将插件APK从assets复制到应用私有目录，这是安装插件的前置步骤
-                                val pluginFile = File(context.filesDir, pluginApkName)
-                                context.copyFileFromAssets(pluginApkName, pluginFile)
-                                
-                                // 调用核心API安装插件
-                                val result = PluginManager.installerManager.installPlugin(pluginFile)
-                                
-                                // 操作完成后，切回主线程更新UI或显示提示
-                                withContext(Dispatchers.Main) {
-                                    when (result) {
-                                        is InstallResult.Success -> {
-                                            Toast.makeText(context, "插件 [${result.pluginInfo.pluginId}] 安装成功!", Toast.LENGTH_SHORT).show()
-                                        }
-                                        is InstallResult.Failure -> {
-                                            Toast.makeText(context, "插件安装失败: ${result.message}", Toast.LENGTH_LONG).show()
-                                        }
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "操作失败: ${e.message}", Toast.LENGTH_LONG).show()
-                                }
-                            }
-                        }
-                    }) {
-                        Text("1. 从 Assets 安装插件")
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-                    
-                    // 2. 启动插件并显示UI按钮
-                    Button(onClick = {
-                        coroutineScope.launch {
-                           // 启动插件 (如果已启动，会执行链式重启，确保总是最新状态)
-                           PluginManager.launchPlugin(pluginId)
-                           
-                           // 获取插件实例，并将其@Composable Content()方法赋值给UI状态
-                           val pluginInstance = PluginManager.getPluginInstance(pluginId)
-                           if (pluginInstance != null) {
-                               pluginUi = { pluginInstance.Content() }
-                               Toast.makeText(context, "插件 [${pluginId}] 启动成功!", Toast.LENGTH_SHORT).show()
-                           } else {
-                               Toast.makeText(context, "插件 [${pluginId}] 未找到或加载失败", Toast.LENGTH_LONG).show()
-                           }
-                        }
-                    }) {
-                        Text("2. 启动并显示插件")
-                    }
+        if (super.pluginActivity == null) {
+            enableEdgeToEdge()
+            setContent {
+                val resources by PluginManager.resourcesManager.mResourcesFlow.collectAsState()
+                key(resources) {
+                    LoadingScreen()
                 }
             }
         }
     }
 }
+```
+
+```kotlin
+package com.combo.plugin.sample
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.combo.plugin.sample.LoadingViewModel.Companion.PLUGIN_ID
+import org.koin.androidx.compose.koinViewModel
+
+/**
+ * 加载页面
+ *
+ * 在插件框架初始化期间显示的加载界面
+ */
+@Composable
+fun LoadingScreen(viewModel: LoadingViewModel = koinViewModel()) {
+    val loading by viewModel.loading.collectAsState()
+    val entryClass by viewModel.entryClass.collectAsState()
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (loading) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+
+                    Text(
+                        text = "正在初始化插件框架...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 32.dp),
+                    )
+                }
+            } else if (entryClass == null) {
+                val pluginState = viewModel.getPluginStatus(PLUGIN_ID)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Text(
+                        text = "基础插件${
+                            when(pluginState) {
+                                PluginStatus.NOT_INSTALLED -> "未安装"
+                                PluginStatus.INSTALLED_NOT_STARTED -> "已安装但未启动"
+                                else -> "已安装且已启动"
+                            }
+                        }",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 32.dp),
+                    )
+                    Button(
+                        onClick = {
+                            when(pluginState) {
+                                PluginStatus.NOT_INSTALLED -> {
+                                    viewModel.installPlugin(LoadingViewModel.BASE_PATH, true)
+                                }
+
+                                PluginStatus.INSTALLED_NOT_STARTED -> {
+                                    viewModel.launchBasePlugin()
+                                }
+
+                                else -> {
+                                    viewModel.launchBasePlugin()
+                                }
+                            }
+                        },
+                    ) {
+                        Text(
+                            text = when(pluginState) {
+                                PluginStatus.NOT_INSTALLED -> "安装插件"
+                                PluginStatus.INSTALLED_NOT_STARTED -> "启动插件"
+                                else -> "打开应用"
+                            }
+                        )
+                    }
+                }
+            } else {
+                entryClass?.Content()
+            }
+        }
+    }
+}
+```
+
+```kotlin
+package com.combo.plugin.sample
+
+import android.annotation.SuppressLint
+import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.combo.core.interfaces.IPluginEntryClass
+import com.combo.core.manager.PluginManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
+
+/**
+ * 插件状态枚举
+ */
+enum class PluginStatus {
+    /** 插件未安装 */
+    NOT_INSTALLED,
+
+    /** 插件已安装但未启动 */
+    INSTALLED_NOT_STARTED,
+
+    /** 插件已安装且已启动 */
+    INSTALLED_AND_STARTED,
+}
+
+
+class LoadingViewModel(
+    context: Context,
+) : ViewModel() {
+    @SuppressLint("StaticFieldLeak")
+    private val context = context.applicationContext
+
+    private val _loading = MutableStateFlow(false)
+    val loading: StateFlow<Boolean> = _loading.asStateFlow()
+
+    private val _entryClass = MutableStateFlow<IPluginEntryClass?>(null)
+    val entryClass: StateFlow<IPluginEntryClass?> = _entryClass.asStateFlow()
+
+    companion object {
+        const val BASE_PATH = "plugins"
+        const val PLUGIN_ID = "com.example.myplugin"
+    }
+
+    init {
+        init()
+    }
+
+    fun init() {
+        viewModelScope.launch {
+            setLoading(true)
+            if (getPluginStatus(PLUGIN_ID) == PluginStatus.NOT_INSTALLED) {
+                installPlugin(BASE_PATH)
+            } else {
+                PluginManager.loadEnabledPlugins()
+            }
+            _entryClass.value = PluginManager.getPluginInstance(PLUGIN_ID)
+            setLoading(false)
+        }
+    }
+
+    fun setLoading(isLoading: Boolean) {
+        _loading.value = isLoading
+    }
+
+    fun installPlugin(
+        assetPath: String,
+        forceOverwrite: Boolean = false,
+    ) {
+        viewModelScope.launch {
+            setLoading(true)
+            val pluginFiles = context.assets.list(assetPath)
+            pluginFiles?.forEach { fileName ->
+                val pluginFile = File(context.filesDir, fileName)
+                context.assets.open("$assetPath/$fileName").use { inputStream ->
+                    FileOutputStream(pluginFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+                PluginManager.installerManager.installPlugin(pluginFile, forceOverwrite)
+            }
+            PluginManager.loadEnabledPlugins()
+            _entryClass.value = PluginManager.getPluginInstance(PLUGIN_ID)
+            setLoading(false)
+        }
+    }
+
+    fun launchBasePlugin() {
+        viewModelScope.launch {
+            PluginManager.launchPlugin(PLUGIN_COMMON).let {
+                if (it) {
+                    PluginManager.getPluginInstance(PLUGIN_COMMON)
+                }
+            }
+            PluginManager.launchPlugin(PLUGIN_ID).let {
+                if (it) {
+                    _entryClass.value = PluginManager.getPluginInstance(PLUGIN_ID)
+                }
+            }
+        }
+    }
+
+    /**
+     * 获取指定插件的状态
+     *
+     * @param pluginId 插件ID
+     * @return 插件状态枚举
+     */
+    fun getPluginStatus(pluginId: String): PluginStatus {
+        // 检查插件是否已安装
+        val isInstalled = PluginManager.getAllInstallPlugins().any { it.pluginId == pluginId }
+
+        if (!isInstalled) {
+            return PluginStatus.NOT_INSTALLED
+        }
+
+        val entryClass = PluginManager.getPluginInstance(pluginId)
+
+        return if (entryClass != null) {
+            PluginStatus.INSTALLED_AND_STARTED
+        } else {
+            PluginStatus.INSTALLED_NOT_STARTED
+        }
+    }
+}
+
 ```
 
 </details>

@@ -17,9 +17,11 @@
 package com.combo.core.proxy
 
 import android.app.Application
+import android.content.ContentProvider
 import android.content.Intent
 import com.combo.core.base.BaseHostActivity
 import com.combo.core.base.BaseHostService
+import com.combo.core.manager.PluginManager
 import com.combo.core.model.ProviderInfo
 import com.combo.core.model.StaticReceiverInfo
 import timber.log.Timber
@@ -82,6 +84,13 @@ class ProxyManager(
      * 用于存储 ContentProvider 的 Authority。
      */
     private var hostProviderAuthority: String? = null
+
+    /**
+     * 用于缓存已实例化的插件 ContentProvider。
+     * Key: Provider 的完整类名。
+     * Value: ContentProvider 的实例。
+     */
+    private val providerInstanceCache = ConcurrentHashMap<String, ContentProvider>()
 
     /**
      * 设置 Activity 组件的代理宿主。
@@ -268,6 +277,32 @@ class ProxyManager(
     }
 
     /**
+     * 获取或创建并缓存一个插件 ContentProvider 的实例。
+     * 这个方法封装了实例化和初始化的逻辑。
+     *
+     * @param className Provider 的完整类名。
+     * @return ContentProvider 的实例；如果创建失败则返回 null。
+     */
+    fun getOrInstantiateProvider(className: String): ContentProvider? {
+        providerInstanceCache[className]?.let { return it }
+
+        return try {
+            val instance = PluginManager.getInterface(ContentProvider::class.java, className)
+            if (instance != null) {
+                instance.attachInfo(context, null)
+                providerInstanceCache[className] = instance
+                Timber.d("已创建并缓存插件 Provider 实例: $className")
+            } else {
+                Timber.e("无法创建插件 Provider 实例: $className")
+            }
+            instance
+        } catch (e: Exception) {
+            Timber.e(e, "创建插件 Provider 实例时发生严重错误: $className")
+            null
+        }
+    }
+
+    /**
      * 注册一个插件的所有 ContentProvider。
      * @param pluginId 插件的 ID。
      * @param providers 插件中包含的、完整的 ProviderInfo 列表。
@@ -307,6 +342,8 @@ class ProxyManager(
                 authorityToProviderMap.remove(authority)
                 Timber.d("注销 Provider Authority: [$authority]")
             }
+            providerInstanceCache.remove(className)
+            Timber.d("已从缓存中移除 Provider 实例: $className")
         }
         Timber.i("已完成插件 [$pluginId] 的所有 Provider 的注销。")
     }

@@ -277,22 +277,22 @@ APK file. The specific methods and advanced strategies for packaging will be det
 **For this guide, we will assume you have already obtained a file named `my-plugin-release.apk` by
 packaging the plugin.**
 
-For quick verification, we will preload this APK file in the host's `assets` directory for loading (
+For quick verification, we will preload this APK file in the host's `assets/plugins` directory for loading (
 in a real-world scenario, it would typically be downloaded from a network).
 
-1. Create an `assets` folder in your host's `:app` module, under the `src/main` directory.
+1. Create an `assets/plugins` folder in your host's `:app` module, under the `src/main` directory.
 2. Copy `my-plugin-release.apk` into it.
 
 > ⚠️ **Please Pay Close Attention**
 >
->   * **Exact Filename Match**: Ensure the APK filename in the `assets` directory (
+>   * **Exact Filename Match**: Ensure the APK filename in the `assets/plugins` directory (
       `my-plugin-release.apk`) is **identical** to the value of the `pluginApkName` variable defined
       in your `MainActivity.kt` code.
 >   * **Exact Plugin ID Match**: Ensure the `plugin.id` declared in your plugin's
       `AndroidManifest.xml` (`com.example.myplugin`) is **identical** to the value of the `pluginId`
       variable defined in your `MainActivity.kt`.
->   * **Correct Directory Location**: The `assets` folder should be located in your `:app` module's
-      `src/main/` directory, with the final path being `app/src/main/assets/`.
+>   * **Correct Directory Location**: The `assets/plugins` folder should be located in your `:app` module's
+      `src/main/` directory, with the final path being `app/src/main/assets/plugins/`.
 
 ### 3.2 Write the Interaction Code (Loading from Assets)
 
@@ -302,149 +302,275 @@ Now, let's add the complete interaction logic to the host `MainActivity`.
 <summary>👉 Click to expand the complete `MainActivity.kt` example code</summary>
 
 ```kotlin
-// in :app/src/main/java/your/package/name/MainActivity.kt
+package com.combo.plugin.sample
+
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import com.combo.core.PluginManager
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import com.combo.core.base.BaseHostActivity
-import com.combo.core.data.InstallResult
-import com.combo.core.ext.copyFileFromAssets
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
+import com.combo.core.manager.PluginManager
 
-class MainActivity : BaseHostActivity() {
-
-    // The unique ID of the plugin, must match the one declared in the plugin's AndroidManifest
-    private val pluginId = "com.example.myplugin"
-
-    // The filename of the plugin placed in the assets folder
-    private val pluginApkName = "my-plugin-release.apk"
-
+class HostActivity : BaseHostActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            var pluginUi by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
-            val coroutineScope = rememberCoroutineScope()
-            val context = LocalContext.current
-
-            MaterialTheme {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text("Host Application", style = MaterialTheme.typography.headlineMedium)
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // Area for displaying the plugin's UI
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().height(200.dp),
-                        tonalElevation = 2.dp,
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (pluginUi != null) {
-                                pluginUi?.invoke()
-                            } else {
-                                Text("Plugin UI will be displayed here")
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // 1. Install Plugin button
-                    Button(onClick = {
-                        // Use the IO dispatcher for file operations to avoid blocking the main thread
-                        coroutineScope.launch(Dispatchers.IO) {
-                            try {
-                                // Copy the plugin APK from assets to the app's private directory as a prerequisite for installation
-                                val pluginFile = File(context.filesDir, pluginApkName)
-                                context.copyFileFromAssets(pluginApkName, pluginFile)
-
-                                // Call the core API to install the plugin
-                                val result =
-                                    PluginManager.installerManager.installPlugin(pluginFile)
-
-                                // After the operation is complete, switch back to the main thread to update the UI or show a toast
-                                withContext(Dispatchers.Main) {
-                                    when (result) {
-                                        is InstallResult.Success -> {
-                                            Toast.makeText(
-                                                context,
-                                                "Plugin [${result.pluginInfo.pluginId}] installed successfully!",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                        is InstallResult.Failure -> {
-                                            Toast.makeText(
-                                                context,
-                                                "Plugin installation failed: ${result.message}",
-                                                Toast.LENGTH_LONG
-                                            ).show()
-                                        }
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(
-                                        context,
-                                        "Operation failed: ${e.message}",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                            }
-                        }
-                    }) {
-                        Text("1. Install Plugin from Assets")
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // 2. Launch Plugin and display UI button
-                    Button(onClick = {
-                        coroutineScope.launch {
-                            // Launch the plugin (if already launched, it will perform a chain restart to ensure it's the latest state)
-                            PluginManager.launchPlugin(pluginId)
-
-                            // Get the plugin instance and assign its @Composable Content() method to the UI state
-                            val pluginInstance = PluginManager.getPluginInstance(pluginId)
-                            if (pluginInstance != null) {
-                                pluginUi = { pluginInstance.Content() }
-                                Toast.makeText(
-                                    context,
-                                    "Plugin [${pluginId}] launched successfully!",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "Plugin [${pluginId}] not found or failed to load",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        }
-                    }) {
-                        Text("2. Launch and Display Plugin")
-                    }
+        if (super.pluginActivity == null) {
+            enableEdgeToEdge()
+            setContent {
+                val resources by PluginManager.resourcesManager.mResourcesFlow.collectAsState()
+                key(resources) {
+                    LoadingScreen()
                 }
             }
         }
     }
 }
+```
+
+```kotlin
+package com.combo.plugin.sample
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.combo.plugin.sample.LoadingViewModel.Companion.PLUGIN_ID
+import org.koin.androidx.compose.koinViewModel
+
+/**
+ * 加载页面
+ *
+ * 在插件框架初始化期间显示的加载界面
+ */
+@Composable
+fun LoadingScreen(viewModel: LoadingViewModel = koinViewModel()) {
+    val loading by viewModel.loading.collectAsState()
+    val entryClass by viewModel.entryClass.collectAsState()
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (loading) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+
+                    Text(
+                        text = "正在初始化插件框架...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 32.dp),
+                    )
+                }
+            } else if (entryClass == null) {
+                val pluginState = viewModel.getPluginStatus(PLUGIN_ID)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Text(
+                        text = "基础插件${
+                            when(pluginState) {
+                                PluginStatus.NOT_INSTALLED -> "未安装"
+                                PluginStatus.INSTALLED_NOT_STARTED -> "已安装但未启动"
+                                else -> "已安装且已启动"
+                            }
+                        }",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 32.dp),
+                    )
+                    Button(
+                        onClick = {
+                            when(pluginState) {
+                                PluginStatus.NOT_INSTALLED -> {
+                                    viewModel.installPlugin(LoadingViewModel.BASE_PATH, true)
+                                }
+
+                                PluginStatus.INSTALLED_NOT_STARTED -> {
+                                    viewModel.launchBasePlugin()
+                                }
+
+                                else -> {
+                                    viewModel.launchBasePlugin()
+                                }
+                            }
+                        },
+                    ) {
+                        Text(
+                            text = when(pluginState) {
+                                PluginStatus.NOT_INSTALLED -> "安装插件"
+                                PluginStatus.INSTALLED_NOT_STARTED -> "启动插件"
+                                else -> "打开应用"
+                            }
+                        )
+                    }
+                }
+            } else {
+                entryClass?.Content()
+            }
+        }
+    }
+}
+```
+
+```kotlin
+package com.combo.plugin.sample
+
+import android.annotation.SuppressLint
+import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.combo.core.interfaces.IPluginEntryClass
+import com.combo.core.manager.PluginManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
+
+/**
+ * 插件状态枚举
+ */
+enum class PluginStatus {
+    /** 插件未安装 */
+    NOT_INSTALLED,
+
+    /** 插件已安装但未启动 */
+    INSTALLED_NOT_STARTED,
+
+    /** 插件已安装且已启动 */
+    INSTALLED_AND_STARTED,
+}
+
+
+class LoadingViewModel(
+    context: Context,
+) : ViewModel() {
+    @SuppressLint("StaticFieldLeak")
+    private val context = context.applicationContext
+
+    private val _loading = MutableStateFlow(false)
+    val loading: StateFlow<Boolean> = _loading.asStateFlow()
+
+    private val _entryClass = MutableStateFlow<IPluginEntryClass?>(null)
+    val entryClass: StateFlow<IPluginEntryClass?> = _entryClass.asStateFlow()
+
+    companion object {
+        const val BASE_PATH = "plugins"
+        const val PLUGIN_ID = "com.example.myplugin"
+    }
+
+    init {
+        init()
+    }
+
+    fun init() {
+        viewModelScope.launch {
+            setLoading(true)
+            if (getPluginStatus(PLUGIN_ID) == PluginStatus.NOT_INSTALLED) {
+                installPlugin(BASE_PATH)
+            } else {
+                PluginManager.loadEnabledPlugins()
+            }
+            _entryClass.value = PluginManager.getPluginInstance(PLUGIN_ID)
+            setLoading(false)
+        }
+    }
+
+    fun setLoading(isLoading: Boolean) {
+        _loading.value = isLoading
+    }
+
+    fun installPlugin(
+        assetPath: String,
+        forceOverwrite: Boolean = false,
+    ) {
+        viewModelScope.launch {
+            setLoading(true)
+            val pluginFiles = context.assets.list(assetPath)
+            pluginFiles?.forEach { fileName ->
+                val pluginFile = File(context.filesDir, fileName)
+                context.assets.open("$assetPath/$fileName").use { inputStream ->
+                    FileOutputStream(pluginFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+                PluginManager.installerManager.installPlugin(pluginFile, forceOverwrite)
+            }
+            PluginManager.loadEnabledPlugins()
+            _entryClass.value = PluginManager.getPluginInstance(PLUGIN_ID)
+            setLoading(false)
+        }
+    }
+
+    fun launchBasePlugin() {
+        viewModelScope.launch {
+            PluginManager.launchPlugin(PLUGIN_COMMON).let {
+                if (it) {
+                    PluginManager.getPluginInstance(PLUGIN_COMMON)
+                }
+            }
+            PluginManager.launchPlugin(PLUGIN_ID).let {
+                if (it) {
+                    _entryClass.value = PluginManager.getPluginInstance(PLUGIN_ID)
+                }
+            }
+        }
+    }
+
+    /**
+     * 获取指定插件的状态
+     *
+     * @param pluginId 插件ID
+     * @return 插件状态枚举
+     */
+    fun getPluginStatus(pluginId: String): PluginStatus {
+        // 检查插件是否已安装
+        val isInstalled = PluginManager.getAllInstallPlugins().any { it.pluginId == pluginId }
+
+        if (!isInstalled) {
+            return PluginStatus.NOT_INSTALLED
+        }
+
+        val entryClass = PluginManager.getPluginInstance(pluginId)
+
+        return if (entryClass != null) {
+            PluginStatus.INSTALLED_AND_STARTED
+        } else {
+            PluginStatus.INSTALLED_NOT_STARTED
+        }
+    }
+}
+
 ```
 
 </details>
