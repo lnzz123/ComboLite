@@ -62,7 +62,7 @@ long-term compatibility.
 | ![示例图](image/figure4.jpg) | ![示例图](image/figure5.jpg) | ![示例图](image/figure6.jpg) |
 
 > 🔗 **Download Sample App
-**: [https://github.com/lnzz123/ComboLite/releases](https://github.com/lnzz123/ComboLite/releases)
+**: [https://github.com/lnzz123/ComboLite/tree/master/app/release/app-release.apk](https://raw.githubusercontent.com/lnzz123/ComboLite/refs/heads/master/app/release/app-release.apk)
 
 -----
 
@@ -304,10 +304,8 @@ plugin development journey:
   deep into the `aar2apk` plugin and master both packaging strategies.
 * **[[Advanced] Core API Usage](https://www.google.com/search?q=./docs/3_CORE_APIS.md)**: Master all
   the core functions of `PluginManager`.
-* **[[Advanced] Four Components Guide](https://www.google.com/search?q=./docs/4_COMPONENTS_GUIDE.md)
-  **: Learn how to use Activity, Service, BroadcastReceiver, and ContentProvider within plugins.
-* **[[Principles] Architecture & Design](https://www.google.com/search?q=./docs/5_ARCHITECTURE.md)
-  **: Explore the internal workings of ComboLite.
+* **[[Advanced] Four Components Guide](https://www.google.com/search?q=./docs/4_COMPONENTS_GUIDE.md)**: Learn how to use Activity, Service, BroadcastReceiver, and ContentProvider within plugins.
+* **[[Principles] Architecture & Design](https://www.google.com/search?q=./docs/5_ARCHITECTURE.md)**: Explore the internal workings of ComboLite.
 
 -----
 

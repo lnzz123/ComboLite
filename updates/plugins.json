@@ -36,8 +36,8 @@
       "description": "展示插件化框架支持的各项原生Android能力。",
       "versions": [
         {
-          "version": "1.0.0",
-          "downloadUrl": "https://raw.githubusercontent.com/lnzz123/ComboLite/refs/heads/master/updates/plugins/example-1.0.0.apk",
+          "version": "1.0.1",
+          "downloadUrl": "https://raw.githubusercontent.com/lnzz123/ComboLite/refs/heads/master/updates/plugins/example-1.0.1.apk",
           "releaseDate": "2025-08-30",
           "changelog": [
             "初始版本发布。"
