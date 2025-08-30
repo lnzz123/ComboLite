@@ -17,14 +17,20 @@
 package com.combo.plugin.sample.home.viewmodel
 
 import androidx.lifecycle.viewModelScope
+import com.combo.core.installer.InstallerManager
 import com.combo.core.manager.PluginManager
+import com.combo.plugin.sample.common.update.DownloadStatus
+import com.combo.plugin.sample.common.update.UpdateManager
 import com.combo.plugin.sample.common.viewmodel.BaseViewModel
 import com.combo.plugin.sample.home.state.HomeState
 import com.combo.plugin.sample.home.state.PluginStatus
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
-class HomeViewModel : BaseViewModel<HomeState>(
+class HomeViewModel(
+    private val updateManager: UpdateManager
+) : BaseViewModel<HomeState>(
     initialState = HomeState()
 ) {
     companion object {
@@ -34,6 +40,12 @@ class HomeViewModel : BaseViewModel<HomeState>(
     }
 
     init {
+        // 刷新远程插件列表
+        viewModelScope.launch {
+            updateManager.fetchRemotePlugins()
+        }
+
+        // 监听插件状态
         viewModelScope.launch {
             combine(
                 PluginManager.loadedPluginsFlow,
@@ -53,6 +65,72 @@ class HomeViewModel : BaseViewModel<HomeState>(
                         exampleEntryClass = PluginManager.getPluginInstance(PLUGIN_EXAMPLE),
                         settingEntryClass = PluginManager.getPluginInstance(PLUGIN_SETTING),
                     )
+                }
+            }
+        }
+    }
+
+    /**
+     * 重试下载失败的插件
+     * @param pluginId 插件ID
+     */
+    fun retryDownload(pluginId: String) {
+        updateState {
+            copy(failedDownloads = failedDownloads - pluginId)
+        }
+        installLatestPlugin(pluginId)
+    }
+
+    /**
+     * 下载并安装最新版本的插件（支持并发和错误处理）
+     * @param pluginId 插件ID
+     */
+    fun installLatestPlugin(pluginId: String) {
+        if (uiState.value.downloadingPlugins.containsKey(pluginId)) {
+            Timber.w("插件 '$pluginId' 已在下载中。")
+            return
+        }
+
+        viewModelScope.launch {
+            updateState {
+                copy(downloadingPlugins = downloadingPlugins + (pluginId to 0f))
+            }
+
+            try {
+                updateManager.downloadLatestPlugin(pluginId).collect { status ->
+                    when (status) {
+                        is DownloadStatus.InProgress -> {
+                            updateState {
+                                copy(downloadingPlugins = downloadingPlugins + (pluginId to status.progress))
+                            }
+                        }
+
+                        is DownloadStatus.Success -> {
+                            val installResult =
+                                PluginManager.installerManager.installPlugin(status.file)
+                            if (installResult is InstallerManager.InstallResult.Success) {
+                                PluginManager.launchPlugin(pluginId)
+                            } else {
+                                Timber.e("插件安装失败: $pluginId")
+                                updateState {
+                                    copy(failedDownloads = failedDownloads + pluginId)
+                                }
+                            }
+                            status.file.delete()
+                        }
+
+                        is DownloadStatus.Failure -> {
+                            Timber.e(status.error, "下载插件失败: $pluginId")
+                            updateState {
+                                copy(failedDownloads = failedDownloads + pluginId)
+                            }
+                        }
+                    }
+                }
+            } finally {
+                // 任务结束，将插件从下载列表中移除
+                updateState {
+                    copy(downloadingPlugins = downloadingPlugins - pluginId)
                 }
             }
         }

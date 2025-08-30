@@ -80,9 +80,9 @@ fun ExampleMainScreen() {
         ExampleItem("SO 库加载", "JNI 调用、动态库加载、native 方法") {
             navigator.navigate(AppScreen.SoLibrary)
         },
-        ExampleItem("皮肤资源替换", "动态换肤、资源替换、主题切换"),
-        ExampleItem("权限申请", "运行时权限申请、权限检查、权限说明"),
-        ExampleItem("悬浮窗示例", "展示如何在插件中创建和管理悬浮窗")
+        ExampleItem("插件热更新", "无需重启应用，动态更新插件的代码和资源") {
+            navigator.navigate(AppScreen.PluginHotUpdate)
+        },
     )
 
     Scaffold(

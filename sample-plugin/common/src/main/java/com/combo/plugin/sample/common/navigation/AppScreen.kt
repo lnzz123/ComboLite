@@ -42,4 +42,7 @@ sealed interface AppScreen {
 
     @Serializable
     data object SoLibrary : AppScreen
+
+    @Serializable
+    data object PluginHotUpdate : AppScreen
 }

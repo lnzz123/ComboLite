@@ -64,7 +64,7 @@ dependencies {
     implementation(projects.dependencies)
     // ========== 插件化框架接口 ==========
     // 插件核心库 远程依赖方式
-    compileOnly(libs.combolite.core)
+//    compileOnly(libs.combolite.core)
     // 插件核心库 本地依赖方式
-    // compileOnly(projects.comboLiteCore)
+    compileOnly(projects.comboLiteCore)
 }

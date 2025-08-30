@@ -57,7 +57,7 @@ class LoadingViewModel(
     val entryClass: StateFlow<IPluginEntryClass?> = _entryClass.asStateFlow()
 
     companion object {
-        const val BASE_PATH = "plugins/base"
+        const val BASE_PATH = "plugins"
         const val PLUGIN_COMMON = "common"
         const val PLUGIN_HOME = "home"
     }

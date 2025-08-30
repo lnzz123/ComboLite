@@ -16,7 +16,6 @@
 
 package com.combo.plugin.sample
 
-import com.combo.core.BuildConfig
 import com.combo.core.base.BaseHostApplication
 import com.combo.core.manager.PluginManager
 import org.koin.core.context.loadKoinModules

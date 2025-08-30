@@ -1,0 +1,79 @@
+{
+  "plugins": [
+    {
+      "id": "common",
+      "name": "公共模块",
+      "description": "提供公共模块，包含基础功能和工具类。",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "downloadUrl": "https://raw.githubusercontent.com/lnzz123/ComboLite/refs/heads/master/updates/plugins/common-1.0.0.apk",
+          "releaseDate": "2025-08-30",
+          "changelog": [
+            "初始版本发布。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "home",
+      "name": "首页",
+      "description": "提供首页功能，展示应用的主要功能。",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "downloadUrl": "https://raw.githubusercontent.com/lnzz123/ComboLite/refs/heads/master/updates/plugins/home-1.0.0.apk",
+          "releaseDate": "2025-08-30",
+          "changelog": [
+            "初始版本发布。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "name": "功能示例",
+      "description": "展示插件化框架支持的各项原生Android能力。",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "downloadUrl": "https://raw.githubusercontent.com/lnzz123/ComboLite/refs/heads/master/updates/plugins/example-1.0.0.apk",
+          "releaseDate": "2025-08-30",
+          "changelog": [
+            "初始版本发布。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guide",
+      "name": "开发指南",
+      "description": "为开发者提供框架的详细使用说明和代码示例。",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "downloadUrl": "https://raw.githubusercontent.com/lnzz123/ComboLite/refs/heads/master/updates/plugins/guide-1.0.0.apk",
+          "releaseDate": "2025-08-30",
+          "changelog": [
+            "初始版本发布。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "setting",
+      "name": "设置中心",
+      "description": "管理应用和插件的各项设置。",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "downloadUrl": "https://raw.githubusercontent.com/lnzz123/ComboLite/refs/heads/master/updates/plugins/setting-1.0.0.apk",
+          "releaseDate": "2025-08-30",
+          "changelog": [
+            "初始版本发布。"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -16,11 +16,6 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.spotless)
-    alias(libs.plugins.kotlin.parcelize)
-    alias(libs.plugins.kotlinx.serialization)
 }
 
 android {
@@ -78,6 +73,7 @@ dependencies {
     api(libs.okhttp.logging.interceptor)
     api(libs.sandwich)
     api(libs.kotlinx.serialization.json)
+    api(libs.converter.gson)
 
     // ========== 工具库 ==========
     api(libs.timber)

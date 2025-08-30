@@ -94,6 +94,7 @@ koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", versi
 sandwich = { module = "com.github.skydoves:sandwich-retrofit", version.ref = "sandwich" }
 retrofit-bom = { module = "com.squareup.retrofit2:retrofit-bom", version.ref = "retrofit" }
 retrofit = { module = "com.squareup.retrofit2:retrofit" }
+converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 retrofit-kotlinx-serialization = { module = "com.squareup.retrofit2:converter-kotlinx-serialization" }
 # OkHttp 网络请求相关库
 okhttp-bom = { module = "com.squareup.okhttp3:okhttp-bom", version.ref = "okHttp" }

@@ -42,6 +42,8 @@ data class HomeState(
     val guideEntryClass: IPluginEntryClass? = null,
     val exampleEntryClass: IPluginEntryClass? = null,
     val settingEntryClass: IPluginEntryClass? = null,
+    val downloadingPlugins: Map<String, Float> = emptyMap(),
+    val failedDownloads: Set<String> = emptySet(),
     override val isLoading: Boolean = true,
     override val isError: Boolean = false,
     override val errorMessage: String? = null,
